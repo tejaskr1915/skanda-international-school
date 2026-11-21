@@ -119,6 +119,8 @@ export const PublicHeader: React.FC<PublicHeaderProps> = ({ onOpenLogin }) => {
 
           {/* Royal Blue Apply Now Button */}
           <TouchableOpacity
+            nativeID="apply-now-btn"
+            testID="apply-now-btn"
             style={styles.applyNowButton}
             onPress={() => navigateTo('/apply')}
             activeOpacity={0.85}

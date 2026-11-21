@@ -30,8 +30,8 @@ const MainNavigator: React.FC = () => {
 
     // 4. Student Dashboard (/student/dashboard)
     if (currentRoute === '/student/dashboard') {
-      // Guard Check: only allow if submitted
-      if (application && application.status === 'SUBMITTED') {
+      // Allow dashboard access if submitted, accepted, under review, or enrolled (anything not DRAFT)
+      if (application && application.status !== 'DRAFT') {
         return <StudentDashboardScreen />;
       }
       // If draft or unauthenticated, redirect to wizard step

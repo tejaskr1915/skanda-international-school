@@ -82,6 +82,8 @@ export const StudentDashboardScreen: React.FC = () => {
             return (
               <TouchableOpacity
                 key={item.id}
+                nativeID={`sidebar-${item.id.toLowerCase()}`}
+                testID={`sidebar-${item.id.toLowerCase()}`}
                 style={[styles.sidebarItem, isActive && styles.sidebarItemActive]}
                 onPress={() => setActiveTab(item.id)}
               >
@@ -123,6 +125,8 @@ export const StudentDashboardScreen: React.FC = () => {
               </View>
 
               <TouchableOpacity
+                nativeID="download-pdf-btn"
+                testID="download-pdf-btn"
                 style={styles.downloadPdfBtn}
                 onPress={handleDownloadPdf}
                 activeOpacity={0.85}

@@ -66,10 +66,14 @@ app.use((err, req, res, next) => {
   });
 });
 
-app.listen(PORT, () => {
-  console.log(`====================================================`);
-  console.log(`  Skanda International School Backend Server`);
-  console.log(`  Server running on http://localhost:${PORT}`);
-  console.log(`  Health Check: http://localhost:${PORT}/api/health`);
-  console.log(`====================================================`);
-});
+if (process.env.NODE_ENV !== 'test' && require.main === module) {
+  app.listen(PORT, () => {
+    console.log(`====================================================`);
+    console.log(`  Skanda International School Backend Server`);
+    console.log(`  Server running on http://localhost:${PORT}`);
+    console.log(`  Health Check: http://localhost:${PORT}/api/health`);
+    console.log(`====================================================`);
+  });
+}
+
+module.exports = app;

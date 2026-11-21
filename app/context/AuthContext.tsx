@@ -83,7 +83,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (route === '/student/dashboard') {
       if (!user) {
         route = '/apply';
-      } else if (application && application.status !== 'SUBMITTED') {
+      } else if (application && application.status === 'DRAFT') {
         const step = application.currentStep || 1;
         route = `/apply/step/${step}`;
       }
@@ -111,7 +111,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             // Guard check on initial page load if user landed directly on /student/dashboard
             if (Platform.OS === 'web' && typeof window !== 'undefined') {
               const currentPath = window.location.pathname;
-              if (currentPath === '/student/dashboard' && res.application.status !== 'SUBMITTED') {
+              if (currentPath === '/student/dashboard' && res.application.status === 'DRAFT') {
                 const targetStep = `/apply/step/${res.application.currentStep || 1}`;
                 setCurrentRoute(targetStep);
                 window.history.replaceState({}, '', targetStep);

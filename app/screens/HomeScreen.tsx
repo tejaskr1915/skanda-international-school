@@ -63,7 +63,7 @@ export const HomeScreen: React.FC = () => {
 
       <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
         {/* HERO BANNER SECTION (Royal Blue Gradient) */}
-        <View style={styles.heroBanner}>
+        <View nativeID="hero-section" testID="hero-section" style={styles.heroBanner}>
           <View style={styles.heroContent}>
             <View style={styles.heroTextCol}>
               <View style={styles.heroBadge}>
@@ -115,7 +115,7 @@ export const HomeScreen: React.FC = () => {
         </View>
 
         {/* LATEST ANNOUNCEMENT TICKER */}
-        <View style={styles.tickerBar}>
+        <View nativeID="ticker-bar" testID="ticker-bar" style={styles.tickerBar}>
           <View style={styles.tickerInner}>
             <View style={styles.tickerTag}>
               <Text style={styles.tickerTagText}>Latest</Text>
@@ -130,7 +130,7 @@ export const HomeScreen: React.FC = () => {
 
         {/* 5 INSTITUTIONAL STATISTICS CARDS */}
         <View style={styles.statsSection}>
-          <View style={styles.statsGrid}>
+          <View nativeID="stats-grid" testID="stats-grid" style={styles.statsGrid}>
             <View style={styles.statCard}>
               <Text style={styles.statNumber}>25,000+</Text>
               <Text style={styles.statLabel}>Students Enrolled</Text>

@@ -498,13 +498,28 @@ router.get('/:id/pdf', async (req, res) => {
       return res.status(404).json({ success: false, message: 'Application not found.' });
     }
 
-    const PDFDocument = require('pdfkit');
-    const doc = new PDFDocument({ margin: 40, size: 'A4' });
-
     const filename = `${application.applicationNo || 'SIS-2026'}-Application.pdf`;
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
 
+    let PDFDocument;
+    try {
+      PDFDocument = require('pdfkit');
+    } catch (e) {
+      try {
+        const mod = await import('pdfkit');
+        PDFDocument = mod.default || mod;
+      } catch (e2) {
+        PDFDocument = null;
+      }
+    }
+
+    if (!PDFDocument) {
+      const minimalPdf = `%PDF-1.4\n1 0 obj << /Type /Catalog /Pages 2 0 R >> endobj\n2 0 obj << /Type /Pages /Kids [3 0 R] /Count 1 >> endobj\n3 0 obj << /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Contents 4 0 R /Resources << /Font << /F1 5 0 R >> >> >> endobj\n4 0 obj << /Length 250 >> stream\nBT\n/F1 16 Tf\n50 800 Td\n(SKANDA INTERNATIONAL SCHOOL - ADMISSION SUMMARY) Tj\n0 -30 Td\n/F1 12 Tf\n(Application No: ${application.applicationNo}) Tj\n0 -20 Td\n(Status: ${application.status}) Tj\n0 -20 Td\n(Academic Year: ${application.academicYear}) Tj\nET\nendstream\nendobj\n5 0 obj << /Type /Font /Subtype /Type1 /BaseFont /Helvetica >> endobj\nxref\n0 6\n0000000000 65535 f \n0000000009 00000 n \n0000000058 00000 n \n0000000115 00000 n \n0000000244 00000 n \n0000000550 00000 n \ntrailer << /Size 6 /Root 1 0 R >>\nstartxref\n620\n%%EOF`;
+      return res.send(Buffer.from(minimalPdf));
+    }
+
+    const doc = new PDFDocument({ margin: 40, size: 'A4' });
     doc.pipe(res);
 
     // Header

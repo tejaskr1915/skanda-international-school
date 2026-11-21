@@ -96,7 +96,7 @@ router.post('/register-step1', async (req, res) => {
             applicationNo,
             academicYear: '2026-2027',
             status: 'DRAFT',
-            currentStep: 2, // successfully passed step 1
+            currentStep: 1,
             institutionType: 'SCHOOL',
             classOrCourse: 'Grade 6',
             studentDetails: {

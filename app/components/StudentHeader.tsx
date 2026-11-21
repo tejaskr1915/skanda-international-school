@@ -128,6 +128,8 @@ export const StudentHeader: React.FC = () => {
           <View style={[styles.searchContainer, isSearchFocused && styles.searchContainerFocused]}>
             <Text style={styles.searchIcon}>🔍</Text>
             <TextInput
+              nativeID="student-search-input"
+              testID="student-search-input"
               style={styles.searchInput}
               placeholder="Search admission steps, curriculum, documents..."
               placeholderTextColor={colors.textMuted}

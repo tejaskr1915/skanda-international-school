@@ -7,7 +7,10 @@
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",
-    "server": "node server/src/index.js"
+    "server": "node server/src/index.js",
+    "test:api": "npm --prefix server test",
+    "test:e2e": "playwright test",
+    "test": "npm run test:api && npm run test:e2e"
   },
   "dependencies": {
     "@expo/metro-runtime": "~4.0.1",
@@ -23,6 +26,7 @@
   },
   "devDependencies": {
     "@babel/core": "^7.20.0",
+    "@playwright/test": "^1.65.1",
     "@types/react": "~18.3.12",
     "babel-preset-expo": "^58.0.26",
     "typescript": "^5.9.3"
