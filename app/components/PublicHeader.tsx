@@ -14,16 +14,38 @@ export const PublicHeader: React.FC<PublicHeaderProps> = ({ onOpenLogin }) => {
 
   const languages = ['English', 'ಕನ್ನಡ (Kannada)', 'हिन्दी (Hindi)'];
 
+  // Only keep functional links that scroll to existing sections or active Phase 1 routes
   const menuItems = [
-    { label: 'About Us', route: '/' },
-    { label: 'Academics', route: '/' },
+    { label: 'About', target: 'about' },
+    { label: 'Campuses', target: 'campus-finder' },
     { label: 'Admissions', route: '/apply' },
-    { label: 'Student Life', route: '/' },
-    { label: 'Achievements', route: '/' },
-    { label: 'News', route: '/' },
-    { label: 'Careers', route: '/' },
-    { label: 'Contact Us', route: '/' }
+    { label: 'News', target: 'news' },
+    { label: 'Contact', target: 'contact' }
   ];
+
+  const handleNavClick = (item: { label: string; route?: string; target?: string }) => {
+    if (item.route) {
+      navigateTo(item.route);
+      return;
+    }
+    if (item.target) {
+      if (Platform.OS === 'web' && typeof window !== 'undefined') {
+        const scrollToSection = () => {
+          const el = document.getElementById(item.target!);
+          if (el) {
+            el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }
+        };
+
+        if (window.location.pathname !== '/') {
+          navigateTo('/');
+          setTimeout(scrollToSection, 200);
+        } else {
+          scrollToSection();
+        }
+      }
+    }
+  };
 
   return (
     <View style={styles.headerContainer}>
@@ -49,7 +71,7 @@ export const PublicHeader: React.FC<PublicHeaderProps> = ({ onOpenLogin }) => {
             <TouchableOpacity
               key={index}
               style={styles.navLink}
-              onPress={() => navigateTo(item.route)}
+              onPress={() => handleNavClick(item)}
             >
               <Text style={styles.navLinkText}>{item.label}</Text>
             </TouchableOpacity>
@@ -211,7 +233,7 @@ const styles = StyleSheet.create({
     display: Platform.OS === 'web' ? ('flex' as any) : 'none',
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 20
+    gap: 16
   },
   navLink: {
     paddingVertical: 6,
@@ -225,74 +247,76 @@ const styles = StyleSheet.create({
   actionsRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12
+    gap: 8,
+    flexShrink: 0
   },
   langButton: {
     borderWidth: 1,
     borderColor: colors.borderDefault,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
     borderRadius: borderRadius.md,
     backgroundColor: colors.bgPage
   },
   langButtonText: {
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '600',
     color: colors.textSecondary
   },
   loginButton: {
     borderWidth: 1,
     borderColor: colors.borderDefault,
-    paddingHorizontal: 18,
-    paddingVertical: 9,
+    paddingHorizontal: 14,
+    paddingVertical: 7,
     borderRadius: borderRadius.md,
     backgroundColor: colors.bgSurface
   },
   loginButtonText: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '600',
     color: colors.textPrimary
   },
   applyNowButton: {
     backgroundColor: colors.brandPrimary,
-    paddingHorizontal: 22,
-    paddingVertical: 10,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
     borderRadius: borderRadius.md,
     shadowColor: colors.brandPrimary,
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.28,
-    shadowRadius: 6,
-    elevation: 3
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 2
   },
   applyNowText: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '700',
     color: colors.textInverse
   },
   userControls: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8
+    gap: 6,
+    flexShrink: 0
   },
   portalPill: {
     backgroundColor: colors.brandLight,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
     borderRadius: borderRadius.full,
     borderWidth: 1,
     borderColor: '#BFDBFE'
   },
   portalPillText: {
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '700',
     color: colors.brandPrimary
   },
   logoutBtn: {
-    paddingHorizontal: 10,
-    paddingVertical: 8
+    paddingHorizontal: 8,
+    paddingVertical: 6
   },
   logoutBtnText: {
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '600',
     color: colors.statusDanger
   },

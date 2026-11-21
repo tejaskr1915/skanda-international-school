@@ -155,7 +155,7 @@ export const HomeScreen: React.FC = () => {
         </View>
 
         {/* FIND A SCHOOL OR COLLEGE SECTION */}
-        <View style={styles.findCampusSection}>
+        <View style={styles.findCampusSection} nativeID="campus-finder" {...({ id: 'campus-finder' } as any)}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionHeading}>Find a school or college</Text>
             <Text style={styles.sectionSubheading}>
@@ -300,7 +300,7 @@ export const HomeScreen: React.FC = () => {
         </View>
 
         {/* NEWS AND EVENTS 3-CARD GRID */}
-        <View style={styles.newsSection}>
+        <View style={styles.newsSection} nativeID="news" {...({ id: 'news' } as any)}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionHeading}>News and events</Text>
             <Text style={styles.sectionSubheading}>What is happening across our school and college campuses.</Text>
@@ -349,7 +349,7 @@ export const HomeScreen: React.FC = () => {
         </View>
 
         {/* WHY FAMILIES CHOOSE SKANDA */}
-        <View style={styles.whySection}>
+        <View style={styles.whySection} nativeID="about" {...({ id: 'about' } as any)}>
           <View style={styles.whyContentRow}>
             <View style={styles.whyGraphicBox}>
               <View style={styles.whyGraphicBackdrop}>
@@ -608,11 +608,13 @@ const styles = StyleSheet.create({
     borderRadius: 3
   },
   tickerBar: {
-    backgroundColor: colors.brandLight,
+    backgroundColor: '#EFF6FF', // bg-blue-50
+    borderTopWidth: 1,
+    borderTopColor: '#DBEAFE', // border-blue-100
     borderBottomWidth: 1,
-    borderBottomColor: '#BFDBFE',
-    paddingVertical: 10,
-    paddingHorizontal: spacing.lg
+    borderBottomColor: '#DBEAFE',
+    paddingVertical: 12, // py-3
+    paddingHorizontal: 24 // px-6
   },
   tickerInner: {
     maxWidth: 1200,
@@ -645,8 +647,9 @@ const styles = StyleSheet.create({
     width: '100%',
     alignSelf: 'center',
     paddingHorizontal: spacing.lg,
-    marginTop: -28,
-    zIndex: 10
+    marginTop: 40, // Clean py-10 vertical spacing (no negative margin overlapping ticker bar)
+    marginBottom: 48, // py-12 vertical spacing before Find a school/college
+    zIndex: 1
   },
   statsGrid: {
     flexDirection: 'row',

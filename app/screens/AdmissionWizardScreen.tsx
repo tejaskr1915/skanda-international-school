@@ -20,6 +20,7 @@ import { StudentFooter } from '../components/StudentFooter';
 import { AdmissionStepper } from '../components/AdmissionStepper';
 import { CurriculumModal } from '../components/CurriculumModal';
 import { LoginModal } from '../components/LoginModal';
+import { generateApplicationPdf } from '../utils/pdfGenerator';
 
 interface WizardProps {
   initialStep?: number;
@@ -1757,7 +1758,9 @@ export const AdmissionWizardScreen: React.FC<WizardProps> = ({ initialStep = 1 }
               <TouchableOpacity
                 style={styles.confirmSecondaryBtn}
                 onPress={() => {
-                  Alert.alert('Download Application PDF', 'Official admission application summary PDF saved.');
+                  if (application) {
+                    generateApplicationPdf(application);
+                  }
                 }}
               >
                 <Text style={styles.confirmSecondaryText}>📥 Download Application PDF</Text>

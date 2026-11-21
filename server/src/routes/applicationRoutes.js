@@ -475,4 +475,78 @@ router.post('/submit', authMiddleware, async (req, res) => {
   }
 });
 
+/**
+ * GET /api/applications/:id/pdf
+ * Generates official application PDF using PDFKit as a backend fallback
+ */
+router.get('/:id/pdf', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const application = await prisma.application.findFirst({
+      where: {
+        OR: [
+          { id: id },
+          { applicationNo: id }
+        ]
+      },
+      include: {
+        applicantUser: true
+      }
+    });
+
+    if (!application) {
+      return res.status(404).json({ success: false, message: 'Application not found.' });
+    }
+
+    const PDFDocument = require('pdfkit');
+    const doc = new PDFDocument({ margin: 40, size: 'A4' });
+
+    const filename = `${application.applicationNo || 'SIS-2026'}-Application.pdf`;
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+
+    doc.pipe(res);
+
+    // Header
+    doc.rect(40, 40, 515, 60).fill('#1D4ED8');
+    doc.fillColor('#FFFFFF').fontSize(20).text('SKANDA INTERNATIONAL SCHOOL', 55, 52);
+    doc.fontSize(10).text('Bengaluru Main Campus • Admissions Academic Session 2026–2027', 55, 78);
+
+    doc.moveDown(4);
+    doc.fillColor('#0F172A').fontSize(14).text(`Application Number: ${application.applicationNo}`, 40, 120);
+    doc.fillColor('#16A34A').fontSize(12).text(`Status: ${application.status}`, 40, 140);
+
+    const student = application.studentDetails || {};
+    doc.fillColor('#1E3A8A').fontSize(12).text('1. Student Information', 40, 170);
+    doc.fillColor('#475569').fontSize(10)
+      .text(`Full Name: ${student.fullName || application.applicantUser?.fullName || 'N/A'}`)
+      .text(`DOB: ${student.dob || 'N/A'} | Gender: ${student.gender || 'N/A'}`)
+      .text(`Class/Course: ${application.classOrCourse} | Board: ${application.board || 'CBSE'}`);
+
+    const parent = application.parentDetails || {};
+    doc.moveDown();
+    doc.fillColor('#1E3A8A').fontSize(12).text('2. Parent / Guardian Details');
+    doc.fillColor('#475569').fontSize(10)
+      .text(`Father: ${parent.fatherName || 'N/A'} | Mother: ${parent.motherName || 'N/A'}`)
+      .text(`Mobile: +91 ${parent.mobile || application.applicantUser?.mobile}`)
+      .text(`Email: ${parent.email || application.applicantUser?.email}`);
+
+    const fac = application.facilities || {};
+    doc.moveDown();
+    doc.fillColor('#1E3A8A').fontSize(12).text('3. Campus Facilities');
+    doc.fillColor('#475569').fontSize(10)
+      .text(`Hostel: ${fac.hostel?.opted ? `Opted (${fac.hostel.roomType})` : 'Not Opted'}`)
+      .text(`Transport: ${fac.transport?.opted ? `Opted (Pickup: ${fac.transport.pickupArea})` : 'Not Opted'}`)
+      .text(`Library: ${fac.library !== false ? 'Included' : 'No'}`);
+
+    doc.moveDown(2);
+    doc.fillColor('#94A3B8').fontSize(9).text('Electronically generated admission summary • Skanda International School', { align: 'center' });
+
+    doc.end();
+  } catch (error) {
+    console.error('Error generating backend PDF:', error);
+    res.status(500).json({ success: false, message: 'Failed to generate PDF.' });
+  }
+});
+
 module.exports = router;

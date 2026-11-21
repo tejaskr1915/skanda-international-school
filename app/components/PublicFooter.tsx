@@ -7,7 +7,7 @@ export const PublicFooter: React.FC = () => {
   const { navigateTo } = useAuth();
 
   return (
-    <View style={styles.footerContainer}>
+    <View style={styles.footerContainer} nativeID="contact" {...({ id: 'contact' } as any)}>
       <View style={styles.footerContent}>
         {/* Col 1: About */}
         <View style={styles.footerCol}>

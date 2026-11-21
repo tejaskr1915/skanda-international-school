@@ -4,33 +4,62 @@ import { useAuth } from '../context/AuthContext';
 import { colors, borderRadius, spacing, shadows } from '../theme/theme';
 import { StudentHeader } from '../components/StudentHeader';
 import { StudentFooter } from '../components/StudentFooter';
+import { generateApplicationPdf } from '../utils/pdfGenerator';
 
 export const StudentDashboardScreen: React.FC = () => {
   const { user, application, navigateTo } = useAuth();
   const [activeTab, setActiveTab] = useState('Dashboard');
+  const [pdfDownloading, setPdfDownloading] = useState(false);
 
   const studentName = application?.studentDetails?.fullName || user?.fullName || 'Student Applicant';
   const appNo = application?.applicationNo || 'SIS-2026-0001';
   const status = application?.status || 'SUBMITTED';
 
-  const sidebarLinks = [
-    { id: 'Dashboard', icon: '🏠', label: 'Dashboard' },
-    { id: 'Attendance', icon: '📅', label: 'Attendance' },
-    { id: 'Timetable', icon: '🕒', label: 'Timetable' },
-    { id: 'Homework', icon: '📝', label: 'Homework' },
-    { id: 'Exams', icon: '📊', label: 'Exams & Results' },
-    { id: 'Study', icon: '📖', label: 'Study Material' },
-    { id: 'Notices', icon: '📢', label: 'Notices' },
-    { id: 'Documents', icon: '📑', label: 'Documents' },
-    { id: 'Profile', icon: '👤', label: 'My Profile' }
-  ];
+  // RBAC Gating: Full student sidebar unlocked ONLY when status === 'ACCEPTED' or 'ENROLLED'
+  const isEnrolled = status === 'ACCEPTED' || status === 'ENROLLED';
+
+  const sidebarLinks = isEnrolled
+    ? [
+        { id: 'Dashboard', icon: '🏠', label: 'Dashboard' },
+        { id: 'Attendance', icon: '📅', label: 'Attendance' },
+        { id: 'Timetable', icon: '🕒', label: 'Timetable' },
+        { id: 'Homework', icon: '📝', label: 'Homework' },
+        { id: 'Exams', icon: '📊', label: 'Exams & Results' },
+        { id: 'Study', icon: '📖', label: 'Study Material' },
+        { id: 'Notices', icon: '📢', label: 'Notices' },
+        { id: 'Documents', icon: '📑', label: 'Documents' },
+        { id: 'Profile', icon: '👤', label: 'My Profile' }
+      ]
+    : [
+        { id: 'Dashboard', icon: '🏠', label: 'Application Summary' },
+        { id: 'Documents', icon: '📑', label: 'Uploaded Documents' },
+        { id: 'Profile', icon: '👤', label: 'My Profile' }
+      ];
 
   const trackerSteps = [
     { title: 'Submitted', done: true, current: status === 'SUBMITTED', date: application?.submittedAt ? new Date(application.submittedAt).toLocaleDateString() : 'Today' },
-    { title: 'Under Review', done: ['UNDER_REVIEW', 'ACCEPTED', 'SHORTLISTED'].includes(status), current: status === 'UNDER_REVIEW', date: 'In Progress' },
-    { title: 'Shortlisted', done: ['ACCEPTED', 'SHORTLISTED'].includes(status), current: status === 'SHORTLISTED', date: 'Expected 3-5 days' },
-    { title: 'Accepted & Enrolled', done: status === 'ACCEPTED', current: status === 'ACCEPTED', date: 'Final Decision' }
+    { title: 'Under Review', done: ['UNDER_REVIEW', 'ACCEPTED', 'SHORTLISTED', 'ENROLLED'].includes(status), current: status === 'UNDER_REVIEW', date: 'In Progress' },
+    { title: 'Shortlisted', done: ['ACCEPTED', 'SHORTLISTED', 'ENROLLED'].includes(status), current: status === 'SHORTLISTED', date: 'Expected 3-5 days' },
+    { title: 'Accepted & Enrolled', done: isEnrolled, current: isEnrolled, date: isEnrolled ? 'Enrolled' : 'Final Decision' }
   ];
+
+  const handleDownloadPdf = () => {
+    if (!application) {
+      Alert.alert('Error', 'No application data found to download.');
+      return;
+    }
+    setPdfDownloading(true);
+    try {
+      generateApplicationPdf(application);
+    } catch (e: any) {
+      console.warn('Client PDF generation error, trying fallback:', e);
+      if (Platform.OS === 'web' && typeof window !== 'undefined') {
+        window.open(`http://localhost:5000/api/applications/${appNo}/pdf`, '_blank');
+      }
+    } finally {
+      setPdfDownloading(false);
+    }
+  };
 
   return (
     <View style={styles.container}>
@@ -41,7 +70,13 @@ export const StudentDashboardScreen: React.FC = () => {
         <View style={styles.sidebar}>
           <View style={styles.sidebarBrand}>
             <Text style={styles.sidebarBrandTitle}>Portal Navigation</Text>
+            <View style={[styles.statusBadgeSm, { backgroundColor: isEnrolled ? colors.statusSuccessBg : colors.brandLight }]}>
+              <Text style={[styles.statusBadgeSmText, { color: isEnrolled ? colors.statusSuccess : colors.brandPrimary }]}>
+                {status}
+              </Text>
+            </View>
           </View>
+
           {sidebarLinks.map((item) => {
             const isActive = activeTab === item.id;
             return (
@@ -57,12 +92,23 @@ export const StudentDashboardScreen: React.FC = () => {
               </TouchableOpacity>
             );
           })}
+
+          {/* Locked Notice for Pre-Enrollment Applicants */}
+          {!isEnrolled && (
+            <View style={styles.sidebarLockCard}>
+              <Text style={styles.lockIcon}>🔒</Text>
+              <Text style={styles.lockTitle}>Post-Enrollment Portal</Text>
+              <Text style={styles.lockDesc}>
+                Attendance, Timetable, Homework, and Exams modules will activate upon admission acceptance and fee clearance.
+              </Text>
+            </View>
+          )}
         </View>
 
         {/* MAIN DASHBOARD CONTENT */}
         <ScrollView style={styles.mainScroll} showsVerticalScrollIndicator={false}>
           <View style={styles.contentCanvas}>
-            {/* TOP NOTICE: SUBMITTED CONFIRMATION */}
+            {/* TOP NOTICE: SUBMITTED CONFIRMATION BANNER */}
             <View style={styles.statusBanner}>
               <View style={styles.statusLeft}>
                 <View style={styles.successDot}>
@@ -78,9 +124,12 @@ export const StudentDashboardScreen: React.FC = () => {
 
               <TouchableOpacity
                 style={styles.downloadPdfBtn}
-                onPress={() => Alert.alert('Download Application PDF', `Downloaded official summary PDF for application ${appNo}.`)}
+                onPress={handleDownloadPdf}
+                activeOpacity={0.85}
               >
-                <Text style={styles.downloadPdfText}>📥 Download Application PDF</Text>
+                <Text style={styles.downloadPdfText}>
+                  {pdfDownloading ? '⏳ Generating PDF...' : '📥 Download Application PDF'}
+                </Text>
               </TouchableOpacity>
             </View>
 
@@ -111,172 +160,186 @@ export const StudentDashboardScreen: React.FC = () => {
             </View>
 
             {/* STUDENT PROFILE CARD */}
-            <View style={styles.profileHeroCard}>
-              <View style={styles.profileAvatarBox}>
-                <Text style={styles.profileAvatarIcon}>🎓</Text>
-              </View>
-              <View style={styles.profileDetailsCol}>
-                <View style={styles.profileBadgeRow}>
-                  <View style={styles.verifiedBadge}>
-                    <Text style={styles.verifiedText}>✓ Mobile Verified Applicant</Text>
-                  </View>
-                  <View style={styles.classBadge}>
-                    <Text style={styles.classBadgeText}>{application?.classOrCourse || 'Grade 6'}</Text>
-                  </View>
+            {(activeTab === 'Dashboard' || activeTab === 'Profile') && (
+              <View style={styles.profileHeroCard}>
+                <View style={styles.profileAvatarBox}>
+                  <Text style={styles.profileAvatarIcon}>🎓</Text>
                 </View>
-                <Text style={styles.profileName}>{studentName}</Text>
-                <Text style={styles.profileMeta}>
-                  Student ID: {appNo} • Board: {application?.board || 'CBSE'} • Mode: {application?.mode || 'Day Scholar'}
-                </Text>
-                <Text style={styles.profileContact}>
-                  📱 +91 {user?.mobile} • ✉️ {user?.email}
-                </Text>
+                <View style={styles.profileDetailsCol}>
+                  <View style={styles.profileBadgeRow}>
+                    <View style={styles.verifiedBadge}>
+                      <Text style={styles.verifiedText}>✓ Mobile Verified Applicant</Text>
+                    </View>
+                    <View style={styles.classBadge}>
+                      <Text style={styles.classBadgeText}>{application?.classOrCourse || 'Grade 6'}</Text>
+                    </View>
+                  </View>
+                  <Text style={styles.profileName}>{studentName}</Text>
+                  <Text style={styles.profileMeta}>
+                    Student ID: {appNo} • Board: {application?.board || 'CBSE'} • Mode: {application?.mode || 'Day Scholar'}
+                  </Text>
+                  <Text style={styles.profileContact}>
+                    📱 +91 {user?.mobile} • ✉️ {user?.email}
+                  </Text>
+                </View>
               </View>
-            </View>
+            )}
 
             {/* ORGANIZED APPLICATION SUMMARY CARDS */}
             <View style={styles.cardsGrid}>
               {/* Card 1: Programme & Board */}
-              <View style={styles.summaryCard}>
-                <View style={styles.summaryCardHeader}>
-                  <Text style={styles.summaryCardTitle}>🏫 Programme & Board</Text>
+              {(activeTab === 'Dashboard') && (
+                <View style={styles.summaryCard}>
+                  <View style={styles.summaryCardHeader}>
+                    <Text style={styles.summaryCardTitle}>🏫 Programme & Board</Text>
+                  </View>
+                  <View style={styles.summaryCardBody}>
+                    <Text style={styles.summaryRow}>
+                      <Text style={styles.summaryLabel}>Institution Type: </Text>
+                      {application?.institutionType || 'SCHOOL'}
+                    </Text>
+                    <Text style={styles.summaryRow}>
+                      <Text style={styles.summaryLabel}>Admitted Class: </Text>
+                      {application?.classOrCourse || 'Grade 6'}
+                    </Text>
+                    <Text style={styles.summaryRow}>
+                      <Text style={styles.summaryLabel}>Board: </Text>
+                      {application?.board?.replace('_', ' / ') || 'CBSE'}
+                    </Text>
+                    <Text style={styles.summaryRow}>
+                      <Text style={styles.summaryLabel}>Academic Year: </Text>
+                      {application?.academicYear || '2026-2027'}
+                    </Text>
+                    <Text style={styles.summaryRow}>
+                      <Text style={styles.summaryLabel}>Attendance Mode: </Text>
+                      {application?.mode || 'Day Scholar'}
+                    </Text>
+                  </View>
                 </View>
-                <View style={styles.summaryCardBody}>
-                  <Text style={styles.summaryRow}>
-                    <Text style={styles.summaryLabel}>Institution Type: </Text>
-                    {application?.institutionType || 'SCHOOL'}
-                  </Text>
-                  <Text style={styles.summaryRow}>
-                    <Text style={styles.summaryLabel}>Admitted Class: </Text>
-                    {application?.classOrCourse || 'Grade 6'}
-                  </Text>
-                  <Text style={styles.summaryRow}>
-                    <Text style={styles.summaryLabel}>Board: </Text>
-                    {application?.board?.replace('_', ' / ') || 'CBSE'}
-                  </Text>
-                  <Text style={styles.summaryRow}>
-                    <Text style={styles.summaryLabel}>Academic Year: </Text>
-                    {application?.academicYear || '2026-2027'}
-                  </Text>
-                  <Text style={styles.summaryRow}>
-                    <Text style={styles.summaryLabel}>Attendance Mode: </Text>
-                    {application?.mode || 'Day Scholar'}
-                  </Text>
-                </View>
-              </View>
+              )}
 
               {/* Card 2: Selected Subjects */}
-              <View style={styles.summaryCard}>
-                <View style={styles.summaryCardHeader}>
-                  <Text style={styles.summaryCardTitle}>📚 Selected Subjects & Languages</Text>
+              {(activeTab === 'Dashboard') && (
+                <View style={styles.summaryCard}>
+                  <View style={styles.summaryCardHeader}>
+                    <Text style={styles.summaryCardTitle}>📚 Selected Subjects & Languages</Text>
+                  </View>
+                  <View style={styles.summaryCardBody}>
+                    <Text style={styles.summaryRow}>
+                      <Text style={styles.summaryLabel}>Core Curriculum: </Text>
+                      English, Mathematics, Science, Social Studies, ICT
+                    </Text>
+                    <Text style={styles.summaryRow}>
+                      <Text style={styles.summaryLabel}>Language Choice: </Text>
+                      {application?.selectedSubjects?.secondLanguage || 'Hindi Course-A'}
+                    </Text>
+                    <Text style={styles.summaryRow}>
+                      <Text style={styles.summaryLabel}>Syllabus Aligned: </Text>
+                      NCERT & Council Standard 2026
+                    </Text>
+                  </View>
                 </View>
-                <View style={styles.summaryCardBody}>
-                  <Text style={styles.summaryRow}>
-                    <Text style={styles.summaryLabel}>Core Curriculum: </Text>
-                    English, Mathematics, Science, Social Studies, ICT
-                  </Text>
-                  <Text style={styles.summaryRow}>
-                    <Text style={styles.summaryLabel}>Language Choice: </Text>
-                    {application?.selectedSubjects?.secondLanguage || 'Hindi Course-A'}
-                  </Text>
-                  <Text style={styles.summaryRow}>
-                    <Text style={styles.summaryLabel}>Syllabus Aligned: </Text>
-                    NCERT & Council Standard 2026
-                  </Text>
-                </View>
-              </View>
+              )}
 
               {/* Card 3: Personal & Demographic Details */}
-              <View style={styles.summaryCard}>
-                <View style={styles.summaryCardHeader}>
-                  <Text style={styles.summaryCardTitle}>👤 Personal Details</Text>
+              {(activeTab === 'Dashboard' || activeTab === 'Profile') && (
+                <View style={styles.summaryCard}>
+                  <View style={styles.summaryCardHeader}>
+                    <Text style={styles.summaryCardTitle}>👤 Personal Details</Text>
+                  </View>
+                  <View style={styles.summaryCardBody}>
+                    <Text style={styles.summaryRow}>
+                      <Text style={styles.summaryLabel}>Full Name: </Text>
+                      {studentName}
+                    </Text>
+                    <Text style={styles.summaryRow}>
+                      <Text style={styles.summaryLabel}>Date of Birth: </Text>
+                      {application?.studentDetails?.dob || '2014-04-15'}
+                    </Text>
+                    <Text style={styles.summaryRow}>
+                      <Text style={styles.summaryLabel}>Gender: </Text>
+                      {application?.studentDetails?.gender || 'Male'} • Blood Group: {application?.studentDetails?.bloodGroup || 'O+'}
+                    </Text>
+                    <Text style={styles.summaryRow}>
+                      <Text style={styles.summaryLabel}>Nationality: </Text>
+                      {application?.studentDetails?.nationality || 'Indian'}
+                    </Text>
+                    <Text style={styles.summaryRow}>
+                      <Text style={styles.summaryLabel}>Residential Address: </Text>
+                      {application?.studentDetails?.address?.street || 'Bengaluru, Karnataka'}
+                    </Text>
+                  </View>
                 </View>
-                <View style={styles.summaryCardBody}>
-                  <Text style={styles.summaryRow}>
-                    <Text style={styles.summaryLabel}>Full Name: </Text>
-                    {studentName}
-                  </Text>
-                  <Text style={styles.summaryRow}>
-                    <Text style={styles.summaryLabel}>Date of Birth: </Text>
-                    {application?.studentDetails?.dob || '2014-04-15'}
-                  </Text>
-                  <Text style={styles.summaryRow}>
-                    <Text style={styles.summaryLabel}>Gender: </Text>
-                    {application?.studentDetails?.gender || 'Male'} • Blood Group: {application?.studentDetails?.bloodGroup || 'O+'}
-                  </Text>
-                  <Text style={styles.summaryRow}>
-                    <Text style={styles.summaryLabel}>Nationality: </Text>
-                    {application?.studentDetails?.nationality || 'Indian'}
-                  </Text>
-                  <Text style={styles.summaryRow}>
-                    <Text style={styles.summaryLabel}>Residential Address: </Text>
-                    {application?.studentDetails?.address?.street || 'Bengaluru, Karnataka'}
-                  </Text>
-                </View>
-              </View>
+              )}
 
               {/* Card 4: Parent / Guardian Details */}
-              <View style={styles.summaryCard}>
-                <View style={styles.summaryCardHeader}>
-                  <Text style={styles.summaryCardTitle}>👨‍👩‍👦 Parent / Guardian Details</Text>
+              {(activeTab === 'Dashboard' || activeTab === 'Profile') && (
+                <View style={styles.summaryCard}>
+                  <View style={styles.summaryCardHeader}>
+                    <Text style={styles.summaryCardTitle}>👨‍👩‍👦 Parent / Guardian Details</Text>
+                  </View>
+                  <View style={styles.summaryCardBody}>
+                    <Text style={styles.summaryRow}>
+                      <Text style={styles.summaryLabel}>Father Name: </Text>
+                      {application?.parentDetails?.fatherName || 'Not specified'} ({application?.parentDetails?.fatherOccupation || 'Professional'})
+                    </Text>
+                    <Text style={styles.summaryRow}>
+                      <Text style={styles.summaryLabel}>Mother Name: </Text>
+                      {application?.parentDetails?.motherName || 'Not specified'} ({application?.parentDetails?.motherOccupation || 'Professional'})
+                    </Text>
+                    <Text style={styles.summaryRow}>
+                      <Text style={styles.summaryLabel}>Emergency Mobile: </Text>
+                      +91 {application?.parentDetails?.mobile || user?.mobile}
+                    </Text>
+                    <Text style={styles.summaryRow}>
+                      <Text style={styles.summaryLabel}>Parent Email: </Text>
+                      {application?.parentDetails?.email || user?.email}
+                    </Text>
+                  </View>
                 </View>
-                <View style={styles.summaryCardBody}>
-                  <Text style={styles.summaryRow}>
-                    <Text style={styles.summaryLabel}>Father Name: </Text>
-                    {application?.parentDetails?.fatherName || 'Not specified'} ({application?.parentDetails?.fatherOccupation || 'Professional'})
-                  </Text>
-                  <Text style={styles.summaryRow}>
-                    <Text style={styles.summaryLabel}>Mother Name: </Text>
-                    {application?.parentDetails?.motherName || 'Not specified'} ({application?.parentDetails?.motherOccupation || 'Professional'})
-                  </Text>
-                  <Text style={styles.summaryRow}>
-                    <Text style={styles.summaryLabel}>Emergency Mobile: </Text>
-                    +91 {application?.parentDetails?.mobile || user?.mobile}
-                  </Text>
-                  <Text style={styles.summaryRow}>
-                    <Text style={styles.summaryLabel}>Parent Email: </Text>
-                    {application?.parentDetails?.email || user?.email}
-                  </Text>
-                </View>
-              </View>
+              )}
 
               {/* Card 5: Opted Campus Facilities */}
-              <View style={styles.summaryCard}>
-                <View style={styles.summaryCardHeader}>
-                  <Text style={styles.summaryCardTitle}>🏨 Opted Campus Facilities</Text>
+              {(activeTab === 'Dashboard') && (
+                <View style={styles.summaryCard}>
+                  <View style={styles.summaryCardHeader}>
+                    <Text style={styles.summaryCardTitle}>🏨 Opted Campus Facilities</Text>
+                  </View>
+                  <View style={styles.summaryCardBody}>
+                    <Text style={styles.summaryRow}>
+                      <Text style={styles.summaryLabel}>Hostel Accommodation: </Text>
+                      {application?.facilities?.hostel?.opted
+                        ? `Opted (${application.facilities.hostel.roomType})`
+                        : 'Not Opted'}
+                    </Text>
+                    <Text style={styles.summaryRow}>
+                      <Text style={styles.summaryLabel}>School Transport: </Text>
+                      {application?.facilities?.transport?.opted
+                        ? `Opted (Pickup: ${application.facilities.transport.pickupArea})`
+                        : 'Not Opted'}
+                    </Text>
+                    <Text style={styles.summaryRow}>
+                      <Text style={styles.summaryLabel}>Library Membership: </Text>
+                      {application?.facilities?.library !== false ? 'Active & Included' : 'No'}
+                    </Text>
+                  </View>
                 </View>
-                <View style={styles.summaryCardBody}>
-                  <Text style={styles.summaryRow}>
-                    <Text style={styles.summaryLabel}>Hostel Accommodation: </Text>
-                    {application?.facilities?.hostel?.opted
-                      ? `Opted (${application.facilities.hostel.roomType})`
-                      : 'Not Opted'}
-                  </Text>
-                  <Text style={styles.summaryRow}>
-                    <Text style={styles.summaryLabel}>School Transport: </Text>
-                    {application?.facilities?.transport?.opted
-                      ? `Opted (Pickup: ${application.facilities.transport.pickupArea})`
-                      : 'Not Opted'}
-                  </Text>
-                  <Text style={styles.summaryRow}>
-                    <Text style={styles.summaryLabel}>Library Membership: </Text>
-                    {application?.facilities?.library !== false ? 'Active & Included' : 'No'}
-                  </Text>
-                </View>
-              </View>
+              )}
 
               {/* Card 6: Uploaded Documents */}
-              <View style={styles.summaryCard}>
-                <View style={styles.summaryCardHeader}>
-                  <Text style={styles.summaryCardTitle}>📑 Uploaded Documents</Text>
+              {(activeTab === 'Dashboard' || activeTab === 'Documents') && (
+                <View style={styles.summaryCard}>
+                  <View style={styles.summaryCardHeader}>
+                    <Text style={styles.summaryCardTitle}>📑 Uploaded Documents</Text>
+                  </View>
+                  <View style={styles.summaryCardBody}>
+                    <Text style={styles.summaryRow}>• Student Photo: ✓ Verified Upload</Text>
+                    <Text style={styles.summaryRow}>• Government ID Proof: ✓ Aadhaar Certificate Attached</Text>
+                    <Text style={styles.summaryRow}>• Previous Marksheet: ✓ Progress Card Attached</Text>
+                    <Text style={styles.summaryRow}>• Transfer Certificate: ✓ School TC Verified</Text>
+                  </View>
                 </View>
-                <View style={styles.summaryCardBody}>
-                  <Text style={styles.summaryRow}>• Student Photo: ✓ Verified Upload</Text>
-                  <Text style={styles.summaryRow}>• Government ID Proof: ✓ Aadhaar Certificate Attached</Text>
-                  <Text style={styles.summaryRow}>• Previous Marksheet: ✓ Progress Card Attached</Text>
-                  <Text style={styles.summaryRow}>• Transfer Certificate: ✓ School TC Verified</Text>
-                </View>
-              </View>
+              )}
             </View>
 
             {/* UPCOMING DEADLINES / NEXT STEPS */}
@@ -333,7 +396,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row'
   },
   sidebar: {
-    width: 240,
+    width: 250,
     backgroundColor: colors.bgSurface,
     borderRightWidth: 1,
     borderRightColor: colors.borderDefault,
@@ -343,7 +406,10 @@ const styles = StyleSheet.create({
   },
   sidebarBrand: {
     paddingHorizontal: spacing.sm,
-    marginBottom: spacing.md
+    marginBottom: spacing.md,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center'
   },
   sidebarBrandTitle: {
     fontSize: 11,
@@ -351,6 +417,15 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     textTransform: 'uppercase',
     letterSpacing: 0.8
+  },
+  statusBadgeSm: {
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: borderRadius.sm
+  },
+  statusBadgeSmText: {
+    fontSize: 10,
+    fontWeight: '800'
   },
   sidebarItem: {
     flexDirection: 'row',
@@ -375,6 +450,29 @@ const styles = StyleSheet.create({
   sidebarTextActive: {
     color: colors.brandPrimary,
     fontWeight: '800'
+  },
+  sidebarLockCard: {
+    backgroundColor: '#F8FAFC',
+    borderRadius: borderRadius.md,
+    padding: spacing.md,
+    marginTop: spacing.xl,
+    borderWidth: 1,
+    borderColor: colors.borderDefault
+  },
+  lockIcon: {
+    fontSize: 16,
+    marginBottom: 4
+  },
+  lockTitle: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: colors.brandDark,
+    marginBottom: 4
+  },
+  lockDesc: {
+    fontSize: 11,
+    color: colors.textSecondary,
+    lineHeight: 16
   },
   mainScroll: {
     flex: 1
@@ -435,11 +533,12 @@ const styles = StyleSheet.create({
     backgroundColor: colors.brandPrimary,
     paddingHorizontal: 16,
     paddingVertical: 9,
-    borderRadius: borderRadius.md
+    borderRadius: borderRadius.md,
+    ...shadows.hover
   },
   downloadPdfText: {
     color: colors.textInverse,
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '700'
   },
   cardSection: {
