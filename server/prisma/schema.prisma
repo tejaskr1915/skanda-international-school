@@ -1,0 +1,72 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum ApplicationStatus {
+  DRAFT
+  SUBMITTED
+  UNDER_REVIEW
+  ACCEPTED
+  REJECTED
+}
+
+enum InstitutionType {
+  SCHOOL
+  COLLEGE
+}
+
+enum BoardType {
+  CBSE
+  ICSE_ISC
+  STATE
+}
+
+model ApplicantUser {
+  id           String        @id @default(uuid()) @db.Char(36)
+  fullName     String        @db.VarChar(255)
+  mobile       String        @unique @db.VarChar(20)
+  email        String        @unique @db.VarChar(255)
+  passwordHash String        @db.VarChar(255)
+  isVerified   Boolean       @default(false)
+  otpCode      String?       @db.VarChar(10)
+  otpExpiresAt DateTime?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  applications Application[]
+
+  @@map("applicant_users")
+}
+
+model Application {
+  id                     String            @id @default(uuid()) @db.Char(36)
+  applicationNo          String            @unique @db.VarChar(64)
+  applicantUserId        String            @db.Char(36)
+  academicYear           String            @default("2026-2027") @db.VarChar(32)
+  status                 ApplicationStatus @default(DRAFT)
+  currentStep            Int               @default(1)
+  institutionType        InstitutionType?
+  classOrCourse          String?           @db.VarChar(100)
+  board                  BoardType?
+  specializationOrStream String?           @db.VarChar(100)
+  mode                   String?           @db.VarChar(50)
+  selectedSubjects       Json?
+  studentDetails         Json?
+  parentDetails          Json?
+  previousEducation      Json?
+  facilities             Json?
+  documents              Json?
+  submittedAt            DateTime?
+  updatedAt              DateTime          @updatedAt
+  createdAt              DateTime          @default(now())
+
+  applicantUser          ApplicantUser     @relation(fields: [applicantUserId], references: [id], onDelete: Cascade)
+
+  @@index([applicantUserId])
+  @@map("applications")
+}
