@@ -3,11 +3,12 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "start": "expo start",
-    "android": "expo start --android",
-    "ios": "expo start --ios",
-    "web": "expo start --web",
-    "server": "node server/src/index.js",
+    "start": "expo start --lan",
+    "android": "expo start --android --lan",
+    "ios": "expo start --ios --lan",
+    "web": "expo start --web --lan",
+    "dev:lan": "expo start --lan",
+    "server": "node server/src/server.js",
     "test:api": "npm --prefix server test",
     "test:e2e": "playwright test",
     "test": "npm run test:api && npm run test:e2e"

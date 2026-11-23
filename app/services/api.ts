@@ -1,13 +1,24 @@
 // API Client for Skanda International School admissions & auth
 import { Platform } from 'react-native';
-
-const BASE_URL = 'http://localhost:5000/api';
+import { getApiBaseUrl, getServerBaseUrl, resolveFileUrl } from '../config/api';
 
 class ApiService {
   private token: string | null = null;
 
   constructor() {
     this.loadToken();
+  }
+
+  public getBaseUrl(): string {
+    return getApiBaseUrl();
+  }
+
+  public getServerUrl(): string {
+    return getServerBaseUrl();
+  }
+
+  public resolveFileUrl(filePath?: string | null): string {
+    return resolveFileUrl(filePath);
   }
 
   private loadToken() {
@@ -35,7 +46,7 @@ class ApiService {
   }
 
   private async request(endpoint: string, options: RequestInit = {}) {
-    const url = `${BASE_URL}${endpoint}`;
+    const url = `${this.getBaseUrl()}${endpoint}`;
     const token = this.getToken();
 
     const headers: Record<string, string> = {

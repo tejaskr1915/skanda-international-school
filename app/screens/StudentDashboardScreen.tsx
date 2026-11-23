@@ -54,7 +54,7 @@ export const StudentDashboardScreen: React.FC = () => {
     } catch (e: any) {
       console.warn('Client PDF generation error, trying fallback:', e);
       if (Platform.OS === 'web' && typeof window !== 'undefined') {
-        window.open(`http://localhost:5000/api/applications/${appNo}/pdf`, '_blank');
+        window.open(`${api.getBaseUrl()}/applications/${appNo}/pdf`, '_blank');
       }
     } finally {
       setPdfDownloading(false);
