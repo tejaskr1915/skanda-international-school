@@ -262,4 +262,52 @@ test.describe('Skanda International School - Phase 1 E2E Verification Suite', ()
     // Should navigate to /apply/step/9
     await expect(page).toHaveURL(/.*\/apply\/step\/9/);
   });
+
+  test('5. Responsive Mobile Layout, Zero Horizontal Overflow & Hamburger Menu Drawer', async ({ page }) => {
+    // Test on narrow mobile screen (331px as reported in user bug screenshot image_c9ba40.png)
+    await page.setViewportSize({ width: 331, height: 696 });
+    await page.goto('/');
+    await page.waitForLoadState('networkidle');
+
+    // 1. Assert zero horizontal overflow (no blank white right margin)
+    const hasHorizontalOverflow = await page.evaluate(() => {
+      return document.documentElement.scrollWidth > window.innerWidth;
+    });
+    expect(hasHorizontalOverflow).toBe(false);
+
+    // 2. Assert hamburger toggle button is visible on mobile (< 768px)
+    const hamburgerBtn = page.getByLabel('Toggle navigation menu');
+    await expect(hamburgerBtn).toBeVisible();
+
+    // 3. Open hamburger drawer
+    await hamburgerBtn.click();
+    await page.waitForTimeout(200);
+
+    // Assert all 5 nav links exist in the mobile drawer
+    await expect(page.locator('text=Admissions').first()).toBeVisible();
+    await expect(page.locator('text=Campuses').first()).toBeVisible();
+    await expect(page.locator('text=News').first()).toBeVisible();
+    await expect(page.locator('text=About').first()).toBeVisible();
+    await expect(page.locator('text=Contact').first()).toBeVisible();
+
+    // 4. Click a link in the mobile drawer and verify drawer closes automatically
+    await page.locator('text=Campuses').first().click();
+    await page.waitForTimeout(300);
+    await expect(page.getByLabel('Toggle navigation menu')).toHaveText('☰');
+
+    // 5. Verify 4-feature highlights dedicated section is visible below ticker
+    await expect(page.locator('text=Experienced Faculty').first()).toBeVisible();
+    await expect(page.locator('text=Modern Facilities').first()).toBeVisible();
+    await expect(page.locator('text=Holistic Development').first()).toBeVisible();
+    await expect(page.locator('text=Safe Environment').first()).toBeVisible();
+
+    // 6. Test on 493px mobile screen (as in user screenshot image_c9b683.png)
+    await page.setViewportSize({ width: 493, height: 696 });
+    await page.waitForTimeout(200);
+
+    const hasHorizontalOverflow493 = await page.evaluate(() => {
+      return document.documentElement.scrollWidth > window.innerWidth;
+    });
+    expect(hasHorizontalOverflow493).toBe(false);
+  });
 });

@@ -8,7 +8,8 @@ import {
   TextInput,
   Platform,
   Image,
-  ImageBackground
+  ImageBackground,
+  useWindowDimensions
 } from 'react-native';
 import { useAuth } from '../context/AuthContext';
 import { colors, borderRadius, spacing, shadows } from '../theme/theme';
@@ -59,6 +60,9 @@ const HERO_SLIDES = [
 
 export const HomeScreen: React.FC = () => {
   const { navigateTo } = useAuth();
+  const { width } = useWindowDimensions();
+  const isMobile = width < 640;
+  const isTablet = width < 960;
   const [loginModalVisible, setLoginModalVisible] = useState(false);
   const [statusModalVisible, setStatusModalVisible] = useState(false);
 
@@ -256,41 +260,6 @@ export const HomeScreen: React.FC = () => {
                   <Text style={styles.carouselArrowText}>›</Text>
                 </TouchableOpacity>
               </View>
-
-              {/* 4-COLUMN FEATURE HIGHLIGHT STRIP */}
-              <View style={styles.heroFeatureStrip}>
-                <View style={styles.featureItem}>
-                  <Text style={styles.featureIcon}>🎓</Text>
-                  <View style={styles.featureTextCol}>
-                    <Text style={styles.featureTitle}>Experienced Faculty</Text>
-                    <Text style={styles.featureDesc}>Dedicated and qualified teachers</Text>
-                  </View>
-                </View>
-
-                <View style={styles.featureItem}>
-                  <Text style={styles.featureIcon}>🏫</Text>
-                  <View style={styles.featureTextCol}>
-                    <Text style={styles.featureTitle}>Modern Facilities</Text>
-                    <Text style={styles.featureDesc}>Smart classrooms, labs & libraries</Text>
-                  </View>
-                </View>
-
-                <View style={styles.featureItem}>
-                  <Text style={styles.featureIcon}>🌱</Text>
-                  <View style={styles.featureTextCol}>
-                    <Text style={styles.featureTitle}>Holistic Development</Text>
-                    <Text style={styles.featureDesc}>Focus on academics, sports & values</Text>
-                  </View>
-                </View>
-
-                <View style={styles.featureItem}>
-                  <Text style={styles.featureIcon}>🛡️</Text>
-                  <View style={styles.featureTextCol}>
-                    <Text style={styles.featureTitle}>Safe Environment</Text>
-                    <Text style={styles.featureDesc}>A secure and nurturing campus</Text>
-                  </View>
-                </View>
-              </View>
             </View>
           </ImageBackground>
         </View>
@@ -306,6 +275,53 @@ export const HomeScreen: React.FC = () => {
               • Campus Open Day & Interactive Orientation this Saturday
               • Merit Scholarships up to 50% available
             </Text>
+          </View>
+        </View>
+
+        {/* 4-FEATURE HIGHLIGHTS DEDICATED SECTION (Below Hero & Announcement Ticker) */}
+        <View style={styles.featuresSection}>
+          <View style={styles.featuresCard}>
+            <View style={[styles.featuresGrid, isMobile && styles.featuresGridMobile]}>
+              <View style={[styles.featureCardItem, isMobile && styles.featureCardItemMobile]}>
+                <View style={styles.featureIconBadge}>
+                  <Text style={styles.featureIconText}>🎓</Text>
+                </View>
+                <View style={styles.featureCardTextCol}>
+                  <Text style={styles.featureCardTitle}>Experienced Faculty</Text>
+                  <Text style={styles.featureCardDesc}>Dedicated and qualified teachers</Text>
+                </View>
+              </View>
+
+              <View style={[styles.featureCardItem, isMobile && styles.featureCardItemMobile]}>
+                <View style={styles.featureIconBadge}>
+                  <Text style={styles.featureIconText}>🏫</Text>
+                </View>
+                <View style={styles.featureCardTextCol}>
+                  <Text style={styles.featureCardTitle}>Modern Facilities</Text>
+                  <Text style={styles.featureCardDesc}>Smart classrooms, labs & libraries</Text>
+                </View>
+              </View>
+
+              <View style={[styles.featureCardItem, isMobile && styles.featureCardItemMobile]}>
+                <View style={styles.featureIconBadge}>
+                  <Text style={styles.featureIconText}>🌱</Text>
+                </View>
+                <View style={styles.featureCardTextCol}>
+                  <Text style={styles.featureCardTitle}>Holistic Development</Text>
+                  <Text style={styles.featureCardDesc}>Focus on academics, sports & values</Text>
+                </View>
+              </View>
+
+              <View style={[styles.featureCardItem, isMobile && styles.featureCardItemMobile]}>
+                <View style={styles.featureIconBadge}>
+                  <Text style={styles.featureIconText}>🛡️</Text>
+                </View>
+                <View style={styles.featureCardTextCol}>
+                  <Text style={styles.featureCardTitle}>Safe Environment</Text>
+                  <Text style={styles.featureCardDesc}>A secure and nurturing campus</Text>
+                </View>
+              </View>
+            </View>
           </View>
         </View>
 
@@ -347,10 +363,11 @@ export const HomeScreen: React.FC = () => {
           {/* UPGRADED FILTER & SEARCH BAR WITH LIVE SUGGESTIONS */}
           <View style={styles.campusFilterContainer}>
             {/* Real-Time Text Search Input with Suggestions Dropdown */}
-            <View style={styles.searchRow}>
+            <View style={[styles.searchRow, isMobile && { flexDirection: 'column', alignItems: 'stretch' }]}>
               <View style={[
                 styles.searchInputWrapper,
-                isCampusSearchFocused && styles.searchInputWrapperFocused
+                isCampusSearchFocused && styles.searchInputWrapperFocused,
+                isMobile && { minWidth: 0, width: '100%' }
               ]}>
                 <Text style={styles.searchIcon}>🔍</Text>
                 <TextInput
@@ -388,7 +405,7 @@ export const HomeScreen: React.FC = () => {
               </View>
 
               <TouchableOpacity
-                style={styles.searchSubmitBtn}
+                style={[styles.searchSubmitBtn, isMobile && { width: '100%' }]}
                 onPress={() => setIsCampusSearchFocused(false)}
                 activeOpacity={0.88}
               >
@@ -476,14 +493,20 @@ export const HomeScreen: React.FC = () => {
             )}
 
             {/* RESTYLED ROYAL BLUE FILTER DROPDOWNS */}
-            <View style={styles.dropdownsRow}>
-              <View style={styles.selectWrapper}>
+            <View style={[styles.dropdownsRow, isMobile && { flexDirection: 'column', alignItems: 'stretch', gap: 10 }]}>
+              <View style={[styles.selectWrapper, isMobile && { flexDirection: 'column', alignItems: 'stretch', width: '100%', gap: 4 }]}>
                 <Text style={styles.selectLabel}>State:</Text>
                 {Platform.OS === 'web' ? (
                   <select
                     value={selectedState}
                     onChange={(e: any) => setSelectedState(e.target.value)}
-                    style={webRoyalSelectStyle}
+                    style={{
+                      ...webRoyalSelectStyle,
+                      width: isMobile ? '100%' : 'auto',
+                      minWidth: 0,
+                      maxWidth: '100%',
+                      boxSizing: 'border-box'
+                    }}
                   >
                     <option value="All States">All States (India)</option>
                     <option value="Karnataka">Karnataka</option>
@@ -497,13 +520,19 @@ export const HomeScreen: React.FC = () => {
                 )}
               </View>
 
-              <View style={styles.selectWrapper}>
+              <View style={[styles.selectWrapper, isMobile && { flexDirection: 'column', alignItems: 'stretch', width: '100%', gap: 4 }]}>
                 <Text style={styles.selectLabel}>City:</Text>
                 {Platform.OS === 'web' ? (
                   <select
                     value={selectedCity}
                     onChange={(e: any) => setSelectedCity(e.target.value)}
-                    style={webRoyalSelectStyle}
+                    style={{
+                      ...webRoyalSelectStyle,
+                      width: isMobile ? '100%' : 'auto',
+                      minWidth: 0,
+                      maxWidth: '100%',
+                      boxSizing: 'border-box'
+                    }}
                   >
                     <option value="All Cities">All Cities</option>
                     <option value="Bengaluru">Bengaluru</option>
@@ -519,13 +548,19 @@ export const HomeScreen: React.FC = () => {
                 )}
               </View>
 
-              <View style={styles.selectWrapper}>
+              <View style={[styles.selectWrapper, isMobile && { flexDirection: 'column', alignItems: 'stretch', width: '100%', gap: 4 }]}>
                 <Text style={styles.selectLabel}>Programme:</Text>
                 {Platform.OS === 'web' ? (
                   <select
                     value={selectedProgram}
                     onChange={(e: any) => setSelectedProgram(e.target.value)}
-                    style={webRoyalSelectStyle}
+                    style={{
+                      ...webRoyalSelectStyle,
+                      width: isMobile ? '100%' : 'auto',
+                      minWidth: 0,
+                      maxWidth: '100%',
+                      boxSizing: 'border-box'
+                    }}
                   >
                     <option value="All Programmes">All Programmes</option>
                     <option value="CBSE">CBSE (Grades 1–12)</option>
@@ -541,7 +576,7 @@ export const HomeScreen: React.FC = () => {
 
               {(selectedState !== 'All States' || selectedCity !== 'All Cities' || selectedProgram !== 'All Programmes' || searchQuery) && (
                 <TouchableOpacity
-                  style={styles.resetFiltersBtn}
+                  style={[styles.resetFiltersBtn, isMobile && { width: '100%', alignItems: 'center' }]}
                   onPress={() => {
                     setSelectedState('All States');
                     setSelectedCity('All Cities');
@@ -556,9 +591,9 @@ export const HomeScreen: React.FC = () => {
           </View>
 
           {/* REALISTIC INTERACTIVE CAMPUS GEO-LOCATOR MAP & CAMPUS CARDS */}
-          <View style={styles.campusExplorer}>
+          <View style={[styles.campusExplorer, (isMobile || isTablet) && { flexDirection: 'column' }]}>
             {/* Realistic Topographic & Geographic Vector Map */}
-            <View style={styles.mapCanvas}>
+            <View style={[styles.mapCanvas, (isMobile || isTablet) && { width: '100%', minWidth: 0, height: isMobile ? 320 : 420 }]}>
               {/* Map Canvas Header with Status and Zoom Controls */}
               <View style={styles.mapCanvasHeader}>
                 <View style={styles.mapHeaderLeft}>
@@ -786,7 +821,7 @@ export const HomeScreen: React.FC = () => {
             </View>
 
             {/* Campus Cards List with Real Photography & Bi-Directional Highlight */}
-            <View style={styles.campusCardsCol}>
+            <View style={[styles.campusCardsCol, (isMobile || isTablet) && { width: '100%', minWidth: 0 }]}>
               {filteredCampuses.length > 0 ? (
                 filteredCampuses.map((campus) => {
                   const isSelected = activePin === campus.id;
@@ -1139,20 +1174,21 @@ const styles = StyleSheet.create({
     minHeight: 280
   },
   heroBadge: {
-    backgroundColor: 'rgba(219, 234, 254, 0.20)',
-    borderWidth: 1,
-    borderColor: 'rgba(191, 219, 254, 0.45)',
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-    borderRadius: borderRadius.full,
+    backgroundColor: 'transparent',
+    borderWidth: 0,
+    // @ts-ignore
+    boxShadow: 'none',
+    padding: 0,
     alignSelf: 'flex-start',
-    marginBottom: spacing.md
+    marginBottom: spacing.sm,
+    // @ts-ignore
+    cursor: 'default'
   },
   heroBadgeText: {
-    color: '#DBEAFE',
-    fontSize: 13,
-    fontWeight: '800',
-    letterSpacing: 0.5
+    color: '#BFDBFE',
+    fontSize: 15,
+    fontWeight: '500',
+    letterSpacing: 0.2
   },
   heroTitle: {
     fontSize: Platform.OS === 'web' ? 44 : 32,
@@ -1246,48 +1282,70 @@ const styles = StyleSheet.create({
     borderColor: '#FFFFFF',
     borderWidth: 1
   },
-  heroFeatureStrip: {
+  featuresSection: {
     maxWidth: 1200,
     width: '100%',
     alignSelf: 'center',
-    backgroundColor: '#0F2756',
+    paddingHorizontal: spacing.lg,
+    marginTop: 28,
+    marginBottom: 8,
+    zIndex: 1
+  },
+  featuresCard: {
+    backgroundColor: '#FFFFFF',
     borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
     paddingVertical: 18,
-    paddingHorizontal: 24,
-    marginTop: 36,
-    marginBottom: 12,
+    paddingHorizontal: 20,
+    ...shadows.card
+  },
+  featuresGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 16,
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.12,
-    shadowRadius: 12,
-    elevation: 5
+    justifyContent: 'space-between'
   },
-  featureItem: {
+  featuresGridMobile: {
+    flexDirection: 'column',
+    gap: 12
+  },
+  featureCardItem: {
     flex: 1,
     minWidth: 220,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12
+    gap: 12,
+    paddingVertical: 4
   },
-  featureIcon: {
-    fontSize: 26
+  featureCardItemMobile: {
+    minWidth: '100%',
+    width: '100%'
   },
-  featureTextCol: {
+  featureIconBadge: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    backgroundColor: '#EFF6FF',
+    borderWidth: 1.5,
+    borderColor: '#BFDBFE',
+    alignItems: 'center',
+    justifyContent: 'center'
+  },
+  featureIconText: {
+    fontSize: 22
+  },
+  featureCardTextCol: {
     flex: 1
   },
-  featureTitle: {
-    color: '#FFFFFF',
-    fontWeight: '700',
+  featureCardTitle: {
+    color: '#0F172A',
+    fontWeight: '800',
     fontSize: 14,
     marginBottom: 2
   },
-  featureDesc: {
-    color: '#94A3B8',
+  featureCardDesc: {
+    color: '#64748B',
     fontSize: 12,
     lineHeight: 16
   },
@@ -1331,8 +1389,8 @@ const styles = StyleSheet.create({
     width: '100%',
     alignSelf: 'center',
     paddingHorizontal: spacing.lg,
-    marginTop: 40,
-    marginBottom: 48,
+    marginTop: 28,
+    marginBottom: 44,
     zIndex: 1
   },
   statsGrid: {
@@ -1342,7 +1400,7 @@ const styles = StyleSheet.create({
   },
   statCard: {
     flex: 1,
-    minWidth: 180,
+    minWidth: 140,
     backgroundColor: colors.bgSurface,
     borderRadius: borderRadius.lg,
     paddingVertical: 20,
@@ -1368,7 +1426,8 @@ const styles = StyleSheet.create({
     width: '100%',
     alignSelf: 'center',
     paddingHorizontal: spacing.lg,
-    marginTop: spacing.xxl
+    marginTop: spacing.xxl,
+    overflow: 'hidden'
   },
   sectionHeader: {
     marginBottom: spacing.lg
@@ -1392,17 +1451,21 @@ const styles = StyleSheet.create({
     padding: spacing.md,
     marginBottom: spacing.lg,
     gap: 12,
+    width: '100%',
+    overflow: 'hidden',
     ...shadows.card
   },
   searchRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 10,
-    alignItems: 'center'
+    alignItems: 'center',
+    width: '100%'
   },
   searchInputWrapper: {
     flex: 1,
-    minWidth: 260,
+    minWidth: 200,
+    maxWidth: '100%',
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#EFF6FF',
@@ -1637,11 +1700,13 @@ const styles = StyleSheet.create({
   campusExplorer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 20
+    gap: 20,
+    width: '100%'
   },
   mapCanvas: {
     flex: 1,
-    minWidth: 320,
+    minWidth: 280,
+    maxWidth: '100%',
     height: 440,
     backgroundColor: '#F8FAFC',
     borderRadius: borderRadius.xl,
@@ -1904,7 +1969,8 @@ const styles = StyleSheet.create({
   },
   campusCardsCol: {
     flex: 1,
-    minWidth: 320,
+    minWidth: 280,
+    maxWidth: '100%',
     gap: 12
   },
   campusCard: {
@@ -1912,10 +1978,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: colors.bgSurface,
     borderRadius: borderRadius.lg,
-    padding: spacing.md,
+    padding: 12,
     borderWidth: 1,
     borderColor: colors.borderDefault,
-    gap: 14,
+    gap: 12,
+    width: '100%',
+    minWidth: 0,
+    maxWidth: '100%',
     ...shadows.card
   },
   campusCardSelected: {
@@ -1999,7 +2068,8 @@ const styles = StyleSheet.create({
     width: '100%',
     alignSelf: 'center',
     paddingHorizontal: spacing.lg,
-    marginTop: spacing.xxl
+    marginTop: spacing.xxl,
+    overflow: 'hidden'
   },
   quickGrid: {
     flexDirection: 'row',
@@ -2008,7 +2078,8 @@ const styles = StyleSheet.create({
   },
   quickCard: {
     flex: 1,
-    minWidth: 240,
+    minWidth: 220,
+    maxWidth: '100%',
     backgroundColor: colors.bgSurface,
     borderRadius: borderRadius.xl,
     padding: spacing.lg,
@@ -2052,7 +2123,8 @@ const styles = StyleSheet.create({
     width: '100%',
     alignSelf: 'center',
     paddingHorizontal: spacing.lg,
-    marginTop: spacing.xxl
+    marginTop: spacing.xxl,
+    overflow: 'hidden'
   },
   newsGrid: {
     flexDirection: 'row',
@@ -2061,7 +2133,8 @@ const styles = StyleSheet.create({
   },
   newsCard: {
     flex: 1,
-    minWidth: 280,
+    minWidth: 260,
+    maxWidth: '100%',
     backgroundColor: colors.bgSurface,
     borderRadius: borderRadius.lg,
     borderWidth: 1,
@@ -2100,7 +2173,8 @@ const styles = StyleSheet.create({
     width: '100%',
     alignSelf: 'center',
     paddingHorizontal: spacing.lg,
-    marginTop: spacing.xxl
+    marginTop: spacing.xxl,
+    overflow: 'hidden'
   },
   whyContentRow: {
     flexDirection: 'row',
@@ -2112,11 +2186,13 @@ const styles = StyleSheet.create({
     padding: spacing.xl,
     borderWidth: 1,
     borderColor: colors.borderDefault,
+    overflow: 'hidden',
     ...shadows.card
   },
   whyImageBox: {
     flex: 1,
-    minWidth: 280,
+    minWidth: 260,
+    maxWidth: '100%',
     height: 280,
     borderRadius: borderRadius.lg,
     overflow: 'hidden',
@@ -2144,7 +2220,8 @@ const styles = StyleSheet.create({
   },
   whyTextCol: {
     flex: 1.4,
-    minWidth: 320
+    minWidth: 260,
+    maxWidth: '100%'
   },
   whyTitle: {
     fontSize: 22,

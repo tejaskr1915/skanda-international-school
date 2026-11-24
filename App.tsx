@@ -53,6 +53,28 @@ const MainNavigator: React.FC = () => {
   );
 };
 
+// Global responsive web styles to prevent horizontal overflow on mobile viewports
+if (Platform.OS === 'web' && typeof document !== 'undefined') {
+  const styleId = 'skanda-global-responsive-styles';
+  if (!document.getElementById(styleId)) {
+    const styleEl = document.createElement('style');
+    styleEl.id = styleId;
+    styleEl.innerHTML = `
+      html, body, #root {
+        overflow-x: hidden !important;
+        max-width: 100vw !important;
+        width: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
+      }
+      *, *::before, *::after {
+        box-sizing: border-box !important;
+      }
+    `;
+    document.head.appendChild(styleEl);
+  }
+}
+
 export default function App() {
   return (
     <AuthProvider>
@@ -64,11 +86,17 @@ export default function App() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: colors.bgPage
+    backgroundColor: colors.bgPage,
+    width: '100%',
+    maxWidth: '100vw' as any,
+    overflow: 'hidden'
   },
   appContainer: {
     flex: 1,
     backgroundColor: colors.bgPage,
-    minHeight: Platform.OS === 'web' ? ('100vh' as any) : undefined
+    minHeight: Platform.OS === 'web' ? ('100vh' as any) : undefined,
+    width: '100%',
+    maxWidth: '100vw' as any,
+    overflow: 'hidden'
   }
 });
