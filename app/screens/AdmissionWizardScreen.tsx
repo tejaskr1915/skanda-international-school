@@ -64,30 +64,28 @@ export const AdmissionWizardScreen: React.FC<WizardProps> = ({ initialStep = 1 }
 
   // Step 2: Programme
   const [s2Type, setS2Type] = useState<'SCHOOL' | 'COLLEGE'>(application?.institutionType || 'SCHOOL');
-  const [s2Class, setS2Class] = useState(application?.classOrCourse || 'Grade 6');
+  const [s2Class, setS2Class] = useState(application?.classOrCourse || '');
   const [s2AcademicYear, setS2AcademicYear] = useState(application?.academicYear || '2026-2027');
-  const [s2Mode, setS2Mode] = useState(application?.mode || 'Day Scholar');
-  const [s2Specialization, setS2Specialization] = useState(application?.specializationOrStream || 'Standard');
+  const [s2Mode, setS2Mode] = useState(application?.mode || '');
+  const [s2Specialization, setS2Specialization] = useState(application?.specializationOrStream || '');
 
   // Step 3: Board Selection
-  const [s3Board, setS3Board] = useState<'CBSE' | 'ICSE_ISC' | 'STATE'>(application?.board || 'CBSE');
+  const [s3Board, setS3Board] = useState<'CBSE' | 'ICSE_ISC' | 'STATE' | ''>(application?.board || '');
 
   // Step 4: Curriculum & Subjects
   const [s4SubjectsData, setS4SubjectsData] = useState<any>(null);
-  const [s4SelectedLanguage, setS4SelectedLanguage] = useState<string>('Hindi Course-A');
-  const [s4SelectedStream, setS4SelectedStream] = useState<string>('science-pcmc');
+  const [s4SelectedLanguage, setS4SelectedLanguage] = useState<string>(application?.selectedSubjects?.secondLanguage || '');
+  const [s4SelectedStream, setS4SelectedStream] = useState<string>(application?.selectedSubjects?.stream || '');
 
   // Step 5: Student Details
   const [s5FullName, setS5FullName] = useState(application?.studentDetails?.fullName || user?.fullName || '');
-  const [s5Dob, setS5Dob] = useState(application?.studentDetails?.dob || '2014-04-15');
-  const [s5Gender, setS5Gender] = useState(application?.studentDetails?.gender || 'Male');
-  const [s5BloodGroup, setS5BloodGroup] = useState(application?.studentDetails?.bloodGroup || 'O+');
-  const [s5Nationality, setS5Nationality] = useState(application?.studentDetails?.nationality || 'Indian');
-  const [s5Category, setS5Category] = useState(application?.studentDetails?.category || 'General');
-  const [s5IdNumber, setS5IdNumber] = useState(application?.studentDetails?.idNumber || '7845 2390 1102');
-  const [s5Address, setS5Address] = useState(
-    application?.studentDetails?.address?.street || '42 Royal Meadows, Kanakapura Road, Bengaluru'
-  );
+  const [s5Dob, setS5Dob] = useState(application?.studentDetails?.dob || '');
+  const [s5Gender, setS5Gender] = useState(application?.studentDetails?.gender || '');
+  const [s5BloodGroup, setS5BloodGroup] = useState(application?.studentDetails?.bloodGroup || '');
+  const [s5Nationality, setS5Nationality] = useState(application?.studentDetails?.nationality || '');
+  const [s5Category, setS5Category] = useState(application?.studentDetails?.category || '');
+  const [s5IdNumber, setS5IdNumber] = useState(application?.studentDetails?.idNumber || '');
+  const [s5Address, setS5Address] = useState(application?.studentDetails?.address?.street || '');
   const [s5AgeValidation, setS5AgeValidation] = useState<{ valid: boolean; age?: number; message?: string }>({ valid: true });
 
   // Step 6: Parent Details
@@ -99,24 +97,24 @@ export const AdmissionWizardScreen: React.FC<WizardProps> = ({ initialStep = 1 }
   const [s6ParentMobile, setS6ParentMobile] = useState(application?.parentDetails?.mobile || user?.mobile || '');
   const [s6ParentEmail, setS6ParentEmail] = useState(application?.parentDetails?.email || user?.email || '');
   const [s6EmergencyContact, setS6EmergencyContact] = useState(application?.parentDetails?.emergencyContact || '');
-  const [s6AnnualIncome, setS6AnnualIncome] = useState(application?.parentDetails?.annualIncome || '12-18 Lakhs');
+  const [s6AnnualIncome, setS6AnnualIncome] = useState(application?.parentDetails?.annualIncome || '');
 
   // Step 7: Previous Education
-  const [s7LastSchool, setS7LastSchool] = useState(application?.previousEducation?.lastSchool || 'Greenwood International');
-  const [s7Board, setS7Board] = useState(application?.previousEducation?.board || 'CBSE');
-  const [s7PassingYear, setS7PassingYear] = useState(application?.previousEducation?.passingYear || '2025');
-  const [s7Marks, setS7Marks] = useState(application?.previousEducation?.percentageMarks || '91.4%');
-  const [s7Medium, setS7Medium] = useState(application?.previousEducation?.medium || 'English');
-  const [s7Reason, setS7Reason] = useState(application?.previousEducation?.reasonForLeaving || 'Relocating to Bengaluru campus area');
-  const [s7TcDetails, setS7TcDetails] = useState(application?.previousEducation?.tcNumber || 'TC-2025-8849');
+  const [s7LastSchool, setS7LastSchool] = useState(application?.previousEducation?.lastSchool || '');
+  const [s7Board, setS7Board] = useState(application?.previousEducation?.board || '');
+  const [s7PassingYear, setS7PassingYear] = useState(application?.previousEducation?.passingYear || '');
+  const [s7Marks, setS7Marks] = useState(application?.previousEducation?.percentageMarks || '');
+  const [s7Medium, setS7Medium] = useState(application?.previousEducation?.medium || '');
+  const [s7Reason, setS7Reason] = useState(application?.previousEducation?.reasonForLeaving || '');
+  const [s7TcDetails, setS7TcDetails] = useState(application?.previousEducation?.tcNumber || '');
 
   // Step 8: Facilities (Conditional enforcement)
   const [s8HostelOpted, setS8HostelOpted] = useState<boolean>(!!application?.facilities?.hostel?.opted);
-  const [s8RoomType, setS8RoomType] = useState<string>(application?.facilities?.hostel?.roomType || '2-Sharing AC');
+  const [s8RoomType, setS8RoomType] = useState<string>(application?.facilities?.hostel?.roomType || '');
   const [s8TransportOpted, setS8TransportOpted] = useState<boolean>(!!application?.facilities?.transport?.opted);
-  const [s8PickupArea, setS8PickupArea] = useState<string>(application?.facilities?.transport?.pickupArea || 'Indiranagar / Metro Hub');
+  const [s8PickupArea, setS8PickupArea] = useState<string>(application?.facilities?.transport?.pickupArea || '');
   const [s8LibraryOpted, setS8LibraryOpted] = useState<boolean>(
-    application?.facilities?.library !== undefined ? !!application.facilities.library : true
+    application?.facilities?.library !== undefined ? !!application.facilities.library : false
   );
 
   // Step 9: Documents & Final Review
@@ -151,16 +149,43 @@ export const AdmissionWizardScreen: React.FC<WizardProps> = ({ initialStep = 1 }
       }
       if (application.institutionType) setS2Type(application.institutionType);
       if (application.classOrCourse) setS2Class(application.classOrCourse);
+      if (application.academicYear) setS2AcademicYear(application.academicYear);
+      if (application.mode) setS2Mode(application.mode);
+      if (application.specializationOrStream) setS2Specialization(application.specializationOrStream);
       if (application.board) setS3Board(application.board);
+      if (application.selectedSubjects) {
+        if (application.selectedSubjects.secondLanguage) setS4SelectedLanguage(application.selectedSubjects.secondLanguage);
+        if (application.selectedSubjects.stream) setS4SelectedStream(application.selectedSubjects.stream);
+      }
       if (application.studentDetails) {
         if (application.studentDetails.fullName) setS5FullName(application.studentDetails.fullName);
         if (application.studentDetails.dob) setS5Dob(application.studentDetails.dob);
         if (application.studentDetails.gender) setS5Gender(application.studentDetails.gender);
+        if (application.studentDetails.bloodGroup) setS5BloodGroup(application.studentDetails.bloodGroup);
+        if (application.studentDetails.nationality) setS5Nationality(application.studentDetails.nationality);
+        if (application.studentDetails.category) setS5Category(application.studentDetails.category);
+        if (application.studentDetails.idNumber) setS5IdNumber(application.studentDetails.idNumber);
+        if (application.studentDetails.address?.street) setS5Address(application.studentDetails.address.street);
       }
       if (application.parentDetails) {
         if (application.parentDetails.fatherName) setS6FatherName(application.parentDetails.fatherName);
         if (application.parentDetails.motherName) setS6MotherName(application.parentDetails.motherName);
+        if (application.parentDetails.guardianName) setS6GuardianName(application.parentDetails.guardianName);
+        if (application.parentDetails.fatherOccupation) setS6FatherOccupation(application.parentDetails.fatherOccupation);
+        if (application.parentDetails.motherOccupation) setS6MotherOccupation(application.parentDetails.motherOccupation);
         if (application.parentDetails.mobile) setS6ParentMobile(application.parentDetails.mobile);
+        if (application.parentDetails.email) setS6ParentEmail(application.parentDetails.email);
+        if (application.parentDetails.emergencyContact) setS6EmergencyContact(application.parentDetails.emergencyContact);
+        if (application.parentDetails.annualIncome) setS6AnnualIncome(application.parentDetails.annualIncome);
+      }
+      if (application.previousEducation) {
+        if (application.previousEducation.lastSchool) setS7LastSchool(application.previousEducation.lastSchool);
+        if (application.previousEducation.board) setS7Board(application.previousEducation.board);
+        if (application.previousEducation.passingYear) setS7PassingYear(application.previousEducation.passingYear);
+        if (application.previousEducation.percentageMarks) setS7Marks(application.previousEducation.percentageMarks);
+        if (application.previousEducation.medium) setS7Medium(application.previousEducation.medium);
+        if (application.previousEducation.reasonForLeaving) setS7Reason(application.previousEducation.reasonForLeaving);
+        if (application.previousEducation.tcNumber) setS7TcDetails(application.previousEducation.tcNumber);
       }
       if (application.facilities) {
         setS8HostelOpted(!!application.facilities.hostel?.opted);
@@ -168,6 +193,12 @@ export const AdmissionWizardScreen: React.FC<WizardProps> = ({ initialStep = 1 }
         setS8TransportOpted(!!application.facilities.transport?.opted);
         if (application.facilities.transport?.pickupArea) setS8PickupArea(application.facilities.transport.pickupArea);
         if (application.facilities.library !== undefined) setS8LibraryOpted(!!application.facilities.library);
+      }
+      if (application.documents) {
+        if (application.documents.photo) setS9PhotoUploaded(true);
+        if (application.documents.idProof) setS9IdUploaded(true);
+        if (application.documents.marksheet) setS9MarksheetUploaded(true);
+        if (application.documents.tc) setS9TcUploaded(true);
       }
     }
   }, [application]);
@@ -303,17 +334,25 @@ export const AdmissionWizardScreen: React.FC<WizardProps> = ({ initialStep = 1 }
 
   // STEP 2: Programme
   const handleStep2Submit = () => {
+    if (!s2Class) {
+      setStatusMessage({ text: 'Please select a Class or Course to continue.', type: 'error' });
+      return;
+    }
     handleSaveStep(2, {
       institutionType: s2Type,
       classOrCourse: s2Class,
       academicYear: s2AcademicYear,
-      mode: s2Mode,
+      mode: s2Mode || 'Day Scholar',
       specializationOrStream: s2Specialization
     });
   };
 
   // STEP 3: Board
   const handleStep3Submit = () => {
+    if (!s3Board) {
+      setStatusMessage({ text: 'Please select an Affiliated Board (CBSE, ICSE, or State).', type: 'error' });
+      return;
+    }
     handleSaveStep(3, {
       board: s3Board,
       classOrCourse: s2Class
@@ -625,6 +664,13 @@ export const AdmissionWizardScreen: React.FC<WizardProps> = ({ initialStep = 1 }
 
                 <TouchableOpacity
                   style={styles.secondaryBtn}
+                  onPress={() => navigateTo('/apply')}
+                >
+                  <Text style={styles.secondaryBtnText}>← Back to Overview</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={styles.secondaryBtn}
                   onPress={() => setLoginModalOpen(true)}
                 >
                   <Text style={styles.secondaryBtnText}>Already have an account? Login</Text>
@@ -739,7 +785,11 @@ export const AdmissionWizardScreen: React.FC<WizardProps> = ({ initialStep = 1 }
               <View style={styles.bannerInfoBox}>
                 <Text style={styles.bannerInfoTitle}>📊 Live Seats, Eligibility & Fee Indicator</Text>
                 <Text style={styles.bannerInfoText}>
-                  Selected: <Text style={{ fontWeight: '700' }}>{s2Class}</Text> ({s2Type}) • Status: <Text style={{ color: colors.statusSuccess, fontWeight: '700' }}>34 Seats Available</Text> • Tuition Base: ₹85,000 / year • Age Cutoff: Min. 6 yrs by June 2026.
+                  {s2Class ? (
+                    <>Selected: <Text style={{ fontWeight: '700' }}>{s2Class}</Text> ({s2Type}) • Status: <Text style={{ color: colors.statusSuccess, fontWeight: '700' }}>34 Seats Available</Text> • Tuition Base: ₹85,000 / year • Age Cutoff: Min. 6 yrs by June 2026.</>
+                  ) : (
+                    'Please select a Class / Course above to view available seats, fees, and age criteria.'
+                  )}
                 </Text>
               </View>
 
@@ -1019,15 +1069,17 @@ export const AdmissionWizardScreen: React.FC<WizardProps> = ({ initialStep = 1 }
                     value={s5Dob}
                     onChangeText={setS5Dob}
                   />
-                  {s5AgeValidation.valid ? (
-                    <Text style={styles.validationSuccess}>
-                      ✓ Age eligible: Calculated {s5AgeValidation.age} years as of June 1, 2026.
-                    </Text>
-                  ) : (
-                    <Text style={styles.validationError}>
-                      ⚠️ {s5AgeValidation.message}
-                    </Text>
-                  )}
+                  {s5Dob ? (
+                    s5AgeValidation.valid ? (
+                      <Text style={styles.validationSuccess}>
+                        ✓ Age eligible: Calculated {s5AgeValidation.age} years as of June 1, 2026.
+                      </Text>
+                    ) : (
+                      <Text style={styles.validationError}>
+                        ⚠️ {s5AgeValidation.message}
+                      </Text>
+                    )
+                  ) : null}
                 </View>
               </View>
 

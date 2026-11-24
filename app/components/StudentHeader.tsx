@@ -49,9 +49,8 @@ const SEARCH_ITEMS: SearchItem[] = [
 ];
 
 export const StudentHeader: React.FC = () => {
-  const { user, application, logout, navigateTo, language, setLanguage } = useAuth();
+  const { user, application, logout, navigateTo } = useAuth();
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
-  const [langModalVisible, setLangModalVisible] = useState(false);
   const [showNotificationModal, setShowNotificationModal] = useState(false);
 
   // Search input state
@@ -202,14 +201,6 @@ export const StudentHeader: React.FC = () => {
 
         {/* Right Controls */}
         <View style={styles.rightControls}>
-          {/* Language Selector */}
-          <TouchableOpacity
-            style={styles.controlPill}
-            onPress={() => setLangModalVisible(true)}
-          >
-            <Text style={styles.controlText}>🌐 {language.split(' ')[0]}</Text>
-          </TouchableOpacity>
-
           {/* Notifications Bell */}
           <TouchableOpacity
             style={styles.bellButton}
@@ -327,39 +318,6 @@ export const StudentHeader: React.FC = () => {
           </TouchableOpacity>
         </View>
       )}
-
-      {/* Language Modal */}
-      <Modal
-        visible={langModalVisible}
-        transparent={true}
-        animationType="fade"
-        onRequestClose={() => setLangModalVisible(false)}
-      >
-        <TouchableOpacity
-          style={styles.modalOverlay}
-          activeOpacity={1}
-          onPress={() => setLangModalVisible(false)}
-        >
-          <View style={styles.langModalContent}>
-            <Text style={styles.notifTitle}>Select Portal Language</Text>
-            {['English', 'ಕನ್ನಡ (Kannada)', 'हिन्दी (Hindi)'].map((l, i) => (
-              <TouchableOpacity
-                key={i}
-                style={[styles.langOption, language === l && styles.langOptionActive]}
-                onPress={() => {
-                  setLanguage(l);
-                  setLangModalVisible(false);
-                }}
-              >
-                <Text style={{ fontWeight: language === l ? '700' : '500', color: language === l ? colors.brandPrimary : colors.textPrimary }}>
-                  {l}
-                </Text>
-                {language === l && <Text style={{ color: colors.brandPrimary }}>✓</Text>}
-              </TouchableOpacity>
-            ))}
-          </View>
-        </TouchableOpacity>
-      </Modal>
     </View>
   );
 };

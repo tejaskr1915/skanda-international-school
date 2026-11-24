@@ -8,11 +8,8 @@ interface PublicHeaderProps {
 }
 
 export const PublicHeader: React.FC<PublicHeaderProps> = ({ onOpenLogin }) => {
-  const { navigateTo, user, application, logout, language, setLanguage } = useAuth();
-  const [langModalVisible, setLangModalVisible] = useState(false);
+  const { navigateTo, user, application, logout } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-
-  const languages = ['English', 'ಕನ್ನಡ (Kannada)', 'हिन्दी (Hindi)'];
 
   // Only keep functional links that scroll to existing sections or active Phase 1 routes
   const menuItems = [
@@ -80,20 +77,12 @@ export const PublicHeader: React.FC<PublicHeaderProps> = ({ onOpenLogin }) => {
 
         {/* Right CTA Actions */}
         <View style={styles.actionsRow}>
-          {/* Language Selector */}
-          <TouchableOpacity
-            style={styles.langButton}
-            onPress={() => setLangModalVisible(true)}
-          >
-            <Text style={styles.langButtonText}>🌐 {language.split(' ')[0]} ▾</Text>
-          </TouchableOpacity>
-
           {user ? (
             <View style={styles.userControls}>
               <TouchableOpacity
                 style={styles.portalPill}
                 onPress={() => {
-                  if (application?.status === 'SUBMITTED') {
+                  if (application?.status === 'SUBMITTED' || application?.status === 'ACCEPTED' || application?.status === 'ENROLLED') {
                     navigateTo('/student/dashboard');
                   } else {
                     navigateTo(`/apply/step/${application?.currentStep || 1}`);
@@ -101,7 +90,9 @@ export const PublicHeader: React.FC<PublicHeaderProps> = ({ onOpenLogin }) => {
                 }}
               >
                 <Text style={styles.portalPillText}>
-                  {application?.status === 'SUBMITTED' ? 'Dashboard ➜' : `Resume Step ${application?.currentStep || 1} ➜`}
+                  {application?.status === 'SUBMITTED' || application?.status === 'ACCEPTED' || application?.status === 'ENROLLED'
+                    ? 'Dashboard ➜'
+                    : `Resume Step ${application?.currentStep || 1} ➜`}
                 </Text>
               </TouchableOpacity>
               <TouchableOpacity style={styles.logoutBtn} onPress={logout}>
@@ -116,60 +107,8 @@ export const PublicHeader: React.FC<PublicHeaderProps> = ({ onOpenLogin }) => {
               <Text style={styles.loginButtonText}>Login</Text>
             </TouchableOpacity>
           )}
-
-          {/* Royal Blue Apply Now Button */}
-          <TouchableOpacity
-            nativeID="apply-now-btn"
-            testID="apply-now-btn"
-            style={styles.applyNowButton}
-            onPress={() => navigateTo('/apply')}
-            activeOpacity={0.85}
-          >
-            <Text style={styles.applyNowText}>Apply Now</Text>
-          </TouchableOpacity>
         </View>
       </View>
-
-      {/* Language Selector Modal */}
-      <Modal
-        visible={langModalVisible}
-        transparent={true}
-        animationType="fade"
-        onRequestClose={() => setLangModalVisible(false)}
-      >
-        <TouchableOpacity
-          style={styles.modalOverlay}
-          activeOpacity={1}
-          onPress={() => setLangModalVisible(false)}
-        >
-          <View style={styles.langModalContent}>
-            <Text style={styles.langModalHeader}>Select Portal Language</Text>
-            {languages.map((lang, idx) => (
-              <TouchableOpacity
-                key={idx}
-                style={[
-                  styles.langOption,
-                  language === lang && styles.langOptionActive
-                ]}
-                onPress={() => {
-                  setLanguage(lang);
-                  setLangModalVisible(false);
-                }}
-              >
-                <Text
-                  style={[
-                    styles.langOptionText,
-                    language === lang && styles.langOptionTextActive
-                  ]}
-                >
-                  {lang}
-                </Text>
-                {language === lang && <Text style={styles.checkmark}>✓</Text>}
-              </TouchableOpacity>
-            ))}
-          </View>
-        </TouchableOpacity>
-      </Modal>
     </View>
   );
 };

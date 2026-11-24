@@ -18,17 +18,26 @@ export const ApplyLandingScreen: React.FC = () => {
 
       <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
         <View style={styles.contentWrapper}>
-          {/* Main Title */}
+          {/* Main Title & Top CTA Header */}
           <View style={styles.titleRow}>
-            <View>
-              <Text style={styles.pageTitle}>Apply: Landing</Text>
+            <View style={styles.titleCol}>
+              <View style={styles.sessionPill}>
+                <Text style={styles.sessionText}>Active Session: 2026-2027</Text>
+              </View>
+              <Text style={styles.pageTitle}>Admissions 2026–2027</Text>
               <Text style={styles.pageSubtitle}>
-                Welcome to the Admissions Portal for Academic Year 2026–2027
+                Begin your journey with Skanda International School. Complete your application online in simple steps.
               </Text>
             </View>
-            <View style={styles.sessionPill}>
-              <Text style={styles.sessionText}>Active Session: 2026-2027</Text>
-            </View>
+
+            {/* Prominent Primary CTA placed ONLY in Top Hero Header */}
+            <TouchableOpacity
+              style={styles.primaryActionBtnTop}
+              onPress={() => navigateTo('/apply/step/1')}
+              activeOpacity={0.88}
+            >
+              <Text style={styles.primaryActionText}>Start New Application ➜ Verify</Text>
+            </TouchableOpacity>
           </View>
 
           {/* CARD 1: Intro, dates, eligibility, documents checklist */}
@@ -102,16 +111,8 @@ export const ApplyLandingScreen: React.FC = () => {
             </View>
           </View>
 
-          {/* THREE CLEAR ACTION BUTTONS */}
+          {/* TWO ACTION BUTTONS BELOW FEE SUMMARY */}
           <View style={styles.actionsContainer}>
-            <TouchableOpacity
-              style={styles.primaryActionBtn}
-              onPress={() => navigateTo('/apply/step/1')}
-              activeOpacity={0.88}
-            >
-              <Text style={styles.primaryActionText}>Start New Application ➜ Verify</Text>
-            </TouchableOpacity>
-
             <TouchableOpacity
               style={styles.secondaryActionBtn}
               onPress={() => setLoginVisible(true)}

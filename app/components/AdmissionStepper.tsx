@@ -13,7 +13,7 @@ export const AdmissionStepper: React.FC<StepperProps> = ({
   onSelectStep,
   maxUnlockedStep = 9
 }) => {
-  // 5 Global Phases as defined in UX specs
+  // 5 Global Stages matching UX spec
   const phases = [
     { id: 1, title: 'Verify', subSteps: [1] },
     { id: 2, title: 'Programme & Board', subSteps: [2, 3, 4] },
@@ -22,16 +22,41 @@ export const AdmissionStepper: React.FC<StepperProps> = ({
     { id: 5, title: 'Review & Submit', subSteps: [9] }
   ];
 
-  // Determine which phase is active
-  const activePhase = phases.find(p => p.subSteps.includes(currentStep)) || phases[0];
+  const getPhaseStatus = (phaseId: number) => {
+    if (phaseId === 1) {
+      if (currentStep === 1) return { isCurrent: true, isPassed: false, fill: 100 };
+      return { isCurrent: false, isPassed: true, fill: 100 };
+    }
+    if (phaseId === 2) {
+      if (currentStep < 2) return { isCurrent: false, isPassed: false, fill: 0 };
+      if (currentStep === 2) return { isCurrent: true, isPassed: false, fill: 33.33 };
+      if (currentStep === 3) return { isCurrent: true, isPassed: false, fill: 66.66 };
+      if (currentStep === 4) return { isCurrent: true, isPassed: false, fill: 100 };
+      return { isCurrent: false, isPassed: true, fill: 100 };
+    }
+    if (phaseId === 3) {
+      if (currentStep < 5) return { isCurrent: false, isPassed: false, fill: 0 };
+      if (currentStep === 5) return { isCurrent: true, isPassed: false, fill: 33.33 };
+      if (currentStep === 6) return { isCurrent: true, isPassed: false, fill: 66.66 };
+      if (currentStep === 7) return { isCurrent: true, isPassed: false, fill: 100 };
+      return { isCurrent: false, isPassed: true, fill: 100 };
+    }
+    if (phaseId === 4) {
+      if (currentStep < 8) return { isCurrent: false, isPassed: false, fill: 0 };
+      if (currentStep === 8) return { isCurrent: true, isPassed: false, fill: 50 };
+      return { isCurrent: false, isPassed: true, fill: 100 };
+    }
+    // phaseId === 5
+    if (currentStep < 9) return { isCurrent: false, isPassed: false, fill: 0 };
+    return { isCurrent: true, isPassed: false, fill: 100 };
+  };
 
   return (
     <View style={styles.stepperContainer}>
       {/* 5-Phase Horizontal Tabs */}
       <View style={styles.phasesRow}>
         {phases.map((phase) => {
-          const isCurrentPhase = phase.id === activePhase.id;
-          const isPassedPhase = phase.id < activePhase.id;
+          const status = getPhaseStatus(phase.id);
           const firstSubStep = phase.subSteps[0];
           const canClick = onSelectStep && firstSubStep <= maxUnlockedStep;
 
@@ -40,8 +65,8 @@ export const AdmissionStepper: React.FC<StepperProps> = ({
               key={phase.id}
               style={[
                 styles.phaseTab,
-                isCurrentPhase && styles.phaseTabActive,
-                isPassedPhase && styles.phaseTabPassed
+                status.isCurrent && styles.phaseTabActive,
+                status.isPassed && styles.phaseTabPassed
               ]}
               disabled={!canClick}
               onPress={() => onSelectStep && onSelectStep(firstSubStep)}
@@ -51,25 +76,25 @@ export const AdmissionStepper: React.FC<StepperProps> = ({
                 <View
                   style={[
                     styles.phaseBadge,
-                    isCurrentPhase && styles.phaseBadgeActive,
-                    isPassedPhase && styles.phaseBadgePassed
+                    status.isCurrent && styles.phaseBadgeActive,
+                    status.isPassed && styles.phaseBadgePassed
                   ]}
                 >
                   <Text
                     style={[
                       styles.phaseBadgeText,
-                      isCurrentPhase && styles.phaseBadgeTextActive,
-                      isPassedPhase && styles.phaseBadgeTextPassed
+                      status.isCurrent && styles.phaseBadgeTextActive,
+                      status.isPassed && styles.phaseBadgeTextPassed
                     ]}
                   >
-                    {isPassedPhase ? '✓' : phase.id}
+                    {status.isPassed ? '✓' : phase.id}
                   </Text>
                 </View>
                 <Text
                   style={[
                     styles.phaseTitle,
-                    isCurrentPhase && styles.phaseTitleActive,
-                    isPassedPhase && styles.phaseTitlePassed
+                    status.isCurrent && styles.phaseTitleActive,
+                    status.isPassed && styles.phaseTitlePassed
                   ]}
                   numberOfLines={1}
                 >
@@ -77,20 +102,28 @@ export const AdmissionStepper: React.FC<StepperProps> = ({
                 </Text>
               </View>
 
-              {/* Progress bar line under tab */}
-              <View
-                style={[
-                  styles.tabUnderline,
-                  isCurrentPhase && styles.tabUnderlineActive,
-                  isPassedPhase && styles.tabUnderlinePassed
-                ]}
-              />
+              {/* Proportional Tube Progress Track and Fill */}
+              <View style={styles.tubeTrack}>
+                <View
+                  style={[
+                    styles.tubeFill,
+                    {
+                      width: `${status.fill}%`,
+                      backgroundColor: status.isPassed
+                        ? colors.statusSuccess
+                        : status.isCurrent
+                        ? colors.brandPrimary
+                        : 'transparent'
+                    }
+                  ]}
+                />
+              </View>
             </TouchableOpacity>
           );
         })}
       </View>
 
-      {/* Substep breadcrumb chips */}
+      {/* Substep breadcrumb info */}
       <View style={styles.substepBar}>
         <Text style={styles.substepInfo}>
           Step {currentStep} of 9:{' '}
@@ -147,10 +180,10 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     paddingHorizontal: 8,
     borderRadius: borderRadius.md,
-    backgroundColor: colors.bgPage
+    backgroundColor: '#F8FAFC'
   },
   phaseTabActive: {
-    backgroundColor: colors.brandLight
+    backgroundColor: '#EFF6FF'
   },
   phaseTabPassed: {
     backgroundColor: '#F0FDF4'
@@ -200,16 +233,16 @@ const styles = StyleSheet.create({
     color: colors.statusSuccess,
     fontWeight: '700'
   },
-  tabUnderline: {
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: '#E2E8F0'
+  tubeTrack: {
+    height: 5,
+    borderRadius: 3,
+    backgroundColor: '#E2E8F0',
+    overflow: 'hidden',
+    width: '100%'
   },
-  tabUnderlineActive: {
-    backgroundColor: colors.brandPrimary
-  },
-  tabUnderlinePassed: {
-    backgroundColor: colors.statusSuccess
+  tubeFill: {
+    height: '100%',
+    borderRadius: 3
   },
   substepBar: {
     marginTop: spacing.md,

@@ -1,5 +1,15 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Platform } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  TextInput,
+  Platform,
+  Image,
+  ImageBackground
+} from 'react-native';
 import { useAuth } from '../context/AuthContext';
 import { colors, borderRadius, spacing, shadows } from '../theme/theme';
 import { PublicHeader } from '../components/PublicHeader';
@@ -13,9 +23,10 @@ export const HomeScreen: React.FC = () => {
   const [statusModalVisible, setStatusModalVisible] = useState(false);
 
   // Filter state for Find a school/college
-  const [selectedState, setSelectedState] = useState('Karnataka');
-  const [selectedCity, setSelectedCity] = useState('Bengaluru');
+  const [selectedState, setSelectedState] = useState('All States');
+  const [selectedCity, setSelectedCity] = useState('All Cities');
   const [selectedProgram, setSelectedProgram] = useState('All Programmes');
+  const [searchQuery, setSearchQuery] = useState('');
   const [activePin, setActivePin] = useState<number>(0);
 
   const campuses = [
@@ -23,8 +34,11 @@ export const HomeScreen: React.FC = () => {
       id: 0,
       name: 'Skanda International Public School',
       location: 'Bengaluru — Kanakapura Rd',
+      city: 'Bengaluru',
+      state: 'Karnataka',
       board: 'CBSE, Grades 1–12',
       seats: 'Admissions Open',
+      image: 'https://images.unsplash.com/photo-1580582932707-520aed937b7b?auto=format&fit=crop&w=600&q=80',
       x: 35,
       y: 60
     },
@@ -32,8 +46,11 @@ export const HomeScreen: React.FC = () => {
       id: 1,
       name: 'Skanda World School (ICSE Campus)',
       location: 'Bengaluru — Whitefield',
+      city: 'Bengaluru',
+      state: 'Karnataka',
       board: 'ICSE / ISC, Grades 1–12',
       seats: 'Limited Seats',
+      image: 'https://images.unsplash.com/photo-1541829070764-84a7d30dd3f3?auto=format&fit=crop&w=600&q=80',
       x: 65,
       y: 35
     },
@@ -41,8 +58,11 @@ export const HomeScreen: React.FC = () => {
       id: 2,
       name: 'Skanda Institute of Technology',
       location: 'Mysuru — Hunsur Rd',
+      city: 'Mysuru',
+      state: 'Karnataka',
       board: 'B.Tech / M.Tech AICTE',
       seats: 'Merit Applications Open',
+      image: 'https://images.unsplash.com/photo-1562774053-701939374585?auto=format&fit=crop&w=600&q=80',
       x: 25,
       y: 40
     },
@@ -50,68 +70,122 @@ export const HomeScreen: React.FC = () => {
       id: 3,
       name: 'Skanda College of Commerce & Management',
       location: 'Mangaluru — Hampankatta',
+      city: 'Mangaluru',
+      state: 'Karnataka',
       board: 'B.Com / BBA / MBA',
       seats: 'Scholarship Available',
+      image: 'https://images.unsplash.com/photo-1525921429624-479b6a26d84d?auto=format&fit=crop&w=600&q=80',
       x: 50,
       y: 75
     }
   ];
+
+  // Dynamic filter logic
+  const filteredCampuses = campuses.filter((campus) => {
+    if (selectedState !== 'All States' && campus.state !== selectedState) return false;
+    if (selectedCity !== 'All Cities' && campus.city !== selectedCity) return false;
+    if (selectedProgram !== 'All Programmes') {
+      if (selectedProgram === 'CBSE' && !campus.board.includes('CBSE')) return false;
+      if (selectedProgram === 'ICSE' && !campus.board.includes('ICSE')) return false;
+      if (selectedProgram === 'College' && !campus.board.includes('Tech') && !campus.board.includes('Com')) return false;
+    }
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      const matchName = campus.name.toLowerCase().includes(q);
+      const matchLoc = campus.location.toLowerCase().includes(q);
+      const matchCity = campus.city.toLowerCase().includes(q);
+      const matchBoard = campus.board.toLowerCase().includes(q);
+      if (!matchName && !matchLoc && !matchCity && !matchBoard) return false;
+    }
+    return true;
+  });
 
   return (
     <View style={styles.container}>
       <PublicHeader onOpenLogin={() => setLoginModalVisible(true)} />
 
       <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
-        {/* HERO BANNER SECTION (Royal Blue Gradient) */}
+        {/* HERO BANNER SECTION (Photo + Responsive Soft Gradient Overlay) */}
         <View nativeID="hero-section" testID="hero-section" style={styles.heroBanner}>
-          <View style={styles.heroContent}>
-            <View style={styles.heroTextCol}>
-              <View style={styles.heroBadge}>
-                <Text style={styles.heroBadgeText}>🎓 ADMISSIONS OPEN FOR 2026-2027</Text>
+          <ImageBackground
+            source={{ uri: 'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&w=1600&q=80' }}
+            style={styles.heroBackground}
+            resizeMode="cover"
+          >
+            <View style={styles.heroGradientOverlay}>
+              <View style={styles.heroContent}>
+                <View style={styles.heroTextCol}>
+                  <View style={styles.heroBadge}>
+                    <Text style={styles.heroBadgeText}>🎓 Shaping Future</Text>
+                  </View>
+                  <Text style={styles.heroTitle}>
+                    Leaders Today{'\n'}for a Better Tomorrow
+                  </Text>
+                  <Text style={styles.heroSubtitle}>
+                    We provide quality education that inspires, empowers, and prepares students for success across CBSE, ICSE, and College disciplines.
+                  </Text>
+
+                  <View style={styles.heroBtnRow}>
+                    <TouchableOpacity
+                      nativeID="apply-now-btn"
+                      testID="apply-now-btn"
+                      style={styles.heroPrimaryBtn}
+                      onPress={() => navigateTo('/apply')}
+                      activeOpacity={0.88}
+                    >
+                      <Text style={styles.heroPrimaryBtnText}>Apply Online ➜</Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                      style={styles.heroSecondaryBtn}
+                      onPress={() => setStatusModalVisible(true)}
+                      activeOpacity={0.88}
+                    >
+                      <Text style={styles.heroSecondaryBtnText}>Track Application Status</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+
+                {/* Right Hero Spacer for photography clarity on desktop */}
+                <View style={styles.heroPhotoSpacer} />
               </View>
-              <Text style={styles.heroTitle}>
-                Learning that opens every door
-              </Text>
-              <Text style={styles.heroSubtitle}>
-                Welcome to Skanda International School: holistic quality education across CBSE, ICSE, and College disciplines that empowers students to excel in knowledge, leadership, and lifelong character.
-              </Text>
 
-              <View style={styles.heroBtnRow}>
-                <TouchableOpacity
-                  style={styles.heroPrimaryBtn}
-                  onPress={() => navigateTo('/apply')}
-                  activeOpacity={0.88}
-                >
-                  <Text style={styles.heroPrimaryBtnText}>Apply Online ➜</Text>
-                </TouchableOpacity>
+              {/* 4-COLUMN FEATURE HIGHLIGHT STRIP */}
+              <View style={styles.heroFeatureStrip}>
+                <View style={styles.featureItem}>
+                  <Text style={styles.featureIcon}>🎓</Text>
+                  <View style={styles.featureTextCol}>
+                    <Text style={styles.featureTitle}>Experienced Faculty</Text>
+                    <Text style={styles.featureDesc}>Dedicated and qualified teachers</Text>
+                  </View>
+                </View>
 
-                <TouchableOpacity
-                  style={styles.heroSecondaryBtn}
-                  onPress={() => setStatusModalVisible(true)}
-                  activeOpacity={0.88}
-                >
-                  <Text style={styles.heroSecondaryBtnText}>Track Application Status</Text>
-                </TouchableOpacity>
+                <View style={styles.featureItem}>
+                  <Text style={styles.featureIcon}>🏫</Text>
+                  <View style={styles.featureTextCol}>
+                    <Text style={styles.featureTitle}>Modern Facilities</Text>
+                    <Text style={styles.featureDesc}>Smart classrooms, labs & libraries</Text>
+                  </View>
+                </View>
+
+                <View style={styles.featureItem}>
+                  <Text style={styles.featureIcon}>🌱</Text>
+                  <View style={styles.featureTextCol}>
+                    <Text style={styles.featureTitle}>Holistic Development</Text>
+                    <Text style={styles.featureDesc}>Focus on academics, sports & values</Text>
+                  </View>
+                </View>
+
+                <View style={styles.featureItem}>
+                  <Text style={styles.featureIcon}>🛡️</Text>
+                  <View style={styles.featureTextCol}>
+                    <Text style={styles.featureTitle}>Safe Environment</Text>
+                    <Text style={styles.featureDesc}>A secure and nurturing campus</Text>
+                  </View>
+                </View>
               </View>
             </View>
-
-            {/* Campus Architectural Illustration Graphic */}
-            <View style={styles.heroIllustrationContainer}>
-              <View style={styles.buildingSilhouette}>
-                <View style={styles.pedimentTriangle} />
-                <View style={styles.buildingPillarsRow}>
-                  {[1, 2, 3, 4, 5, 6].map(i => (
-                    <View key={i} style={styles.pillar} />
-                  ))}
-                </View>
-                <View style={styles.buildingBase} />
-                <View style={styles.portalArch}>
-                  <Text style={styles.archEmblem}>SIS</Text>
-                </View>
-              </View>
-              <View style={styles.lawnStrip} />
-            </View>
-          </View>
+          </ImageBackground>
         </View>
 
         {/* LATEST ANNOUNCEMENT TICKER */}
@@ -163,23 +237,113 @@ export const HomeScreen: React.FC = () => {
             </Text>
           </View>
 
-          {/* Filter Bar */}
-          <View style={styles.filterBar}>
-            <View style={styles.filterPill}>
-              <Text style={styles.filterLabel}>State: </Text>
-              <Text style={styles.filterValue}>{selectedState}</Text>
+          {/* UPGRADED FILTER & SEARCH BAR */}
+          <View style={styles.campusFilterContainer}>
+            {/* Real-Time Text Search Input */}
+            <View style={styles.searchRow}>
+              <View style={styles.searchInputWrapper}>
+                <Text style={styles.searchIcon}>🔍</Text>
+                <TextInput
+                  style={styles.searchInput}
+                  placeholder="Search school name, address, or city..."
+                  placeholderTextColor="#94A3B8"
+                  value={searchQuery}
+                  onChangeText={setSearchQuery}
+                />
+                {searchQuery.length > 0 && (
+                  <TouchableOpacity onPress={() => setSearchQuery('')} style={styles.clearSearchBtn}>
+                    <Text style={styles.clearSearchText}>✕</Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+
+              <TouchableOpacity
+                style={styles.searchSubmitBtn}
+                onPress={() => {}}
+                activeOpacity={0.88}
+              >
+                <Text style={styles.searchSubmitBtnText}>Search Campuses</Text>
+              </TouchableOpacity>
             </View>
-            <View style={styles.filterPill}>
-              <Text style={styles.filterLabel}>City: </Text>
-              <Text style={styles.filterValue}>{selectedCity}</Text>
+
+            {/* Interactive Select Dropdowns */}
+            <View style={styles.dropdownsRow}>
+              <View style={styles.selectWrapper}>
+                <Text style={styles.selectLabel}>State:</Text>
+                {Platform.OS === 'web' ? (
+                  <select
+                    value={selectedState}
+                    onChange={(e: any) => setSelectedState(e.target.value)}
+                    style={webSelectStyle}
+                  >
+                    <option value="All States">All States</option>
+                    <option value="Karnataka">Karnataka</option>
+                    <option value="Maharashtra">Maharashtra</option>
+                    <option value="Tamil Nadu">Tamil Nadu</option>
+                  </select>
+                ) : (
+                  <TouchableOpacity style={styles.nativeSelectBtn}>
+                    <Text style={styles.nativeSelectText}>{selectedState}</Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+
+              <View style={styles.selectWrapper}>
+                <Text style={styles.selectLabel}>City:</Text>
+                {Platform.OS === 'web' ? (
+                  <select
+                    value={selectedCity}
+                    onChange={(e: any) => setSelectedCity(e.target.value)}
+                    style={webSelectStyle}
+                  >
+                    <option value="All Cities">All Cities</option>
+                    <option value="Bengaluru">Bengaluru</option>
+                    <option value="Mysuru">Mysuru</option>
+                    <option value="Mangaluru">Mangaluru</option>
+                    <option value="Pune">Pune</option>
+                    <option value="Chennai">Chennai</option>
+                  </select>
+                ) : (
+                  <TouchableOpacity style={styles.nativeSelectBtn}>
+                    <Text style={styles.nativeSelectText}>{selectedCity}</Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+
+              <View style={styles.selectWrapper}>
+                <Text style={styles.selectLabel}>Programme:</Text>
+                {Platform.OS === 'web' ? (
+                  <select
+                    value={selectedProgram}
+                    onChange={(e: any) => setSelectedProgram(e.target.value)}
+                    style={webSelectStyle}
+                  >
+                    <option value="All Programmes">All Programmes</option>
+                    <option value="CBSE">CBSE (Grades 1–12)</option>
+                    <option value="ICSE">ICSE / ISC (Grades 1–12)</option>
+                    <option value="College">Collegiate (B.Tech / B.Com / MBA)</option>
+                  </select>
+                ) : (
+                  <TouchableOpacity style={styles.nativeSelectBtn}>
+                    <Text style={styles.nativeSelectText}>{selectedProgram}</Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+
+              {(selectedState !== 'All States' || selectedCity !== 'All Cities' || selectedProgram !== 'All Programmes' || searchQuery) && (
+                <TouchableOpacity
+                  style={styles.resetFiltersBtn}
+                  onPress={() => {
+                    setSelectedState('All States');
+                    setSelectedCity('All Cities');
+                    setSelectedProgram('All Programmes');
+                    setSearchQuery('');
+                  }}
+                >
+                  <Text style={styles.resetFiltersText}>Reset Filters ✕</Text>
+                </TouchableOpacity>
+              )}
             </View>
-            <View style={styles.filterPill}>
-              <Text style={styles.filterLabel}>Programme: </Text>
-              <Text style={styles.filterValue}>{selectedProgram}</Text>
-            </View>
-            <TouchableOpacity style={styles.searchPillBtn}>
-              <Text style={styles.searchPillText}>Search Campuses</Text>
-            </TouchableOpacity>
           </View>
 
           {/* Interactive Map & Campus Cards Grid */}
@@ -188,13 +352,13 @@ export const HomeScreen: React.FC = () => {
             <View style={styles.mapCanvas}>
               <Text style={styles.mapTitle}>🗺️ Interactive Campus Geo-Locator</Text>
               <View style={styles.mapGridLines}>
-                {[1, 2, 3, 4].map(line => (
+                {[1, 2, 3, 4].map((line) => (
                   <View key={line} style={[styles.mapGridLine, { top: `${line * 20}%` }]} />
                 ))}
               </View>
 
               {/* Interactive Campus Pins */}
-              {campuses.map(campus => (
+              {filteredCampuses.map((campus) => (
                 <TouchableOpacity
                   key={campus.id}
                   style={[
@@ -205,43 +369,59 @@ export const HomeScreen: React.FC = () => {
                   onPress={() => setActivePin(campus.id)}
                 >
                   <View style={[styles.pinDot, activePin === campus.id && styles.pinDotActive]} />
-                  <Text style={styles.pinName} numberOfLines={1}>{campus.name.split(' ')[1] || 'Campus'}</Text>
+                  <Text style={styles.pinName} numberOfLines={1}>
+                    {campus.name.split(' ')[1] || 'Campus'}
+                  </Text>
                 </TouchableOpacity>
               ))}
 
               <Text style={styles.mapHint}>Map shows campus pins • Click to highlight details</Text>
             </View>
 
-            {/* Campus Cards List */}
+            {/* Campus Cards List with Real Photography */}
             <View style={styles.campusCardsCol}>
-              {campuses.map(campus => {
-                const isSelected = activePin === campus.id;
-                return (
-                  <TouchableOpacity
-                    key={campus.id}
-                    style={[styles.campusCard, isSelected && styles.campusCardSelected]}
-                    onPress={() => setActivePin(campus.id)}
-                    activeOpacity={0.9}
-                  >
-                    <View style={styles.campusIconBox}>
-                      <Text style={styles.campusIcon}>🏫</Text>
-                    </View>
-                    <View style={{ flex: 1 }}>
-                      <Text style={styles.campusName}>{campus.name}</Text>
-                      <Text style={styles.campusLoc}>{campus.location} • {campus.board}</Text>
-                      <View style={styles.seatsBadge}>
-                        <Text style={styles.seatsText}>● {campus.seats}</Text>
-                      </View>
-                    </View>
+              {filteredCampuses.length > 0 ? (
+                filteredCampuses.map((campus) => {
+                  const isSelected = activePin === campus.id;
+                  return (
                     <TouchableOpacity
-                      style={styles.viewDetailBtn}
-                      onPress={() => navigateTo('/apply')}
+                      key={campus.id}
+                      style={[styles.campusCard, isSelected && styles.campusCardSelected]}
+                      onPress={() => setActivePin(campus.id)}
+                      activeOpacity={0.9}
                     >
-                      <Text style={styles.viewDetailText}>Apply ➜</Text>
+                      <Image
+                        source={{ uri: campus.image }}
+                        style={styles.campusThumbnail}
+                        resizeMode="cover"
+                      />
+                      <View style={{ flex: 1 }}>
+                        <Text style={styles.campusName}>{campus.name}</Text>
+                        <Text style={styles.campusLoc}>
+                          {campus.location} • {campus.board}
+                        </Text>
+                        <View style={styles.seatsBadge}>
+                          <Text style={styles.seatsText}>● {campus.seats}</Text>
+                        </View>
+                      </View>
+                      <TouchableOpacity
+                        style={styles.viewDetailBtn}
+                        onPress={() => navigateTo('/apply')}
+                      >
+                        <Text style={styles.viewDetailText}>Apply ➜</Text>
+                      </TouchableOpacity>
                     </TouchableOpacity>
-                  </TouchableOpacity>
-                );
-              })}
+                  );
+                })
+              ) : (
+                <View style={styles.emptyStateBox}>
+                  <Text style={styles.emptyStateIcon}>🏫</Text>
+                  <Text style={styles.emptyStateTitle}>No Campuses Found</Text>
+                  <Text style={styles.emptyStateText}>
+                    No campuses match your current search and filter criteria. Try resetting filters.
+                  </Text>
+                </View>
+              )}
             </View>
           </View>
         </View>
@@ -299,7 +479,7 @@ export const HomeScreen: React.FC = () => {
           </View>
         </View>
 
-        {/* NEWS AND EVENTS 3-CARD GRID */}
+        {/* NEWS AND EVENTS WITH REAL PHOTOGRAPHY */}
         <View style={styles.newsSection} nativeID="news" {...({ id: 'news' } as any)}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionHeading}>News and events</Text>
@@ -308,9 +488,11 @@ export const HomeScreen: React.FC = () => {
 
           <View style={styles.newsGrid}>
             <View style={styles.newsCard}>
-              <View style={[styles.newsHeaderBox, { backgroundColor: '#DBEAFE' }]}>
-                <Text style={styles.newsIcon}>🎓</Text>
-              </View>
+              <Image
+                source={{ uri: 'https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&w=800&q=80' }}
+                style={styles.newsImage}
+                resizeMode="cover"
+              />
               <View style={styles.newsContent}>
                 <Text style={styles.newsDate}>12 Nov 2026 • Academic Achievements</Text>
                 <Text style={styles.newsTitle}>Class of 2026 records 98% distinction rate in national board exams</Text>
@@ -321,9 +503,11 @@ export const HomeScreen: React.FC = () => {
             </View>
 
             <View style={styles.newsCard}>
-              <View style={[styles.newsHeaderBox, { backgroundColor: '#E0F2FE' }]}>
-                <Text style={styles.newsIcon}>🔬</Text>
-              </View>
+              <Image
+                source={{ uri: 'https://images.unsplash.com/photo-1581092921461-eab62e97a780?auto=format&fit=crop&w=800&q=80' }}
+                style={styles.newsImage}
+                resizeMode="cover"
+              />
               <View style={styles.newsContent}>
                 <Text style={styles.newsDate}>08 Nov 2026 • Innovation & Science</Text>
                 <Text style={styles.newsTitle}>Inter-campus science & robotics expo draws 3,000 visitors</Text>
@@ -334,9 +518,11 @@ export const HomeScreen: React.FC = () => {
             </View>
 
             <View style={styles.newsCard}>
-              <View style={[styles.newsHeaderBox, { backgroundColor: '#FEF3C7' }]}>
-                <Text style={styles.newsIcon}>📢</Text>
-              </View>
+              <Image
+                source={{ uri: 'https://images.unsplash.com/photo-1577896851231-70ef18881754?auto=format&fit=crop&w=800&q=80' }}
+                style={styles.newsImage}
+                resizeMode="cover"
+              />
               <View style={styles.newsContent}>
                 <Text style={styles.newsDate}>28 Oct 2026 • Admissions Alert</Text>
                 <Text style={styles.newsTitle}>Merit and sports scholarship applications open for 2026–2027</Text>
@@ -348,13 +534,17 @@ export const HomeScreen: React.FC = () => {
           </View>
         </View>
 
-        {/* WHY FAMILIES CHOOSE SKANDA */}
+        {/* WHY FAMILIES CHOOSE SKANDA (Real School Photography) */}
         <View style={styles.whySection} nativeID="about" {...({ id: 'about' } as any)}>
           <View style={styles.whyContentRow}>
-            <View style={styles.whyGraphicBox}>
-              <View style={styles.whyGraphicBackdrop}>
-                <Text style={styles.whyEmoji}>🏛️</Text>
-                <Text style={styles.whyGraphicText}>Excellence in Education since 1996</Text>
+            <View style={styles.whyImageBox}>
+              <Image
+                source={{ uri: 'https://images.unsplash.com/photo-1509062522246-3755977927d7?auto=format&fit=crop&w=1000&q=80' }}
+                style={styles.whyPhoto}
+                resizeMode="cover"
+              />
+              <View style={styles.whyPhotoBadge}>
+                <Text style={styles.whyBadgeText}>🏆 30 Years of Educational Excellence</Text>
               </View>
             </View>
 
@@ -449,6 +639,18 @@ export const HomeScreen: React.FC = () => {
   );
 };
 
+const webSelectStyle: any = {
+  padding: '8px 12px',
+  borderRadius: 8,
+  border: '1px solid #CBD5E1',
+  backgroundColor: '#FFFFFF',
+  color: '#0F172A',
+  fontSize: 14,
+  fontWeight: '500',
+  outline: 'none',
+  cursor: 'pointer'
+};
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -458,12 +660,19 @@ const styles = StyleSheet.create({
     flex: 1
   },
   heroBanner: {
-    backgroundColor: colors.brandDark,
-    paddingTop: spacing.xxl,
-    paddingBottom: spacing.section,
-    paddingHorizontal: spacing.lg,
-    borderBottomLeftRadius: borderRadius.xl,
-    borderBottomRightRadius: borderRadius.xl
+    width: '100%',
+    backgroundColor: '#F8FAFC',
+    overflow: 'hidden'
+  },
+  heroBackground: {
+    width: '100%'
+  },
+  heroGradientOverlay: {
+    width: '100%',
+    backgroundColor: 'rgba(248, 250, 252, 0.92)',
+    paddingTop: 48,
+    paddingBottom: 24,
+    paddingHorizontal: spacing.lg
   },
   heroContent: {
     maxWidth: 1200,
@@ -473,16 +682,22 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     alignItems: 'center',
     justifyContent: 'space-between',
-    gap: 40
+    gap: 32
   },
   heroTextCol: {
-    flex: 1,
-    minWidth: 320
+    flex: 1.2,
+    minWidth: 320,
+    paddingVertical: spacing.md
+  },
+  heroPhotoSpacer: {
+    flex: 0.8,
+    minWidth: 260,
+    minHeight: 280
   },
   heroBadge: {
-    backgroundColor: 'rgba(219, 234, 254, 0.2)',
+    backgroundColor: '#EFF6FF',
     borderWidth: 1,
-    borderColor: 'rgba(219, 234, 254, 0.3)',
+    borderColor: '#BFDBFE',
     paddingHorizontal: 14,
     paddingVertical: 6,
     borderRadius: borderRadius.full,
@@ -490,25 +705,25 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md
   },
   heroBadgeText: {
-    color: '#93C5FD',
-    fontSize: 12,
+    color: '#1D4ED8',
+    fontSize: 13,
     fontWeight: '800',
     letterSpacing: 0.5
   },
   heroTitle: {
     fontSize: Platform.OS === 'web' ? 44 : 32,
     fontWeight: '900',
-    color: colors.textInverse,
+    color: '#0F172A',
     lineHeight: Platform.OS === 'web' ? 52 : 38,
     letterSpacing: -1,
     marginBottom: spacing.md
   },
   heroSubtitle: {
     fontSize: 16,
-    color: '#DBEAFE',
+    color: '#334155',
     lineHeight: 24,
     marginBottom: spacing.xl,
-    maxWidth: 580
+    maxWidth: 540
   },
   heroBtnRow: {
     flexDirection: 'row',
@@ -528,93 +743,72 @@ const styles = StyleSheet.create({
     fontWeight: '700'
   },
   heroSecondaryBtn: {
-    backgroundColor: 'rgba(255, 255, 255, 0.12)',
+    backgroundColor: '#FFFFFF',
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.3)',
+    borderColor: '#CBD5E1',
     paddingHorizontal: 24,
     paddingVertical: 14,
-    borderRadius: borderRadius.md
+    borderRadius: borderRadius.md,
+    ...shadows.card
   },
   heroSecondaryBtnText: {
-    color: colors.textInverse,
+    color: '#1E293B',
     fontSize: 15,
     fontWeight: '600'
   },
-  heroIllustrationContainer: {
-    width: 320,
-    height: 220,
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
-    borderRadius: borderRadius.xl,
-    padding: spacing.lg,
-    alignItems: 'center',
-    justifyContent: 'flex-end',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.15)'
-  },
-  buildingSilhouette: {
-    alignItems: 'center',
-    width: '100%'
-  },
-  pedimentTriangle: {
-    width: 0,
-    height: 0,
-    backgroundColor: 'transparent',
-    borderStyle: 'solid',
-    borderLeftWidth: 110,
-    borderRightWidth: 110,
-    borderBottomWidth: 35,
-    borderLeftColor: 'transparent',
-    borderRightColor: 'transparent',
-    borderBottomColor: '#DBEAFE'
-  },
-  buildingPillarsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    width: 200,
-    height: 70,
-    backgroundColor: '#BFDBFE',
-    paddingHorizontal: 12
-  },
-  pillar: {
-    width: 14,
-    height: '100%',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 2
-  },
-  buildingBase: {
-    width: 230,
-    height: 14,
-    backgroundColor: '#93C5FD',
-    borderRadius: 3
-  },
-  portalArch: {
-    position: 'absolute',
-    bottom: 14,
-    backgroundColor: colors.brandDark,
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-    borderRadius: borderRadius.sm
-  },
-  archEmblem: {
-    color: '#FFFFFF',
-    fontSize: 12,
-    fontWeight: '900'
-  },
-  lawnStrip: {
+  heroFeatureStrip: {
+    maxWidth: 1200,
     width: '100%',
-    height: 6,
-    backgroundColor: colors.brandPrimary,
-    marginTop: 10,
-    borderRadius: 3
+    alignSelf: 'center',
+    backgroundColor: '#0F2756',
+    borderRadius: 16,
+    paddingVertical: 18,
+    paddingHorizontal: 24,
+    marginTop: 36,
+    marginBottom: 12,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 16,
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.12,
+    shadowRadius: 12,
+    elevation: 5
+  },
+  featureItem: {
+    flex: 1,
+    minWidth: 220,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12
+  },
+  featureIcon: {
+    fontSize: 26
+  },
+  featureTextCol: {
+    flex: 1
+  },
+  featureTitle: {
+    color: '#FFFFFF',
+    fontWeight: '700',
+    fontSize: 14,
+    marginBottom: 2
+  },
+  featureDesc: {
+    color: '#94A3B8',
+    fontSize: 12,
+    lineHeight: 16
   },
   tickerBar: {
-    backgroundColor: '#EFF6FF', // bg-blue-50
+    backgroundColor: '#EFF6FF',
     borderTopWidth: 1,
-    borderTopColor: '#DBEAFE', // border-blue-100
+    borderTopColor: '#DBEAFE',
     borderBottomWidth: 1,
     borderBottomColor: '#DBEAFE',
-    paddingVertical: 12, // py-3
-    paddingHorizontal: 24 // px-6
+    paddingVertical: 12,
+    paddingHorizontal: 24
   },
   tickerInner: {
     maxWidth: 1200,
@@ -647,8 +841,8 @@ const styles = StyleSheet.create({
     width: '100%',
     alignSelf: 'center',
     paddingHorizontal: spacing.lg,
-    marginTop: 40, // Clean py-10 vertical spacing (no negative margin overlapping ticker bar)
-    marginBottom: 48, // py-12 vertical spacing before Find a school/college
+    marginTop: 40,
+    marginBottom: 48,
     zIndex: 1
   },
   statsGrid: {
@@ -700,47 +894,106 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     marginTop: 4
   },
-  filterBar: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 10,
-    alignItems: 'center',
+  campusFilterContainer: {
     backgroundColor: colors.bgSurface,
-    padding: spacing.md,
     borderRadius: borderRadius.lg,
     borderWidth: 1,
     borderColor: colors.borderDefault,
+    padding: spacing.md,
     marginBottom: spacing.lg,
+    gap: 12,
     ...shadows.card
   },
-  filterPill: {
+  searchRow: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+    alignItems: 'center'
+  },
+  searchInputWrapper: {
+    flex: 1,
+    minWidth: 260,
+    flexDirection: 'row',
+    alignItems: 'center',
     backgroundColor: colors.bgPage,
+    borderRadius: borderRadius.md,
     borderWidth: 1,
     borderColor: colors.borderDefault,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: borderRadius.md
+    paddingHorizontal: 12,
+    height: 42
   },
-  filterLabel: {
-    fontSize: 13,
-    color: colors.textSecondary
+  searchIcon: {
+    fontSize: 16,
+    marginRight: 8
   },
-  filterValue: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: colors.brandPrimary
+  searchInput: {
+    flex: 1,
+    fontSize: 14,
+    color: colors.textPrimary,
+    outline: 'none'
   },
-  searchPillBtn: {
+  clearSearchBtn: {
+    padding: 4
+  },
+  clearSearchText: {
+    color: colors.textSecondary,
+    fontSize: 14,
+    fontWeight: '700'
+  },
+  searchSubmitBtn: {
     backgroundColor: colors.brandPrimary,
-    paddingHorizontal: 18,
-    paddingVertical: 9,
-    borderRadius: borderRadius.md
+    paddingHorizontal: 20,
+    height: 42,
+    borderRadius: borderRadius.md,
+    alignItems: 'center',
+    justifyContent: 'center'
   },
-  searchPillText: {
+  searchSubmitBtnText: {
     color: colors.textInverse,
     fontWeight: '700',
-    fontSize: 13
+    fontSize: 14
+  },
+  dropdownsRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+    alignItems: 'center'
+  },
+  selectWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8
+  },
+  selectLabel: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: colors.textSecondary
+  },
+  nativeSelectBtn: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: borderRadius.md,
+    borderWidth: 1,
+    borderColor: colors.borderDefault,
+    backgroundColor: colors.bgSurface
+  },
+  nativeSelectText: {
+    fontSize: 13,
+    color: colors.textPrimary,
+    fontWeight: '600'
+  },
+  resetFiltersBtn: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: borderRadius.md,
+    backgroundColor: '#FEE2E2',
+    borderWidth: 1,
+    borderColor: '#FECACA'
+  },
+  resetFiltersText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#DC2626'
   },
   campusExplorer: {
     flexDirection: 'row',
@@ -834,16 +1087,10 @@ const styles = StyleSheet.create({
     borderColor: colors.brandPrimary,
     backgroundColor: '#F8FAFF'
   },
-  campusIconBox: {
-    width: 44,
-    height: 44,
-    borderRadius: borderRadius.md,
-    backgroundColor: colors.brandLight,
-    alignItems: 'center',
-    justifyContent: 'center'
-  },
-  campusIcon: {
-    fontSize: 22
+  campusThumbnail: {
+    width: 80,
+    height: 70,
+    borderRadius: borderRadius.md
   },
   campusName: {
     fontSize: 14,
@@ -880,6 +1127,30 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '700',
     color: colors.brandPrimary
+  },
+  emptyStateBox: {
+    backgroundColor: colors.bgSurface,
+    borderRadius: borderRadius.lg,
+    borderWidth: 1,
+    borderColor: colors.borderDefault,
+    padding: spacing.xl,
+    alignItems: 'center',
+    justifyContent: 'center'
+  },
+  emptyStateIcon: {
+    fontSize: 36,
+    marginBottom: 8
+  },
+  emptyStateTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: colors.textPrimary,
+    marginBottom: 4
+  },
+  emptyStateText: {
+    fontSize: 13,
+    color: colors.textSecondary,
+    textAlign: 'center'
   },
   quickLinksSection: {
     maxWidth: 1200,
@@ -956,13 +1227,9 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     ...shadows.card
   },
-  newsHeaderBox: {
-    height: 120,
-    alignItems: 'center',
-    justifyContent: 'center'
-  },
-  newsIcon: {
-    fontSize: 48
+  newsImage: {
+    width: '100%',
+    height: 160
   },
   newsContent: {
     padding: spacing.md
@@ -1005,26 +1272,33 @@ const styles = StyleSheet.create({
     borderColor: colors.borderDefault,
     ...shadows.card
   },
-  whyGraphicBox: {
+  whyImageBox: {
     flex: 1,
     minWidth: 280,
-    height: 240,
-    backgroundColor: colors.brandLight,
+    height: 280,
     borderRadius: borderRadius.lg,
-    alignItems: 'center',
-    justifyContent: 'center'
+    overflow: 'hidden',
+    position: 'relative'
   },
-  whyGraphicBackdrop: {
+  whyPhoto: {
+    width: '100%',
+    height: '100%'
+  },
+  whyPhotoBadge: {
+    position: 'absolute',
+    bottom: 12,
+    left: 12,
+    right: 12,
+    backgroundColor: 'rgba(15, 39, 86, 0.9)',
+    borderRadius: borderRadius.sm,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
     alignItems: 'center'
   },
-  whyEmoji: {
-    fontSize: 54,
-    marginBottom: 10
-  },
-  whyGraphicText: {
-    fontSize: 14,
+  whyBadgeText: {
+    color: '#FFFFFF',
     fontWeight: '700',
-    color: colors.brandDark
+    fontSize: 12
   },
   whyTextCol: {
     flex: 1.4,
@@ -1059,27 +1333,28 @@ const styles = StyleSheet.create({
     marginTop: 2
   },
   checkText: {
-    fontSize: 12,
-    fontWeight: '800',
-    color: colors.statusSuccess
+    color: colors.statusSuccess,
+    fontWeight: '900',
+    fontSize: 13
   },
   pointTitle: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '700',
-    color: colors.textPrimary
+    color: colors.textPrimary,
+    marginBottom: 2
   },
   pointBody: {
-    fontSize: 12,
+    fontSize: 13,
     color: colors.textSecondary,
-    lineHeight: 18,
-    marginTop: 2
+    lineHeight: 18
   },
   bottomCtaWrapper: {
     maxWidth: 1200,
     width: '100%',
     alignSelf: 'center',
     paddingHorizontal: spacing.lg,
-    marginTop: spacing.xxl
+    marginTop: spacing.xxl,
+    marginBottom: spacing.xxl
   },
   bottomCtaBanner: {
     backgroundColor: colors.brandPrimary,
@@ -1087,22 +1362,21 @@ const styles = StyleSheet.create({
     padding: spacing.xl,
     flexDirection: 'row',
     flexWrap: 'wrap',
+    gap: 24,
     alignItems: 'center',
     justifyContent: 'space-between',
-    gap: 24,
-    ...shadows.hover
+    ...shadows.card
   },
   ctaTitle: {
-    fontSize: 24,
-    fontWeight: '900',
+    fontSize: 22,
+    fontWeight: '800',
     color: colors.textInverse,
     marginBottom: 6
   },
   ctaSub: {
     fontSize: 14,
     color: '#DBEAFE',
-    lineHeight: 20,
-    maxWidth: 600
+    lineHeight: 20
   },
   ctaActionRow: {
     flexDirection: 'row',
