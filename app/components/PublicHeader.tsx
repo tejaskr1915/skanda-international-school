@@ -13,10 +13,10 @@ export const PublicHeader: React.FC<PublicHeaderProps> = ({ onOpenLogin }) => {
 
   // Only keep functional links that scroll to existing sections or active Phase 1 routes
   const menuItems = [
-    { label: 'About', target: 'about' },
-    { label: 'Campuses', target: 'campus-finder' },
     { label: 'Admissions', route: '/apply' },
+    { label: 'Campuses', target: 'campus-finder' },
     { label: 'News', target: 'news' },
+    { label: 'About', target: 'about' },
     { label: 'Contact', target: 'contact' }
   ];
 

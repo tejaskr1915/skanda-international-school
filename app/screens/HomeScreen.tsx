@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -17,68 +17,133 @@ import { PublicFooter } from '../components/PublicFooter';
 import { LoginModal } from '../components/LoginModal';
 import { StatusModal } from '../components/StatusModal';
 
+// 4-Slide Auto-Rotating Royal Blue Hero Carousel (Changes Every 4000ms)
+const HERO_SLIDES = [
+  {
+    id: 0,
+    badge: '🎓 Admissions Open 2026–2027',
+    title: 'Learning That Opens\nEvery Door',
+    subtitle: 'Welcome to Skanda International School: quality holistic education across CBSE, ICSE, and College disciplines empowering students to grow in knowledge, character and confidence.',
+    image: 'https://images.unsplash.com/photo-1541829070764-84a7d30dd3f3?auto=format&fit=crop&w=1920&q=80',
+    primaryBtn: 'Apply Online ➜',
+    secondaryBtn: 'Track Application Status'
+  },
+  {
+    id: 1,
+    badge: '💻 Smart Interactive Classrooms',
+    title: 'Shaping Future\nLeaders Today',
+    subtitle: 'Inspiring young minds through digital smart classrooms, collaborative technology hubs, and future-ready experiential curricula.',
+    image: 'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&w=1920&q=80',
+    primaryBtn: 'Apply Online ➜',
+    secondaryBtn: 'Explore Academic Streams'
+  },
+  {
+    id: 2,
+    badge: '🔬 Advanced STEM & Robotics',
+    title: 'Hands-On STEM &\nAcademic Excellence',
+    subtitle: 'State-of-the-art physics, chemistry, biotechnology, and AI robotics laboratories empowering inquisitive young minds to innovate.',
+    image: 'https://images.unsplash.com/photo-1581093458791-9f3c3900df4b?auto=format&fit=crop&w=1920&q=80',
+    primaryBtn: 'Apply Online ➜',
+    secondaryBtn: 'Explore Innovation Labs'
+  },
+  {
+    id: 3,
+    badge: '🏆 Sports & 50,000+ Book Library',
+    title: 'Holistic Growth Across\nCBSE, ICSE & College',
+    subtitle: 'Olympic-grade athletic facilities, vibrant creative arts studios, and an expansive digital research library for all-round student excellence.',
+    image: 'https://images.unsplash.com/photo-1521587760476-6c12a4b040da?auto=format&fit=crop&w=1920&q=80',
+    primaryBtn: 'Apply Online ➜',
+    secondaryBtn: 'Campus Virtual Tour'
+  }
+];
+
 export const HomeScreen: React.FC = () => {
   const { navigateTo } = useAuth();
   const [loginModalVisible, setLoginModalVisible] = useState(false);
   const [statusModalVisible, setStatusModalVisible] = useState(false);
 
-  // Filter state for Find a school/college
+  // Hero Carousel State
+  const [activeSlide, setActiveSlide] = useState(0);
+  const [isCarouselHovered, setIsCarouselHovered] = useState(false);
+
+  // Auto-rotate hero slides every 4 seconds (pause on hover)
+  useEffect(() => {
+    if (isCarouselHovered) return;
+    const timer = setInterval(() => {
+      setActiveSlide((prev) => (prev + 1) % HERO_SLIDES.length);
+    }, 4000);
+    return () => clearInterval(timer);
+  }, [isCarouselHovered]);
+
+  // Filter & Search state for Find a school/college
   const [selectedState, setSelectedState] = useState('All States');
   const [selectedCity, setSelectedCity] = useState('All Cities');
   const [selectedProgram, setSelectedProgram] = useState('All Programmes');
   const [searchQuery, setSearchQuery] = useState('');
+  const [isCampusSearchFocused, setIsCampusSearchFocused] = useState(false);
+
+  // Realistic Map View State
   const [activePin, setActivePin] = useState<number>(0);
+  const [showMapInfoCard, setShowMapInfoCard] = useState<boolean>(true);
+  const [mapZoom, setMapZoom] = useState<number>(1);
 
   const campuses = [
     {
       id: 0,
       name: 'Skanda International Public School',
       location: 'Bengaluru — Kanakapura Rd',
+      address: 'Kanakapura Main Road, South Bengaluru, Karnataka 560062',
       city: 'Bengaluru',
       state: 'Karnataka',
       board: 'CBSE, Grades 1–12',
-      seats: 'Admissions Open',
+      seats: 'Admissions Open (34 Seats)',
       image: 'https://images.unsplash.com/photo-1580582932707-520aed937b7b?auto=format&fit=crop&w=600&q=80',
-      x: 35,
-      y: 60
+      x: 68,
+      y: 56
     },
     {
       id: 1,
       name: 'Skanda World School (ICSE Campus)',
       location: 'Bengaluru — Whitefield',
+      address: 'ITPL Main Rd, Whitefield, Bengaluru, Karnataka 560066',
       city: 'Bengaluru',
       state: 'Karnataka',
       board: 'ICSE / ISC, Grades 1–12',
-      seats: 'Limited Seats',
+      seats: 'Limited Seats (8 Seats)',
       image: 'https://images.unsplash.com/photo-1541829070764-84a7d30dd3f3?auto=format&fit=crop&w=600&q=80',
-      x: 65,
-      y: 35
+      x: 78,
+      y: 46
     },
     {
       id: 2,
       name: 'Skanda Institute of Technology',
       location: 'Mysuru — Hunsur Rd',
+      address: 'Hunsur Highway, Jayalakshmipuram, Mysuru, Karnataka 570012',
       city: 'Mysuru',
       state: 'Karnataka',
       board: 'B.Tech / M.Tech AICTE',
       seats: 'Merit Applications Open',
       image: 'https://images.unsplash.com/photo-1562774053-701939374585?auto=format&fit=crop&w=600&q=80',
-      x: 25,
-      y: 40
+      x: 48,
+      y: 74
     },
     {
       id: 3,
       name: 'Skanda College of Commerce & Management',
       location: 'Mangaluru — Hampankatta',
+      address: 'K.S. Rao Road, Hampankatta, Mangaluru, Karnataka 575001',
       city: 'Mangaluru',
       state: 'Karnataka',
       board: 'B.Com / BBA / MBA',
       seats: 'Scholarship Available',
       image: 'https://images.unsplash.com/photo-1525921429624-479b6a26d84d?auto=format&fit=crop&w=600&q=80',
-      x: 50,
-      y: 75
+      x: 18,
+      y: 62
     }
   ];
+
+  // Active selected campus for the floating map info card
+  const activeCampus = campuses.find((c) => c.id === activePin) || campuses[0];
 
   // Dynamic filter logic
   const filteredCampuses = campuses.filter((campus) => {
@@ -105,10 +170,18 @@ export const HomeScreen: React.FC = () => {
       <PublicHeader onOpenLogin={() => setLoginModalVisible(true)} />
 
       <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
-        {/* HERO BANNER SECTION (Photo + Responsive Soft Gradient Overlay) */}
-        <View nativeID="hero-section" testID="hero-section" style={styles.heroBanner}>
+        {/* HERO BANNER SECTION (4-Slide Auto-Rotating Royal Blue Carousel) */}
+        <View
+          nativeID="hero-section"
+          testID="hero-section"
+          style={styles.heroBanner}
+          {...({
+            onMouseEnter: () => setIsCarouselHovered(true),
+            onMouseLeave: () => setIsCarouselHovered(false)
+          } as any)}
+        >
           <ImageBackground
-            source={{ uri: 'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&w=1600&q=80' }}
+            source={{ uri: HERO_SLIDES[activeSlide].image }}
             style={styles.heroBackground}
             imageStyle={styles.heroBackgroundImage}
             resizeMode="cover"
@@ -117,13 +190,13 @@ export const HomeScreen: React.FC = () => {
               <View style={styles.heroContent}>
                 <View style={styles.heroTextCol}>
                   <View style={styles.heroBadge}>
-                    <Text style={styles.heroBadgeText}>🎓 Shaping Future</Text>
+                    <Text style={styles.heroBadgeText}>{HERO_SLIDES[activeSlide].badge}</Text>
                   </View>
                   <Text style={styles.heroTitle}>
-                    Leaders Today{'\n'}for a Better Tomorrow
+                    {HERO_SLIDES[activeSlide].title}
                   </Text>
                   <Text style={styles.heroSubtitle}>
-                    We provide quality education that inspires, empowers, and prepares students for success across CBSE, ICSE, and College disciplines.
+                    {HERO_SLIDES[activeSlide].subtitle}
                   </Text>
 
                   <View style={styles.heroBtnRow}>
@@ -134,7 +207,7 @@ export const HomeScreen: React.FC = () => {
                       onPress={() => navigateTo('/apply')}
                       activeOpacity={0.88}
                     >
-                      <Text style={styles.heroPrimaryBtnText}>Apply Online ➜</Text>
+                      <Text style={styles.heroPrimaryBtnText}>{HERO_SLIDES[activeSlide].primaryBtn}</Text>
                     </TouchableOpacity>
 
                     <TouchableOpacity
@@ -142,13 +215,46 @@ export const HomeScreen: React.FC = () => {
                       onPress={() => setStatusModalVisible(true)}
                       activeOpacity={0.88}
                     >
-                      <Text style={styles.heroSecondaryBtnText}>Track Application Status</Text>
+                      <Text style={styles.heroSecondaryBtnText}>{HERO_SLIDES[activeSlide].secondaryBtn}</Text>
                     </TouchableOpacity>
                   </View>
                 </View>
 
                 {/* Right Hero Spacer for photography clarity on desktop */}
                 <View style={styles.heroPhotoSpacer} />
+              </View>
+
+              {/* 4-SLIDE CAROUSEL INDICATOR DOTS & ARROWS */}
+              <View style={styles.carouselNavRow}>
+                <TouchableOpacity
+                  style={styles.carouselArrowBtn}
+                  onPress={() => setActiveSlide((prev) => (prev - 1 + HERO_SLIDES.length) % HERO_SLIDES.length)}
+                  accessibilityLabel="Previous Hero Slide"
+                >
+                  <Text style={styles.carouselArrowText}>‹</Text>
+                </TouchableOpacity>
+
+                <View style={styles.carouselDotsRow}>
+                  {HERO_SLIDES.map((slide, index) => (
+                    <TouchableOpacity
+                      key={slide.id}
+                      style={[
+                        styles.carouselDot,
+                        activeSlide === index && styles.carouselDotActive
+                      ]}
+                      onPress={() => setActiveSlide(index)}
+                      accessibilityLabel={`Slide ${index + 1}`}
+                    />
+                  ))}
+                </View>
+
+                <TouchableOpacity
+                  style={styles.carouselArrowBtn}
+                  onPress={() => setActiveSlide((prev) => (prev + 1) % HERO_SLIDES.length)}
+                  accessibilityLabel="Next Hero Slide"
+                >
+                  <Text style={styles.carouselArrowText}>›</Text>
+                </TouchableOpacity>
               </View>
 
               {/* 4-COLUMN FEATURE HIGHLIGHT STRIP */}
@@ -238,21 +344,44 @@ export const HomeScreen: React.FC = () => {
             </Text>
           </View>
 
-          {/* UPGRADED FILTER & SEARCH BAR */}
+          {/* UPGRADED FILTER & SEARCH BAR WITH LIVE SUGGESTIONS */}
           <View style={styles.campusFilterContainer}>
-            {/* Real-Time Text Search Input */}
+            {/* Real-Time Text Search Input with Suggestions Dropdown */}
             <View style={styles.searchRow}>
-              <View style={styles.searchInputWrapper}>
+              <View style={[
+                styles.searchInputWrapper,
+                isCampusSearchFocused && styles.searchInputWrapperFocused
+              ]}>
                 <Text style={styles.searchIcon}>🔍</Text>
                 <TextInput
-                  style={styles.searchInput}
+                  nativeID="campus-search-input"
+                  style={[
+                    styles.searchInput,
+                    {
+                      borderWidth: 0,
+                      outlineStyle: 'none' as any,
+                      outlineWidth: 0 as any,
+                      boxShadow: 'none' as any,
+                      backgroundColor: 'transparent'
+                    }
+                  ]}
                   placeholder="Search school name, address, or city..."
                   placeholderTextColor="#94A3B8"
                   value={searchQuery}
-                  onChangeText={setSearchQuery}
+                  onChangeText={(val) => {
+                    setSearchQuery(val);
+                    setIsCampusSearchFocused(true);
+                  }}
+                  onFocus={() => setIsCampusSearchFocused(true)}
                 />
                 {searchQuery.length > 0 && (
-                  <TouchableOpacity onPress={() => setSearchQuery('')} style={styles.clearSearchBtn}>
+                  <TouchableOpacity
+                    onPress={() => {
+                      setSearchQuery('');
+                      setIsCampusSearchFocused(false);
+                    }}
+                    style={styles.clearSearchBtn}
+                  >
                     <Text style={styles.clearSearchText}>✕</Text>
                   </TouchableOpacity>
                 )}
@@ -260,14 +389,93 @@ export const HomeScreen: React.FC = () => {
 
               <TouchableOpacity
                 style={styles.searchSubmitBtn}
-                onPress={() => {}}
+                onPress={() => setIsCampusSearchFocused(false)}
                 activeOpacity={0.88}
               >
                 <Text style={styles.searchSubmitBtnText}>Search Campuses</Text>
               </TouchableOpacity>
             </View>
 
-            {/* Interactive Select Dropdowns */}
+            {/* LIVE SEARCH AUTOCOMPLETE SUGGESTIONS DROPDOWN */}
+            {isCampusSearchFocused && (
+              <View style={styles.campusSearchDropdown}>
+                <View style={styles.dropdownHeaderRow}>
+                  <Text style={styles.dropdownHeaderTitle}>
+                    {searchQuery.trim().length > 0
+                      ? `Matching Campuses (${filteredCampuses.length})`
+                      : '⚡ Quick Campus & City Suggestions'}
+                  </Text>
+                  <TouchableOpacity onPress={() => setIsCampusSearchFocused(false)}>
+                    <Text style={styles.dropdownCloseText}>Close ✕</Text>
+                  </TouchableOpacity>
+                </View>
+
+                {/* Quick City Chips when query is empty */}
+                {searchQuery.trim().length === 0 && (
+                  <View style={styles.quickSuggestionsRow}>
+                    <Text style={styles.quickSuggestionsLabel}>Popular Cities:</Text>
+                    {['Bengaluru', 'Mysuru', 'Mangaluru'].map((city) => (
+                      <TouchableOpacity
+                        key={city}
+                        style={styles.quickSuggestionPill}
+                        onPress={() => {
+                          setSelectedCity(city);
+                          setIsCampusSearchFocused(false);
+                        }}
+                      >
+                        <Text style={styles.quickSuggestionText}>📍 {city}</Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                )}
+
+                {/* Filtered Campuses Suggestions List */}
+                <ScrollView style={styles.dropdownScroll} keyboardShouldPersistTaps="handled">
+                  {filteredCampuses.length > 0 ? (
+                    filteredCampuses.map((campus) => (
+                      <TouchableOpacity
+                        key={campus.id}
+                        style={[
+                          styles.dropdownItemRow,
+                          activePin === campus.id && styles.dropdownItemRowActive
+                        ]}
+                        onPress={() => {
+                          setSearchQuery(campus.name);
+                          setActivePin(campus.id);
+                          setShowMapInfoCard(true);
+                          setIsCampusSearchFocused(false);
+                        }}
+                      >
+                        <View style={styles.dropdownItemIconCircle}>
+                          <Text style={{ fontSize: 16 }}>🏫</Text>
+                        </View>
+                        <View style={{ flex: 1 }}>
+                          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                            <Text style={styles.dropdownItemName}>{campus.name}</Text>
+                            <View style={styles.dropdownBoardBadge}>
+                              <Text style={styles.dropdownBoardText}>{campus.board.split(',')[0]}</Text>
+                            </View>
+                          </View>
+                          <Text style={styles.dropdownItemLoc}>📍 {campus.location} • {campus.state}</Text>
+                        </View>
+                        <View style={styles.dropdownSeatsBadge}>
+                          <Text style={styles.dropdownSeatsText}>{campus.seats.split('(')[0].trim()}</Text>
+                        </View>
+                        <Text style={styles.dropdownSelectArrow}>➜</Text>
+                      </TouchableOpacity>
+                    ))
+                  ) : (
+                    <View style={styles.dropdownEmpty}>
+                      <Text style={styles.dropdownEmptyText}>
+                        No campuses match "{searchQuery}". Try selecting from popular cities above.
+                      </Text>
+                    </View>
+                  )}
+                </ScrollView>
+              </View>
+            )}
+
+            {/* RESTYLED ROYAL BLUE FILTER DROPDOWNS */}
             <View style={styles.dropdownsRow}>
               <View style={styles.selectWrapper}>
                 <Text style={styles.selectLabel}>State:</Text>
@@ -275,9 +483,9 @@ export const HomeScreen: React.FC = () => {
                   <select
                     value={selectedState}
                     onChange={(e: any) => setSelectedState(e.target.value)}
-                    style={webSelectStyle}
+                    style={webRoyalSelectStyle}
                   >
-                    <option value="All States">All States</option>
+                    <option value="All States">All States (India)</option>
                     <option value="Karnataka">Karnataka</option>
                     <option value="Maharashtra">Maharashtra</option>
                     <option value="Tamil Nadu">Tamil Nadu</option>
@@ -295,7 +503,7 @@ export const HomeScreen: React.FC = () => {
                   <select
                     value={selectedCity}
                     onChange={(e: any) => setSelectedCity(e.target.value)}
-                    style={webSelectStyle}
+                    style={webRoyalSelectStyle}
                   >
                     <option value="All Cities">All Cities</option>
                     <option value="Bengaluru">Bengaluru</option>
@@ -317,7 +525,7 @@ export const HomeScreen: React.FC = () => {
                   <select
                     value={selectedProgram}
                     onChange={(e: any) => setSelectedProgram(e.target.value)}
-                    style={webSelectStyle}
+                    style={webRoyalSelectStyle}
                   >
                     <option value="All Programmes">All Programmes</option>
                     <option value="CBSE">CBSE (Grades 1–12)</option>
@@ -347,39 +555,237 @@ export const HomeScreen: React.FC = () => {
             </View>
           </View>
 
-          {/* Interactive Map & Campus Cards Grid */}
+          {/* REALISTIC INTERACTIVE CAMPUS GEO-LOCATOR MAP & CAMPUS CARDS */}
           <View style={styles.campusExplorer}>
-            {/* Interactive Campus Map Canvas */}
+            {/* Realistic Topographic & Geographic Vector Map */}
             <View style={styles.mapCanvas}>
-              <Text style={styles.mapTitle}>🗺️ Interactive Campus Geo-Locator</Text>
-              <View style={styles.mapGridLines}>
-                {[1, 2, 3, 4].map((line) => (
-                  <View key={line} style={[styles.mapGridLine, { top: `${line * 20}%` }]} />
-                ))}
+              {/* Map Canvas Header with Status and Zoom Controls */}
+              <View style={styles.mapCanvasHeader}>
+                <View style={styles.mapHeaderLeft}>
+                  <Text style={styles.mapTitle}>🗺️ Interactive Campus Geo-Locator</Text>
+                  <View style={styles.mapRegionBadge}>
+                    <Text style={styles.mapRegionText}>📍 Karnataka Region</Text>
+                  </View>
+                </View>
+
+                {/* Map Zoom Controls */}
+                <View style={styles.mapZoomControls}>
+                  <TouchableOpacity
+                    style={styles.zoomBtn}
+                    onPress={() => setMapZoom((z) => Math.min(1.4, Number((z + 0.15).toFixed(2))))}
+                    accessibilityLabel="Zoom In"
+                  >
+                    <Text style={styles.zoomBtnText}>+</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={styles.zoomBtn}
+                    onPress={() => setMapZoom((z) => Math.max(0.85, Number((z - 0.15).toFixed(2))))}
+                    accessibilityLabel="Zoom Out"
+                  >
+                    <Text style={styles.zoomBtnText}>−</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={styles.zoomResetBtn}
+                    onPress={() => {
+                      setMapZoom(1);
+                      setActivePin(0);
+                      setShowMapInfoCard(true);
+                    }}
+                    accessibilityLabel="Reset View"
+                  >
+                    <Text style={styles.zoomResetText}>⟲ Reset</Text>
+                  </TouchableOpacity>
+                </View>
               </View>
 
-              {/* Interactive Campus Pins */}
-              {filteredCampuses.map((campus) => (
-                <TouchableOpacity
-                  key={campus.id}
+              {/* Realistic Geographic Canvas (Terrain, Coastline, Rivers, Highways, and Pins) */}
+              <View style={styles.mapViewport}>
+                <View
                   style={[
-                    styles.mapPin,
-                    { left: `${campus.x}%`, top: `${campus.y}%` },
-                    activePin === campus.id && styles.mapPinActive
+                    styles.mapScalableCanvas,
+                    { transform: [{ scale: mapZoom }] }
                   ]}
-                  onPress={() => setActivePin(campus.id)}
                 >
-                  <View style={[styles.pinDot, activePin === campus.id && styles.pinDotActive]} />
-                  <Text style={styles.pinName} numberOfLines={1}>
-                    {campus.name.split(' ')[1] || 'Campus'}
-                  </Text>
-                </TouchableOpacity>
-              ))}
+                  {/* Geographic SVG Topography Background */}
+                  {Platform.OS === 'web' && (
+                    <svg
+                      viewBox="0 0 600 360"
+                      style={{
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        width: '100%',
+                        height: '100%',
+                        pointerEvents: 'none'
+                      }}
+                    >
+                      <defs>
+                        <linearGradient id="seaGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                          <stop offset="0%" stopColor="#BAE6FD" stopOpacity="0.8" />
+                          <stop offset="100%" stopColor="#E0F2FE" stopOpacity="0.4" />
+                        </linearGradient>
+                        <linearGradient id="landGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                          <stop offset="0%" stopColor="#F8FAFC" />
+                          <stop offset="100%" stopColor="#EFF6FF" />
+                        </linearGradient>
+                      </defs>
 
-              <Text style={styles.mapHint}>Map shows campus pins • Click to highlight details</Text>
+                      {/* Arabian Sea on West */}
+                      <path d="M 0 0 L 110 0 Q 125 100 115 180 Q 105 260 120 360 L 0 360 Z" fill="url(#seaGradient)" />
+                      <path d="M 110 0 Q 125 100 115 180 Q 105 260 120 360" stroke="#93C5FD" strokeWidth="2.5" fill="none" />
+
+                      {/* Karnataka Region Territory Fill */}
+                      <path
+                        d="M 110 20 Q 220 10 380 30 Q 520 60 560 180 Q 520 310 400 340 Q 220 350 120 340 Z"
+                        fill="url(#landGradient)"
+                        stroke="#BFDBFE"
+                        strokeWidth="1.5"
+                        strokeDasharray="4,4"
+                      />
+
+                      {/* Major Geographic Rivers */}
+                      {/* Cauvery River */}
+                      <path d="M 190 280 Q 280 270 380 290 Q 480 300 580 330" fill="none" stroke="#60A5FA" strokeWidth="2.5" opacity="0.85" />
+                      <text x="360" y="278" fill="#3B82F6" fontSize="9" fontWeight="600" opacity="0.8">Cauvery River</text>
+
+                      {/* Tungabhadra River */}
+                      <path d="M 180 150 Q 280 130 400 120 Q 500 115 580 130" fill="none" stroke="#60A5FA" strokeWidth="2" opacity="0.75" />
+                      <text x="320" y="118" fill="#3B82F6" fontSize="8" fontWeight="600" opacity="0.75">Tungabhadra</text>
+
+                      {/* Netravati River to Mangaluru */}
+                      <path d="M 120 220 Q 160 215 200 225" fill="none" stroke="#38BDF8" strokeWidth="2" opacity="0.85" />
+                      <text x="135" y="210" fill="#0284C7" fontSize="8" fontWeight="600">Netravati</text>
+
+                      {/* Major Highway Corridors */}
+                      {/* NH-48 Expressway: Bengaluru to Hubballi / Pune */}
+                      <path d="M 460 210 L 370 150 L 260 90 L 180 50" fill="none" stroke="#CBD5E1" strokeWidth="3" strokeDasharray="6,4" />
+                      <text x="280" y="140" fill="#64748B" fontSize="8" fontWeight="600">NH-48</text>
+
+                      {/* NH-75: Bengaluru to Mangaluru */}
+                      <path d="M 460 210 L 340 215 L 230 220 L 120 225" fill="none" stroke="#CBD5E1" strokeWidth="3" strokeDasharray="6,4" />
+                      <text x="260" y="210" fill="#64748B" fontSize="8" fontWeight="600">NH-75</text>
+
+                      {/* NH-275: Bengaluru to Mysuru Expressway */}
+                      <path d="M 460 210 Q 390 240 310 270" fill="none" stroke="#93C5FD" strokeWidth="3.5" />
+                      <text x="385" y="245" fill="#1D4ED8" fontSize="8" fontWeight="700">NH-275 Expressway</text>
+
+                      {/* Regional City Hub Reference Labels */}
+                      <circle cx="260" cy="90" r="3.5" fill="#94A3B8" />
+                      <text x="268" y="93" fill="#64748B" fontSize="9" fontWeight="600">Hubballi</text>
+
+                      <circle cx="180" cy="50" r="3.5" fill="#94A3B8" />
+                      <text x="188" y="53" fill="#64748B" fontSize="9" fontWeight="600">Belagavi</text>
+
+                      <circle cx="250" cy="170" r="3.5" fill="#94A3B8" />
+                      <text x="258" y="173" fill="#64748B" fontSize="9" fontWeight="600">Shivamogga</text>
+
+                      {/* Compass Rose */}
+                      <g transform="translate(540, 35)">
+                        <circle cx="0" cy="0" r="14" fill="#FFFFFF" stroke="#CBD5E1" strokeWidth="1" />
+                        <path d="M 0 -11 L 3 -2 L 0 0 L -3 -2 Z" fill="#DC2626" />
+                        <path d="M 0 11 L 3 2 L 0 0 L -3 2 Z" fill="#1D4ED8" />
+                        <text x="-4" y="-13" fill="#DC2626" fontSize="8" fontWeight="800">N</text>
+                      </g>
+
+                      {/* Map Scale Indicator */}
+                      <g transform="translate(480, 335)">
+                        <rect x="0" y="0" width="80" height="4" fill="#94A3B8" />
+                        <rect x="0" y="0" width="40" height="4" fill="#1D4ED8" />
+                        <text x="18" y="-4" fill="#64748B" fontSize="8" fontWeight="600">50 km</text>
+                      </g>
+                    </svg>
+                  )}
+
+                  {/* Interactive Royal Blue & Crimson Map Markers */}
+                  {filteredCampuses.map((campus) => {
+                    const isActive = activePin === campus.id;
+                    return (
+                      <TouchableOpacity
+                        key={campus.id}
+                        style={[
+                          styles.mapPin,
+                          { left: `${campus.x}%`, top: `${campus.y}%` },
+                          isActive && styles.mapPinActive
+                        ]}
+                        onPress={() => {
+                          setActivePin(campus.id);
+                          setShowMapInfoCard(true);
+                        }}
+                        activeOpacity={0.88}
+                      >
+                        {/* Animated pulsing wave ring on active pin */}
+                        {isActive && <View style={styles.pinRadarPulse} />}
+
+                        <View style={[styles.pinHead, isActive && styles.pinHeadActive]}>
+                          <Text style={styles.pinIcon}>{isActive ? '★' : '🏫'}</Text>
+                        </View>
+                        <View style={[styles.pinStem, isActive && styles.pinStemActive]} />
+
+                        {/* Campus Label Pill */}
+                        <View style={[styles.pinBadge, isActive && styles.pinBadgeActive]}>
+                          <Text style={[styles.pinBadgeText, isActive && styles.pinBadgeTextActive]} numberOfLines={1}>
+                            {campus.name.replace('Skanda ', '')}
+                          </Text>
+                        </View>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+
+                {/* Floating Campus Info Card over Map */}
+                {showMapInfoCard && activeCampus && (
+                  <View style={styles.floatingInfoCard}>
+                    <TouchableOpacity
+                      style={styles.floatingCardClose}
+                      onPress={() => setShowMapInfoCard(false)}
+                      accessibilityLabel="Close Card"
+                    >
+                      <Text style={styles.floatingCardCloseText}>✕</Text>
+                    </TouchableOpacity>
+
+                    <View style={styles.floatingCardHeader}>
+                      <Image
+                        source={{ uri: activeCampus.image }}
+                        style={styles.floatingCardPhoto}
+                        resizeMode="cover"
+                      />
+                      <View style={{ flex: 1 }}>
+                        <View style={styles.floatingBoardPill}>
+                          <Text style={styles.floatingBoardText}>{activeCampus.board.split(',')[0]}</Text>
+                        </View>
+                        <Text style={styles.floatingCardTitle} numberOfLines={2}>
+                          {activeCampus.name}
+                        </Text>
+                      </View>
+                    </View>
+
+                    <Text style={styles.floatingCardAddress}>
+                      📍 {activeCampus.address}
+                    </Text>
+
+                    <View style={styles.floatingCardFooter}>
+                      <View style={styles.floatingSeatsTag}>
+                        <Text style={styles.floatingSeatsText}>● {activeCampus.seats}</Text>
+                      </View>
+
+                      <TouchableOpacity
+                        style={styles.floatingApplyBtn}
+                        onPress={() => navigateTo('/apply')}
+                        activeOpacity={0.88}
+                      >
+                        <Text style={styles.floatingApplyText}>Apply Now ➜</Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                )}
+
+                <Text style={styles.mapHint}>
+                  💡 Click any pin to open live campus summary • Zoom controls available in top-right
+                </Text>
+              </View>
             </View>
 
-            {/* Campus Cards List with Real Photography */}
+            {/* Campus Cards List with Real Photography & Bi-Directional Highlight */}
             <View style={styles.campusCardsCol}>
               {filteredCampuses.length > 0 ? (
                 filteredCampuses.map((campus) => {
@@ -388,7 +794,10 @@ export const HomeScreen: React.FC = () => {
                     <TouchableOpacity
                       key={campus.id}
                       style={[styles.campusCard, isSelected && styles.campusCardSelected]}
-                      onPress={() => setActivePin(campus.id)}
+                      onPress={() => {
+                        setActivePin(campus.id);
+                        setShowMapInfoCard(true);
+                      }}
                       activeOpacity={0.9}
                     >
                       <Image
@@ -406,10 +815,12 @@ export const HomeScreen: React.FC = () => {
                         </View>
                       </View>
                       <TouchableOpacity
-                        style={styles.viewDetailBtn}
+                        style={[styles.viewDetailBtn, isSelected && styles.viewDetailBtnActive]}
                         onPress={() => navigateTo('/apply')}
                       >
-                        <Text style={styles.viewDetailText}>Apply ➜</Text>
+                        <Text style={[styles.viewDetailText, isSelected && styles.viewDetailTextActive]}>
+                          Apply ➜
+                        </Text>
                       </TouchableOpacity>
                     </TouchableOpacity>
                   );
@@ -641,16 +1052,26 @@ export const HomeScreen: React.FC = () => {
 };
 
 const webSelectStyle: any = {
-  padding: '8px 12px',
-  borderRadius: 8,
-  border: '1px solid #CBD5E1',
-  backgroundColor: '#FFFFFF',
-  color: '#0F172A',
-  fontSize: 14,
-  fontWeight: '500',
+  padding: '10px 34px 10px 14px',
+  borderRadius: 10,
+  border: '1.5px solid #BFDBFE',
+  backgroundColor: '#EFF6FF',
+  color: '#1E3A8A',
+  fontSize: 13,
+  fontWeight: '600',
   outline: 'none',
-  cursor: 'pointer'
+  cursor: 'pointer',
+  appearance: 'none',
+  WebkitAppearance: 'none',
+  backgroundImage: `url("data:image/svg+xml;utf8,<svg fill='%231D4ED8' height='20' viewBox='0 0 24 24' width='20' xmlns='http://www.w3.org/2000/svg'><path d='M7 10l5 5 5-5z'/></svg>")`,
+  backgroundRepeat: 'no-repeat',
+  backgroundPosition: 'right 10px center',
+  backgroundSize: '16px',
+  transition: 'all 0.2s ease',
+  boxShadow: '0 1px 2px rgba(29, 78, 216, 0.05)'
 };
+
+const webRoyalSelectStyle: any = webSelectStyle;
 
 const styles = StyleSheet.create({
   container: {
@@ -662,7 +1083,7 @@ const styles = StyleSheet.create({
   },
   heroBanner: {
     width: '100%',
-    backgroundColor: '#F8FAFC',
+    backgroundColor: '#0F172A',
     overflow: 'hidden'
   },
   heroBackground: {
@@ -671,7 +1092,7 @@ const styles = StyleSheet.create({
     ...(Platform.OS === 'web'
       ? ({
           backgroundSize: 'cover',
-          backgroundPosition: 'right center'
+          backgroundPosition: 'center center'
         } as any)
       : {})
   },
@@ -680,20 +1101,20 @@ const styles = StyleSheet.create({
     ...(Platform.OS === 'web'
       ? ({
           objectFit: 'cover',
-          objectPosition: 'right center'
+          objectPosition: 'center center'
         } as any)
       : {})
   },
   heroGradientOverlay: {
     width: '100%',
-    paddingTop: 48,
+    paddingTop: 52,
     paddingBottom: 24,
     paddingHorizontal: spacing.lg,
-    backgroundColor: 'rgba(255, 255, 255, 0.78)',
+    backgroundColor: 'rgba(15, 23, 42, 0.70)',
     ...(Platform.OS === 'web'
       ? ({
           backgroundImage:
-            'linear-gradient(90deg, rgba(255, 255, 255, 0.90) 0%, rgba(255, 255, 255, 0.68) 48%, rgba(255, 255, 255, 0.22) 100%)'
+            'linear-gradient(90deg, rgba(15, 23, 42, 0.90) 0%, rgba(30, 58, 138, 0.76) 45%, rgba(29, 78, 216, 0.35) 80%, rgba(30, 58, 138, 0.18) 100%)'
         } as any)
       : {})
   },
@@ -718,9 +1139,9 @@ const styles = StyleSheet.create({
     minHeight: 280
   },
   heroBadge: {
-    backgroundColor: '#EFF6FF',
+    backgroundColor: 'rgba(219, 234, 254, 0.20)',
     borderWidth: 1,
-    borderColor: '#BFDBFE',
+    borderColor: 'rgba(191, 219, 254, 0.45)',
     paddingHorizontal: 14,
     paddingVertical: 6,
     borderRadius: borderRadius.full,
@@ -728,7 +1149,7 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md
   },
   heroBadgeText: {
-    color: '#1D4ED8',
+    color: '#DBEAFE',
     fontSize: 13,
     fontWeight: '800',
     letterSpacing: 0.5
@@ -736,14 +1157,14 @@ const styles = StyleSheet.create({
   heroTitle: {
     fontSize: Platform.OS === 'web' ? 44 : 32,
     fontWeight: '900',
-    color: '#0F172A',
+    color: '#FFFFFF',
     lineHeight: Platform.OS === 'web' ? 52 : 38,
     letterSpacing: -1,
     marginBottom: spacing.md
   },
   heroSubtitle: {
     fontSize: 16,
-    color: '#334155',
+    color: '#E0E7FF',
     lineHeight: 24,
     marginBottom: spacing.xl,
     maxWidth: 540
@@ -766,18 +1187,64 @@ const styles = StyleSheet.create({
     fontWeight: '700'
   },
   heroSecondaryBtn: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
     borderWidth: 1,
-    borderColor: '#CBD5E1',
+    borderColor: 'rgba(255, 255, 255, 0.35)',
     paddingHorizontal: 24,
     paddingVertical: 14,
     borderRadius: borderRadius.md,
     ...shadows.card
   },
   heroSecondaryBtnText: {
-    color: '#1E293B',
+    color: '#FFFFFF',
     fontSize: 15,
     fontWeight: '600'
+  },
+  carouselNavRow: {
+    maxWidth: 1200,
+    width: '100%',
+    alignSelf: 'center',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 16,
+    marginTop: 18,
+    marginBottom: 8,
+    zIndex: 10
+  },
+  carouselArrowBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: 'rgba(255, 255, 255, 0.22)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.35)'
+  },
+  carouselArrowText: {
+    color: '#FFFFFF',
+    fontSize: 20,
+    lineHeight: 22,
+    fontWeight: '700'
+  },
+  carouselDotsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8
+  },
+  carouselDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: 'rgba(255, 255, 255, 0.45)',
+    transition: 'all 0.3s ease' as any
+  },
+  carouselDotActive: {
+    width: 28,
+    backgroundColor: colors.brandPrimary,
+    borderColor: '#FFFFFF',
+    borderWidth: 1
   },
   heroFeatureStrip: {
     maxWidth: 1200,
@@ -938,25 +1405,42 @@ const styles = StyleSheet.create({
     minWidth: 260,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.bgPage,
-    borderRadius: borderRadius.md,
-    borderWidth: 1,
-    borderColor: colors.borderDefault,
-    paddingHorizontal: 12,
-    height: 42
+    backgroundColor: '#EFF6FF',
+    borderRadius: 9999,
+    borderWidth: 1.5,
+    borderColor: '#BFDBFE',
+    paddingHorizontal: 16,
+    height: 48,
+    position: 'relative'
+  },
+  searchInputWrapperFocused: {
+    borderColor: colors.brandPrimary,
+    backgroundColor: '#FFFFFF',
+    shadowColor: colors.brandPrimary,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 4
   },
   searchIcon: {
     fontSize: 16,
-    marginRight: 8
+    marginRight: 10
   },
   searchInput: {
     flex: 1,
     fontSize: 14,
     color: colors.textPrimary,
-    outline: 'none'
+    backgroundColor: 'transparent',
+    borderWidth: 0,
+    // @ts-ignore
+    outlineStyle: 'none',
+    // @ts-ignore
+    outlineWidth: 0,
+    // @ts-ignore
+    boxShadow: 'none'
   },
   clearSearchBtn: {
-    padding: 4
+    padding: 6
   },
   clearSearchText: {
     color: colors.textSecondary,
@@ -965,16 +1449,148 @@ const styles = StyleSheet.create({
   },
   searchSubmitBtn: {
     backgroundColor: colors.brandPrimary,
-    paddingHorizontal: 20,
-    height: 42,
-    borderRadius: borderRadius.md,
+    paddingHorizontal: 22,
+    height: 48,
+    borderRadius: 9999,
     alignItems: 'center',
-    justifyContent: 'center'
+    justifyContent: 'center',
+    ...shadows.card
   },
   searchSubmitBtnText: {
     color: colors.textInverse,
     fontWeight: '700',
     fontSize: 14
+  },
+  campusSearchDropdown: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    borderWidth: 1.5,
+    borderColor: '#BFDBFE',
+    padding: 14,
+    marginTop: 6,
+    marginBottom: 8,
+    maxHeight: 340,
+    ...shadows.modal,
+    zIndex: 99
+  },
+  dropdownHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingBottom: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E2E8F0',
+    marginBottom: 10
+  },
+  dropdownHeaderTitle: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: colors.brandDark
+  },
+  dropdownCloseText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: colors.textSecondary
+  },
+  quickSuggestionsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: 8,
+    paddingBottom: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F1F5F9',
+    marginBottom: 8
+  },
+  quickSuggestionsLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: colors.textSecondary
+  },
+  quickSuggestionPill: {
+    backgroundColor: '#EFF6FF',
+    borderWidth: 1,
+    borderColor: '#BFDBFE',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 20
+  },
+  quickSuggestionText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: colors.brandPrimary
+  },
+  dropdownScroll: {
+    maxHeight: 220
+  },
+  dropdownItemRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 10,
+    paddingHorizontal: 10,
+    borderRadius: 10,
+    gap: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F8FAFC'
+  },
+  dropdownItemRowActive: {
+    backgroundColor: '#EFF6FF'
+  },
+  dropdownItemIconCircle: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#DBEAFE',
+    alignItems: 'center',
+    justifyContent: 'center'
+  },
+  dropdownItemName: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: colors.textPrimary
+  },
+  dropdownBoardBadge: {
+    backgroundColor: '#EFF6FF',
+    borderWidth: 1,
+    borderColor: '#BFDBFE',
+    paddingHorizontal: 6,
+    paddingVertical: 1,
+    borderRadius: 6
+  },
+  dropdownBoardText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: colors.brandPrimary
+  },
+  dropdownItemLoc: {
+    fontSize: 11,
+    color: colors.textSecondary,
+    marginTop: 2
+  },
+  dropdownSeatsBadge: {
+    backgroundColor: '#DCFCE7',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 8
+  },
+  dropdownSeatsText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#15803D'
+  },
+  dropdownSelectArrow: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: colors.brandPrimary
+  },
+  dropdownEmpty: {
+    padding: 16,
+    alignItems: 'center'
+  },
+  dropdownEmptyText: {
+    fontSize: 13,
+    color: colors.textSecondary,
+    textAlign: 'center'
   },
   dropdownsRow: {
     flexDirection: 'row',
@@ -1026,69 +1642,265 @@ const styles = StyleSheet.create({
   mapCanvas: {
     flex: 1,
     minWidth: 320,
-    height: 380,
-    backgroundColor: colors.brandLight,
+    height: 440,
+    backgroundColor: '#F8FAFC',
     borderRadius: borderRadius.xl,
-    padding: spacing.md,
-    borderWidth: 1,
+    borderWidth: 1.5,
     borderColor: '#BFDBFE',
     position: 'relative',
-    overflow: 'hidden'
+    overflow: 'hidden',
+    ...shadows.card
+  },
+  mapCanvasHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    backgroundColor: '#FFFFFF',
+    borderBottomWidth: 1,
+    borderBottomColor: '#E2E8F0',
+    zIndex: 10
+  },
+  mapHeaderLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    flexWrap: 'wrap'
   },
   mapTitle: {
     fontSize: 13,
-    fontWeight: '700',
+    fontWeight: '800',
     color: colors.brandDark
   },
-  mapGridLines: {
-    ...StyleSheet.absoluteFillObject
+  mapRegionBadge: {
+    backgroundColor: '#EFF6FF',
+    borderWidth: 1,
+    borderColor: '#BFDBFE',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 12
   },
-  mapGridLine: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    height: 1,
-    backgroundColor: 'rgba(29, 78, 216, 0.08)'
+  mapRegionText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: colors.brandPrimary
+  },
+  mapZoomControls: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6
+  },
+  zoomBtn: {
+    width: 28,
+    height: 28,
+    borderRadius: 6,
+    backgroundColor: '#EFF6FF',
+    borderWidth: 1,
+    borderColor: '#BFDBFE',
+    alignItems: 'center',
+    justifyContent: 'center'
+  },
+  zoomBtnText: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: colors.brandPrimary,
+    lineHeight: 18
+  },
+  zoomResetBtn: {
+    paddingHorizontal: 8,
+    height: 28,
+    borderRadius: 6,
+    backgroundColor: '#EFF6FF',
+    borderWidth: 1,
+    borderColor: '#BFDBFE',
+    alignItems: 'center',
+    justifyContent: 'center'
+  },
+  zoomResetText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: colors.brandPrimary
+  },
+  mapViewport: {
+    flex: 1,
+    position: 'relative',
+    overflow: 'hidden'
+  },
+  mapScalableCanvas: {
+    width: '100%',
+    height: '100%',
+    position: 'relative'
   },
   mapPin: {
     position: 'absolute',
-    alignItems: 'center'
+    alignItems: 'center',
+    transform: [{ translateX: -18 }, { translateY: -36 }],
+    zIndex: 20
   },
   mapPinActive: {
-    transform: [{ scale: 1.15 }]
+    zIndex: 30,
+    transform: [{ translateX: -20 }, { translateY: -40 }, { scale: 1.1 }]
   },
-  pinDot: {
-    width: 16,
-    height: 16,
-    borderRadius: 8,
+  pinRadarPulse: {
+    position: 'absolute',
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'rgba(220, 38, 38, 0.25)',
+    top: -4,
+    left: 2
+  },
+  pinHead: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
     backgroundColor: colors.brandPrimary,
-    borderWidth: 3,
+    borderWidth: 2.5,
     borderColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
     ...shadows.card
   },
-  pinDotActive: {
-    backgroundColor: colors.statusDanger,
-    width: 20,
-    height: 20,
-    borderRadius: 10
+  pinHeadActive: {
+    backgroundColor: '#DC2626',
+    width: 32,
+    height: 32,
+    borderRadius: 16
   },
-  pinName: {
-    fontSize: 10,
-    fontWeight: '700',
-    color: colors.brandDark,
-    backgroundColor: 'rgba(255, 255, 255, 0.85)',
+  pinIcon: {
+    fontSize: 13,
+    color: '#FFFFFF'
+  },
+  pinStem: {
+    width: 3,
+    height: 8,
+    backgroundColor: colors.brandPrimary,
+    marginTop: -1
+  },
+  pinStemActive: {
+    backgroundColor: '#DC2626',
+    height: 10
+  },
+  pinBadge: {
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    borderWidth: 1,
+    borderColor: '#BFDBFE',
     paddingHorizontal: 6,
     paddingVertical: 2,
-    borderRadius: borderRadius.sm,
-    marginTop: 2
+    borderRadius: 6,
+    marginTop: 2,
+    maxWidth: 120,
+    ...shadows.card
+  },
+  pinBadgeActive: {
+    backgroundColor: colors.brandDark,
+    borderColor: colors.brandDark
+  },
+  pinBadgeText: {
+    fontSize: 9,
+    fontWeight: '700',
+    color: colors.brandDark
+  },
+  pinBadgeTextActive: {
+    color: '#FFFFFF'
+  },
+  floatingInfoCard: {
+    position: 'absolute',
+    bottom: 34,
+    left: 14,
+    right: 14,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 14,
+    padding: 12,
+    borderWidth: 1.5,
+    borderColor: '#BFDBFE',
+    ...shadows.modal,
+    zIndex: 40
+  },
+  floatingCardClose: {
+    position: 'absolute',
+    top: 8,
+    right: 10,
+    zIndex: 10,
+    padding: 4
+  },
+  floatingCardCloseText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: colors.textSecondary
+  },
+  floatingCardHeader: {
+    flexDirection: 'row',
+    gap: 10,
+    alignItems: 'center',
+    marginBottom: 6
+  },
+  floatingCardPhoto: {
+    width: 50,
+    height: 42,
+    borderRadius: 8
+  },
+  floatingBoardPill: {
+    alignSelf: 'flex-start',
+    backgroundColor: '#EFF6FF',
+    borderWidth: 1,
+    borderColor: '#BFDBFE',
+    paddingHorizontal: 6,
+    paddingVertical: 1,
+    borderRadius: 6,
+    marginBottom: 2
+  },
+  floatingBoardText: {
+    fontSize: 9,
+    fontWeight: '700',
+    color: colors.brandPrimary
+  },
+  floatingCardTitle: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: colors.textPrimary
+  },
+  floatingCardAddress: {
+    fontSize: 11,
+    color: colors.textSecondary,
+    marginBottom: 8
+  },
+  floatingCardFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center'
+  },
+  floatingSeatsTag: {
+    backgroundColor: '#DCFCE7',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6
+  },
+  floatingSeatsText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#15803D'
+  },
+  floatingApplyBtn: {
+    backgroundColor: colors.brandPrimary,
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+    borderRadius: 8
+  },
+  floatingApplyText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#FFFFFF'
   },
   mapHint: {
     position: 'absolute',
-    bottom: 12,
-    left: 12,
-    fontSize: 11,
-    color: colors.brandDark,
-    fontWeight: '500'
+    bottom: 8,
+    left: 14,
+    right: 14,
+    fontSize: 10,
+    color: '#64748B',
+    fontWeight: '600'
   },
   campusCardsCol: {
     flex: 1,
@@ -1146,10 +1958,17 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.borderDefault
   },
+  viewDetailBtnActive: {
+    backgroundColor: colors.brandPrimary,
+    borderColor: colors.brandPrimary
+  },
   viewDetailText: {
     fontSize: 12,
     fontWeight: '700',
     color: colors.brandPrimary
+  },
+  viewDetailTextActive: {
+    color: '#FFFFFF'
   },
   emptyStateBox: {
     backgroundColor: colors.bgSurface,
