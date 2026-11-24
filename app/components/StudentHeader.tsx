@@ -146,25 +146,57 @@ export const StudentHeader: React.FC = () => {
             )}
           </View>
 
-          {/* Search Results Dropdown Popover */}
-          {isSearchFocused && searchQuery.trim().length > 0 && (
+          {/* Search Suggestions & Results Dropdown Popover */}
+          {isSearchFocused && (
             <View style={styles.searchResultsDropdown}>
               <View style={styles.searchDropdownHeader}>
                 <Text style={styles.searchDropdownHeaderText}>
-                  Search Results ({filteredSearchResults.length})
+                  {searchQuery.trim().length > 0
+                    ? `Search Results (${filteredSearchResults.length})`
+                    : '⚡ Quick-Jump Suggestions'}
                 </Text>
                 <TouchableOpacity onPress={() => setIsSearchFocused(false)}>
                   <Text style={styles.closeSearchDropdown}>Close ✕</Text>
                 </TouchableOpacity>
               </View>
 
+              {/* Quick Jump Category Chips when query is empty */}
+              {searchQuery.trim().length === 0 && (
+                <View style={styles.quickCategoryChipsRow}>
+                  <TouchableOpacity
+                    style={styles.quickCategoryChip}
+                    onPress={() => setSearchQuery('Step')}
+                  >
+                    <Text style={styles.quickCategoryChipText}>📋 Steps 1–9</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={styles.quickCategoryChip}
+                    onPress={() => setSearchQuery('Curriculum')}
+                  >
+                    <Text style={styles.quickCategoryChipText}>📚 Curriculum</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={styles.quickCategoryChip}
+                    onPress={() => setSearchQuery('Facility')}
+                  >
+                    <Text style={styles.quickCategoryChipText}>🏨 Facilities</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={styles.quickCategoryChip}
+                    onPress={() => setSearchQuery('Document')}
+                  >
+                    <Text style={styles.quickCategoryChipText}>📑 Documents</Text>
+                  </TouchableOpacity>
+                </View>
+              )}
+
               <ScrollView
                 style={styles.searchResultsScroll}
                 keyboardShouldPersistTaps="handled"
                 showsVerticalScrollIndicator={false}
               >
-                {filteredSearchResults.length > 0 ? (
-                  filteredSearchResults.map((item) => {
+                {(searchQuery.trim().length > 0 ? filteredSearchResults : SEARCH_ITEMS).length > 0 ? (
+                  (searchQuery.trim().length > 0 ? filteredSearchResults : SEARCH_ITEMS).map((item) => {
                     const badge = getCategoryBadgeColor(item.category);
                     return (
                       <TouchableOpacity
@@ -404,7 +436,17 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 13,
     color: colors.textPrimary,
-    outlineWidth: 0 as any
+    borderWidth: 0,
+    backgroundColor: 'transparent',
+    padding: 0,
+    ...(Platform.OS === 'web'
+      ? ({
+          outlineStyle: 'none',
+          outline: 'none',
+          border: 'none',
+          boxShadow: 'none'
+        } as any)
+      : {})
   },
   clearSearchBtn: {
     paddingHorizontal: 6,
@@ -414,6 +456,29 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: colors.textSecondary,
     fontWeight: '700'
+  },
+  quickCategoryChipsRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    backgroundColor: '#F8FAFC',
+    borderBottomWidth: 1,
+    borderBottomColor: colors.borderDefault
+  },
+  quickCategoryChip: {
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#CBD5E1',
+    borderRadius: borderRadius.full,
+    paddingHorizontal: 10,
+    paddingVertical: 4
+  },
+  quickCategoryChipText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: colors.brandPrimary
   },
   searchResultsDropdown: {
     position: 'absolute',

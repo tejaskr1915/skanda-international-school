@@ -8,6 +8,18 @@ interface StepperProps {
   maxUnlockedStep?: number;
 }
 
+const SUB_STEP_METADATA: Record<number, { step: number; label: string; short: string }> = {
+  1: { step: 1, label: 'Verify Account & Mobile', short: 'Step 1: Account Verification' },
+  2: { step: 2, label: 'Programme & Class Selection', short: 'Step 2: Programme & Class' },
+  3: { step: 3, label: 'Affiliated Board Selection', short: 'Step 3: Board Selection' },
+  4: { step: 4, label: 'Curriculum & Subjects', short: 'Step 4: Curriculum & Subjects' },
+  5: { step: 5, label: 'Student Personal Details', short: 'Step 5: Student Personal Details' },
+  6: { step: 6, label: 'Parent & Guardian Information', short: 'Step 6: Parent / Guardian Details' },
+  7: { step: 7, label: 'Previous Education', short: 'Step 7: Previous Education' },
+  8: { step: 8, label: 'Campus Facilities', short: 'Step 8: Facilities' },
+  9: { step: 9, label: 'Documents & Final Submit', short: 'Step 9: Documents & Review' }
+};
+
 export const AdmissionStepper: React.FC<StepperProps> = ({
   currentStep,
   onSelectStep,
@@ -18,7 +30,7 @@ export const AdmissionStepper: React.FC<StepperProps> = ({
     { id: 1, title: 'Verify', subSteps: [1] },
     { id: 2, title: 'Programme & Board', subSteps: [2, 3, 4] },
     { id: 3, title: 'Details', subSteps: [5, 6, 7] },
-    { id: 4, title: 'Facilities & Documents', subSteps: [8] },
+    { id: 4, title: 'Facilities & Documents', subSteps: [8, 9] },
     { id: 5, title: 'Review & Submit', subSteps: [9] }
   ];
 
@@ -50,6 +62,12 @@ export const AdmissionStepper: React.FC<StepperProps> = ({
     if (currentStep < 9) return { isCurrent: false, isPassed: false, fill: 0 };
     return { isCurrent: true, isPassed: false, fill: 100 };
   };
+
+  // Determine active stage and its sub-steps
+  const activeStageId =
+    currentStep === 1 ? 1 : currentStep <= 4 ? 2 : currentStep <= 7 ? 3 : currentStep === 8 ? 4 : 5;
+  const activeSubSteps =
+    activeStageId === 1 ? [1] : activeStageId === 2 ? [2, 3, 4] : activeStageId === 3 ? [5, 6, 7] : [8, 9];
 
   return (
     <View style={styles.stepperContainer}>
@@ -123,12 +141,63 @@ export const AdmissionStepper: React.FC<StepperProps> = ({
         })}
       </View>
 
-      {/* Substep breadcrumb info */}
-      <View style={styles.substepBar}>
-        <Text style={styles.substepInfo}>
-          Step {currentStep} of 9:{' '}
-          <Text style={styles.substepHighlight}>{getStepTitle(currentStep)}</Text>
-        </Text>
+      {/* Sub-Step Navigation Bar Below the 5 Cards */}
+      <View style={styles.subStepNavBar}>
+        <View style={styles.subStepPillsRow}>
+          {activeSubSteps.map((stepNum, idx) => {
+            const isCompleted = stepNum < currentStep;
+            const isActive = stepNum === currentStep;
+            const isUpcoming = stepNum > currentStep;
+            const meta = SUB_STEP_METADATA[stepNum];
+            const canClick = onSelectStep && stepNum <= maxUnlockedStep;
+
+            return (
+              <React.Fragment key={stepNum}>
+                {idx > 0 && <Text style={styles.subStepArrow}>➜</Text>}
+                <TouchableOpacity
+                  style={[
+                    styles.subStepPill,
+                    isActive && styles.subStepPillActive,
+                    isCompleted && styles.subStepPillCompleted,
+                    isUpcoming && styles.subStepPillUpcoming
+                  ]}
+                  disabled={!canClick}
+                  onPress={() => onSelectStep && onSelectStep(stepNum)}
+                  activeOpacity={0.8}
+                >
+                  <Text
+                    style={[
+                      styles.subStepPillIcon,
+                      isActive && styles.subStepPillIconActive,
+                      isCompleted && styles.subStepPillIconCompleted,
+                      isUpcoming && styles.subStepPillIconUpcoming
+                    ]}
+                  >
+                    {isCompleted ? '✓' : isActive ? '●' : '○'}
+                  </Text>
+                  <Text
+                    style={[
+                      styles.subStepPillText,
+                      isActive && styles.subStepPillTextActive,
+                      isCompleted && styles.subStepPillTextCompleted,
+                      isUpcoming && styles.subStepPillTextUpcoming
+                    ]}
+                  >
+                    {meta.short}
+                  </Text>
+                </TouchableOpacity>
+              </React.Fragment>
+            );
+          })}
+        </View>
+
+        {/* Substep breadcrumb info label */}
+        <View style={styles.substepLabelRow}>
+          <Text style={styles.substepInfo}>
+            Step {currentStep} of 9:{' '}
+            <Text style={styles.substepHighlight}>{getStepTitle(currentStep)}</Text>
+          </Text>
+        </View>
       </View>
     </View>
   );
@@ -244,14 +313,78 @@ const styles = StyleSheet.create({
     height: '100%',
     borderRadius: 3
   },
-  substepBar: {
-    marginTop: spacing.md,
-    paddingTop: spacing.sm,
+  subStepNavBar: {
+    marginTop: 14,
+    paddingTop: 12,
     borderTopWidth: 1,
     borderTopColor: colors.borderDefault,
+    gap: 10
+  },
+  subStepPillsRow: {
     flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: 8
+  },
+  subStepPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: borderRadius.full,
+    borderWidth: 1,
+    gap: 6
+  },
+  subStepPillActive: {
+    backgroundColor: colors.brandPrimary,
+    borderColor: colors.brandPrimary
+  },
+  subStepPillCompleted: {
+    backgroundColor: '#DCFCE7',
+    borderColor: '#86EFAC'
+  },
+  subStepPillUpcoming: {
+    backgroundColor: '#F1F5F9',
+    borderColor: '#E2E8F0'
+  },
+  subStepPillIcon: {
+    fontSize: 11
+  },
+  subStepPillIconActive: {
+    color: colors.textInverse
+  },
+  subStepPillIconCompleted: {
+    color: colors.statusSuccess,
+    fontWeight: '700'
+  },
+  subStepPillIconUpcoming: {
+    color: colors.textSecondary
+  },
+  subStepPillText: {
+    fontSize: 12,
+    fontWeight: '600'
+  },
+  subStepPillTextActive: {
+    color: colors.textInverse,
+    fontWeight: '700'
+  },
+  subStepPillTextCompleted: {
+    color: colors.statusSuccess,
+    fontWeight: '600'
+  },
+  subStepPillTextUpcoming: {
+    color: colors.textSecondary
+  },
+  subStepArrow: {
+    color: '#94A3B8',
+    fontSize: 12,
+    fontWeight: '700'
+  },
+  substepLabelRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
     justifyContent: 'space-between',
-    alignItems: 'center'
+    marginTop: 2
   },
   substepInfo: {
     fontSize: 13,

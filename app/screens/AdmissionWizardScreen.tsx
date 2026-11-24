@@ -61,6 +61,19 @@ export const AdmissionWizardScreen: React.FC<WizardProps> = ({ initialStep = 1 }
   const [s1ConfirmPassword, setS1ConfirmPassword] = useState('');
   const [s1ShowPassword, setS1ShowPassword] = useState(false);
   const [s1OtpNotice, setS1OtpNotice] = useState<string | null>(null);
+  const [s1OtpStepActive, setS1OtpStepActive] = useState<boolean>(false);
+  const [s1OtpInput, setS1OtpInput] = useState<string>('');
+  const [s3WaitlistConfirmed, setS3WaitlistConfirmed] = useState<boolean>(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  const clearError = (field: string) => {
+    setErrors(prev => {
+      if (!prev[field]) return prev;
+      const next = { ...prev };
+      delete next[field];
+      return next;
+    });
+  };
 
   // Step 2: Programme
   const [s2Type, setS2Type] = useState<'SCHOOL' | 'COLLEGE'>(application?.institutionType || 'SCHOOL');
@@ -248,38 +261,199 @@ export const AdmissionWizardScreen: React.FC<WizardProps> = ({ initialStep = 1 }
   }, [s5Dob, s2Class, classOptions]);
 
   // -------------------------------------------------------------
+  // COMPREHENSIVE INLINE FORM VALIDATION FUNCTIONS (STEPS 1-9)
+  // -------------------------------------------------------------
+  const validateStep1 = () => {
+    const errs: Record<string, string> = {};
+    if (!s1FullName.trim()) {
+      errs.s1FullName = 'Full name is required.';
+    } else if (!/^[A-Za-z\s.]{2,}$/.test(s1FullName.trim())) {
+      errs.s1FullName = 'Please enter a valid name (at least 2 alphabetic characters).';
+    }
+
+    const cleanMobile = s1Mobile.replace(/\D/g, '');
+    if (!cleanMobile) {
+      errs.s1Mobile = '10-digit mobile number is required.';
+    } else if (!/^[6-9]\d{9}$/.test(cleanMobile)) {
+      errs.s1Mobile = 'Enter a valid 10-digit Indian mobile number starting with 6, 7, 8, or 9.';
+    }
+
+    if (!s1Email.trim()) {
+      errs.s1Email = 'Email address is required.';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s1Email.trim())) {
+      errs.s1Email = 'Please enter a valid email address (e.g. name@domain.com).';
+    }
+
+    const pwdRegex = /^(?=.*[A-Za-z])(?=.*\d).{8,}$/;
+    if (!s1Password) {
+      errs.s1Password = 'Password is required.';
+    } else if (!pwdRegex.test(s1Password)) {
+      errs.s1Password = 'Password must be min. 8 characters with at least 1 letter and 1 number.';
+    }
+
+    if (!s1ConfirmPassword) {
+      errs.s1ConfirmPassword = 'Confirm password is required.';
+    } else if (s1Password !== s1ConfirmPassword) {
+      errs.s1ConfirmPassword = 'Passwords do not match.';
+    }
+
+    return errs;
+  };
+
+  const validateStep2 = () => {
+    const errs: Record<string, string> = {};
+    if (!s2Type) errs.s2Type = 'Please select institution type (School or College).';
+    if (!s2Class) errs.s2Class = 'Please select a Class or Course.';
+    if (!s2AcademicYear) errs.s2AcademicYear = 'Academic year is required.';
+    if (!s2Mode) errs.s2Mode = 'Please select Mode of Attendance (Day Scholar, Day Boarding, or Residential).';
+    return errs;
+  };
+
+  const validateStep3 = () => {
+    const errs: Record<string, string> = {};
+    if (!s3Board) {
+      errs.s3Board = 'Please select an Affiliated Board (CBSE, ICSE, or State).';
+    } else if (s3Board === 'STATE' && !s3WaitlistConfirmed) {
+      errs.s3Waitlist = 'State Board is currently on Waitlist. Please confirm waitlist opt-in to proceed.';
+    }
+    return errs;
+  };
+
+  const validateStep4 = () => {
+    const errs: Record<string, string> = {};
+    if (s4SubjectsData?.languageChoices && s4SubjectsData.languageChoices.length > 0) {
+      if (!s4SelectedLanguage) {
+        errs.s4SelectedLanguage = 'Please select your mandatory Second Language choice.';
+      }
+    }
+    if (s4SubjectsData?.streams && s4SubjectsData.streams.length > 0) {
+      if (!s4SelectedStream) {
+        errs.s4SelectedStream = 'Please select a Senior Secondary Stream & Electives combination.';
+      }
+    }
+    return errs;
+  };
+
+  const validateStep5 = () => {
+    const errs: Record<string, string> = {};
+    if (!s5FullName.trim()) {
+      errs.s5FullName = 'Student full name is required.';
+    } else if (!/^[A-Za-z\s.]{2,}$/.test(s5FullName.trim())) {
+      errs.s5FullName = 'Name must contain at least 2 alphabetic characters.';
+    }
+    if (!s5Gender) {
+      errs.s5Gender = 'Please select student gender.';
+    }
+    if (!s5BloodGroup.trim()) {
+      errs.s5BloodGroup = 'Blood group is required (e.g. O+, A+, B+).';
+    }
+    if (!s5Dob.trim()) {
+      errs.s5Dob = 'Date of birth is required (YYYY-MM-DD).';
+    } else if (isNaN(new Date(s5Dob).getTime())) {
+      errs.s5Dob = 'Please enter a valid date in YYYY-MM-DD format.';
+    } else if (!s5AgeValidation.valid) {
+      errs.s5Dob = s5AgeValidation.message || 'Age requirement not met for the selected class.';
+    }
+    if (!s5Nationality.trim()) {
+      errs.s5Nationality = 'Nationality is required.';
+    }
+    if (!s5Address.trim()) {
+      errs.s5Address = 'Residential address is required.';
+    } else if (s5Address.trim().length < 10) {
+      errs.s5Address = 'Residential address must be at least 10 characters.';
+    }
+    return errs;
+  };
+
+  const validateStep6 = () => {
+    const errs: Record<string, string> = {};
+    if (!s6FatherName.trim() && !s6MotherName.trim() && !s6GuardianName.trim()) {
+      errs.s6ParentName = 'At least one Parent or Guardian name is required.';
+    }
+    if (!s6FatherOccupation.trim() && !s6MotherOccupation.trim()) {
+      errs.s6ParentOccupation = 'Parent or Guardian occupation is required.';
+    }
+    const cleanPhone = s6ParentMobile.replace(/\D/g, '');
+    if (!cleanPhone) {
+      errs.s6ParentMobile = 'Parent mobile number is required.';
+    } else if (!/^[6-9]\d{9}$/.test(cleanPhone)) {
+      errs.s6ParentMobile = 'Please enter a valid 10-digit Indian mobile number (starting with 6-9).';
+    }
+    if (!s6ParentEmail.trim()) {
+      errs.s6ParentEmail = 'Parent email address is required.';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s6ParentEmail.trim())) {
+      errs.s6ParentEmail = 'Please enter a valid email address.';
+    }
+    return errs;
+  };
+
+  const validateStep7 = () => {
+    const errs: Record<string, string> = {};
+    const isGrade2OrHigher = !['Nursery', 'LKG', 'UKG', 'Grade 1'].includes(s2Class);
+    if (isGrade2OrHigher) {
+      if (!s7LastSchool.trim()) {
+        errs.s7LastSchool = 'Previous school or college name is required.';
+      }
+      if (!s7Board.trim()) {
+        errs.s7Board = 'Previous affiliated board / university is required.';
+      }
+      if (!s7PassingYear.trim()) {
+        errs.s7PassingYear = 'Passing year is required.';
+      } else if (!/^\d{4}$/.test(s7PassingYear.trim()) || parseInt(s7PassingYear) < 2000 || parseInt(s7PassingYear) > 2026) {
+        errs.s7PassingYear = 'Please enter a valid 4-digit passing year (e.g. 2025).';
+      }
+      if (!s7Marks.trim()) {
+        errs.s7Marks = 'Marks percentage or CGPA is required.';
+      }
+    }
+    return errs;
+  };
+
+  const validateStep8 = () => {
+    const errs: Record<string, string> = {};
+    if (s8HostelOpted && (!s8RoomType || !s8RoomType.trim())) {
+      errs.s8RoomType = 'Please select a Room Type when hostel accommodation is opted.';
+    }
+    if (s8TransportOpted && (!s8PickupArea || s8PickupArea.trim().length < 3)) {
+      errs.s8PickupArea = 'Please specify your Preferred Pickup Area (minimum 3 characters).';
+    }
+    return errs;
+  };
+
+  const validateStep9 = () => {
+    const errs: Record<string, string> = {};
+    const isGrade2OrHigher = !['Nursery', 'LKG', 'UKG', 'Grade 1'].includes(s2Class);
+    if (!s9PhotoUploaded) {
+      errs.s9Photo = 'Student passport photograph is mandatory (max 5MB, JPG/PNG).';
+    }
+    if (!s9IdUploaded) {
+      errs.s9Id = 'Identity proof / Birth certificate is mandatory (max 5MB, PDF/JPG/PNG).';
+    }
+    if (isGrade2OrHigher && !s9MarksheetUploaded) {
+      errs.s9Marksheet = 'Previous marksheet / report card is mandatory for Grade 2 and higher.';
+    }
+    if (!s9Declaration) {
+      errs.s9Declaration = 'You must check the declaration box before submitting.';
+    }
+    return errs;
+  };
+
+  // -------------------------------------------------------------
   // STEP ACTION HANDLERS
   // -------------------------------------------------------------
 
   // STEP 1: Verify & Register
   const handleStep1Submit = async () => {
     setStatusMessage(null);
-    if (!s1FullName.trim()) {
-      setStatusMessage({ text: 'Please enter applicant full name.', type: 'error' });
+    const errs = validateStep1();
+    if (Object.keys(errs).length > 0) {
+      setErrors(errs);
+      setStatusMessage({ text: 'Please resolve the highlighted errors to proceed.', type: 'error' });
       return;
     }
-    const cleanMobile = s1Mobile.replace(/\D/g, '');
-    if (cleanMobile.length !== 10) {
-      setStatusMessage({ text: 'Please enter a valid 10-digit mobile number.', type: 'error' });
-      return;
-    }
-    if (!s1Email.includes('@') || !s1Email.includes('.')) {
-      setStatusMessage({ text: 'Please enter a valid email address.', type: 'error' });
-      return;
-    }
-    const pwdRegex = /^(?=.*[A-Za-z])(?=.*\d).{8,}$/;
-    if (!pwdRegex.test(s1Password)) {
-      setStatusMessage({
-        text: 'Password must be at least 8 characters with at least 1 letter and 1 number.',
-        type: 'error'
-      });
-      return;
-    }
-    if (s1Password !== s1ConfirmPassword) {
-      setStatusMessage({ text: 'Confirm password does not match.', type: 'error' });
-      return;
-    }
+    setErrors({});
 
+    const cleanMobile = s1Mobile.replace(/\D/g, '');
     setLoading(true);
     try {
       const res = await api.registerStep1({
@@ -294,11 +468,41 @@ export const AdmissionWizardScreen: React.FC<WizardProps> = ({ initialStep = 1 }
         if (res.otpPreview) {
           setS1OtpNotice(res.otpPreview);
         }
-        setStatusMessage({ text: 'Account registered and draft application created! Proceeding to Step 2.', type: 'success' });
-        setCurrentStep(2);
+        setS1OtpStepActive(true);
+        setStatusMessage({
+          text: `Account created! Verification OTP sent to +91 ${cleanMobile}. Please verify OTP to proceed.`,
+          type: 'info'
+        });
       }
     } catch (err: any) {
       setStatusMessage({ text: err.message || 'Registration failed. Try logging in if already registered.', type: 'error' });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // STEP 1: OTP Verify
+  const handleStep1OtpVerify = async () => {
+    setStatusMessage(null);
+    const cleanMobile = s1Mobile.replace(/\D/g, '');
+    const trimmedOtp = s1OtpInput.trim();
+    if (!trimmedOtp || trimmedOtp.length < 6) {
+      setErrors({ s1Otp: 'Please enter the complete 6-digit OTP code.' });
+      return;
+    }
+    clearError('s1Otp');
+
+    setLoading(true);
+    try {
+      const res = await api.verifyOtp(cleanMobile, trimmedOtp);
+      if (res.success) {
+        setAuthSession(res.token, res.user, res.application);
+        setStatusMessage({ text: 'Mobile OTP verified successfully! Proceeding to Step 2.', type: 'success' });
+        setCurrentStep(2);
+      }
+    } catch (err: any) {
+      setErrors({ s1Otp: err.message || 'Invalid or expired OTP. Please try again.' });
+      setStatusMessage({ text: err.message || 'Invalid OTP.', type: 'error' });
     } finally {
       setLoading(false);
     }
@@ -334,10 +538,13 @@ export const AdmissionWizardScreen: React.FC<WizardProps> = ({ initialStep = 1 }
 
   // STEP 2: Programme
   const handleStep2Submit = () => {
-    if (!s2Class) {
-      setStatusMessage({ text: 'Please select a Class or Course to continue.', type: 'error' });
+    const errs = validateStep2();
+    if (Object.keys(errs).length > 0) {
+      setErrors(errs);
+      setStatusMessage({ text: 'Please resolve the highlighted errors in Step 2.', type: 'error' });
       return;
     }
+    setErrors({});
     handleSaveStep(2, {
       institutionType: s2Type,
       classOrCourse: s2Class,
@@ -349,10 +556,13 @@ export const AdmissionWizardScreen: React.FC<WizardProps> = ({ initialStep = 1 }
 
   // STEP 3: Board
   const handleStep3Submit = () => {
-    if (!s3Board) {
-      setStatusMessage({ text: 'Please select an Affiliated Board (CBSE, ICSE, or State).', type: 'error' });
+    const errs = validateStep3();
+    if (Object.keys(errs).length > 0) {
+      setErrors(errs);
+      setStatusMessage({ text: 'Please select an affiliated board and confirm waitlist if applicable.', type: 'error' });
       return;
     }
+    setErrors({});
     handleSaveStep(3, {
       board: s3Board,
       classOrCourse: s2Class
@@ -361,6 +571,13 @@ export const AdmissionWizardScreen: React.FC<WizardProps> = ({ initialStep = 1 }
 
   // STEP 4: Curriculum
   const handleStep4Submit = () => {
+    const errs = validateStep4();
+    if (Object.keys(errs).length > 0) {
+      setErrors(errs);
+      setStatusMessage({ text: 'Please select your language or stream choices.', type: 'error' });
+      return;
+    }
+    setErrors({});
     handleSaveStep(4, {
       selectedSubjects: {
         compulsory: s4SubjectsData?.compulsory || [],
@@ -372,82 +589,77 @@ export const AdmissionWizardScreen: React.FC<WizardProps> = ({ initialStep = 1 }
 
   // STEP 5: Student Details
   const handleStep5Submit = () => {
-    if (!s5FullName.trim()) {
-      setStatusMessage({ text: 'Student full name is required.', type: 'error' });
+    const errs = validateStep5();
+    if (Object.keys(errs).length > 0) {
+      setErrors(errs);
+      setStatusMessage({ text: 'Please complete all required student fields.', type: 'error' });
       return;
     }
-    if (!s5AgeValidation.valid) {
-      setStatusMessage({ text: s5AgeValidation.message || 'Age requirement not met.', type: 'error' });
-      return;
-    }
-
+    setErrors({});
     handleSaveStep(5, {
-      fullName: s5FullName,
-      dob: s5Dob,
+      fullName: s5FullName.trim(),
+      dob: s5Dob.trim(),
       gender: s5Gender,
-      bloodGroup: s5BloodGroup,
-      nationality: s5Nationality,
-      category: s5Category,
-      idNumber: s5IdNumber,
-      address: { street: s5Address }
+      bloodGroup: s5BloodGroup.trim(),
+      nationality: s5Nationality.trim(),
+      category: s5Category.trim(),
+      idNumber: s5IdNumber.trim(),
+      address: { street: s5Address.trim() }
     });
   };
 
   // STEP 6: Parent Details
   const handleStep6Submit = () => {
-    if (!s6FatherName && !s6MotherName && !s6GuardianName) {
-      setStatusMessage({ text: 'At least one parent or guardian name is required.', type: 'error' });
+    const errs = validateStep6();
+    if (Object.keys(errs).length > 0) {
+      setErrors(errs);
+      setStatusMessage({ text: 'Please complete all required parent/guardian fields.', type: 'error' });
       return;
     }
+    setErrors({});
     const cleanPhone = s6ParentMobile.replace(/\D/g, '');
-    if (cleanPhone && cleanPhone.length !== 10) {
-      setStatusMessage({ text: 'Parent mobile number must be 10 digits.', type: 'error' });
-      return;
-    }
-
     handleSaveStep(6, {
-      fatherName: s6FatherName,
-      motherName: s6MotherName,
-      guardianName: s6GuardianName,
-      fatherOccupation: s6FatherOccupation,
-      motherOccupation: s6MotherOccupation,
+      fatherName: s6FatherName.trim(),
+      motherName: s6MotherName.trim(),
+      guardianName: s6GuardianName.trim(),
+      fatherOccupation: s6FatherOccupation.trim(),
+      motherOccupation: s6MotherOccupation.trim(),
       mobile: cleanPhone,
-      email: s6ParentEmail,
-      emergencyContact: s6EmergencyContact,
-      annualIncome: s6AnnualIncome
+      email: s6ParentEmail.trim(),
+      emergencyContact: s6EmergencyContact.trim(),
+      annualIncome: s6AnnualIncome.trim()
     });
   };
 
   // STEP 7: Previous Education
   const handleStep7Submit = () => {
+    const errs = validateStep7();
+    if (Object.keys(errs).length > 0) {
+      setErrors(errs);
+      setStatusMessage({ text: 'Please provide valid previous education details.', type: 'error' });
+      return;
+    }
+    setErrors({});
     handleSaveStep(7, {
-      lastSchool: s7LastSchool,
-      board: s7Board,
-      passingYear: s7PassingYear,
-      percentageMarks: s7Marks,
-      medium: s7Medium,
-      reasonForLeaving: s7Reason,
-      tcNumber: s7TcDetails
+      lastSchool: s7LastSchool.trim(),
+      board: s7Board.trim(),
+      passingYear: s7PassingYear.trim(),
+      percentageMarks: s7Marks.trim(),
+      medium: s7Medium.trim(),
+      reasonForLeaving: s7Reason.trim(),
+      tcNumber: s7TcDetails.trim()
     });
   };
 
   // STEP 8: Facilities (Strict Conditional Enforcement)
   const handleStep8Submit = () => {
-    if (s8HostelOpted && (!s8RoomType || s8RoomType.trim() === '')) {
-      setStatusMessage({
-        text: 'Please select a Room Type when hostel accommodation is opted.',
-        type: 'error'
-      });
+    const errs = validateStep8();
+    if (Object.keys(errs).length > 0) {
+      setErrors(errs);
+      setStatusMessage({ text: 'Please provide required details for selected amenities.', type: 'error' });
       return;
     }
-    if (s8TransportOpted && (!s8PickupArea || s8PickupArea.trim() === '')) {
-      setStatusMessage({
-        text: 'Please specify your Preferred Pickup Area when school transport is opted.',
-        type: 'error'
-      });
-      return;
-    }
-
+    setErrors({});
     handleSaveStep(8, {
       hostel: {
         opted: s8HostelOpted,
@@ -455,7 +667,7 @@ export const AdmissionWizardScreen: React.FC<WizardProps> = ({ initialStep = 1 }
       },
       transport: {
         opted: s8TransportOpted,
-        pickupArea: s8TransportOpted ? s8PickupArea : null
+        pickupArea: s8TransportOpted ? s8PickupArea.trim() : null
       },
       library: s8LibraryOpted
     });
@@ -464,13 +676,13 @@ export const AdmissionWizardScreen: React.FC<WizardProps> = ({ initialStep = 1 }
   // STEP 9: Final Submit
   const handleFinalSubmit = async () => {
     setStatusMessage(null);
-    if (!s9Declaration) {
-      setStatusMessage({
-        text: 'Please check the declaration checkbox before submitting your application.',
-        type: 'error'
-      });
+    const errs = validateStep9();
+    if (Object.keys(errs).length > 0) {
+      setErrors(errs);
+      setStatusMessage({ text: 'Please upload mandatory documents and accept declaration before submitting.', type: 'error' });
       return;
     }
+    setErrors({});
 
     setLoading(true);
     try {
@@ -489,9 +701,10 @@ export const AdmissionWizardScreen: React.FC<WizardProps> = ({ initialStep = 1 }
       if (res.success) {
         updateApplicationLocally(res.application);
         setSubmissionSuccess(true);
+        setStatusMessage({ text: '🎉 Application submitted successfully! Welcome to Skanda International School.', type: 'success' });
       }
     } catch (err: any) {
-      setStatusMessage({ text: err.message || 'Submission failed. Please review all steps.', type: 'error' });
+      setStatusMessage({ text: err.message || 'Submission failed. Please check all fields.', type: 'error' });
     } finally {
       setLoading(false);
     }
@@ -568,52 +781,73 @@ export const AdmissionWizardScreen: React.FC<WizardProps> = ({ initialStep = 1 }
                 <View style={styles.colHalf}>
                   <Text style={styles.label}>Applicant Full Name *</Text>
                   <TextInput
-                    style={styles.textInput}
+                    style={[styles.textInput, errors.s1FullName && styles.inputError]}
                     placeholder="e.g. Jane Doe"
                     placeholderTextColor={colors.textMuted}
                     value={s1FullName}
-                    onChangeText={setS1FullName}
+                    onChangeText={(val) => {
+                      setS1FullName(val);
+                      clearError('s1FullName');
+                    }}
                   />
+                  {errors.s1FullName && (
+                    <Text style={styles.inlineErrorText}>⚠️ {errors.s1FullName}</Text>
+                  )}
                 </View>
 
                 <View style={styles.colHalf}>
                   <Text style={styles.label}>10-Digit Mobile Number *</Text>
                   <TextInput
-                    style={styles.textInput}
+                    style={[styles.textInput, errors.s1Mobile && styles.inputError]}
                     placeholder="e.g. 9876543210"
                     placeholderTextColor={colors.textMuted}
                     keyboardType="numeric"
                     maxLength={10}
                     value={s1Mobile}
-                    onChangeText={setS1Mobile}
+                    onChangeText={(val) => {
+                      setS1Mobile(val);
+                      clearError('s1Mobile');
+                    }}
                   />
+                  {errors.s1Mobile && (
+                    <Text style={styles.inlineErrorText}>⚠️ {errors.s1Mobile}</Text>
+                  )}
                 </View>
               </View>
 
               <View style={styles.inputGroup}>
                 <Text style={styles.label}>Email Address *</Text>
                 <TextInput
-                  style={styles.textInput}
+                  style={[styles.textInput, errors.s1Email && styles.inputError]}
                   placeholder="e.g. jane.doe@example.com"
                   placeholderTextColor={colors.textMuted}
                   keyboardType="email-address"
                   autoCapitalize="none"
                   value={s1Email}
-                  onChangeText={setS1Email}
+                  onChangeText={(val) => {
+                    setS1Email(val);
+                    clearError('s1Email');
+                  }}
                 />
+                {errors.s1Email && (
+                  <Text style={styles.inlineErrorText}>⚠️ {errors.s1Email}</Text>
+                )}
               </View>
 
               <View style={styles.formGrid}>
                 <View style={styles.colHalf}>
                   <Text style={styles.label}>Create Password *</Text>
-                  <View style={styles.passwordRow}>
+                  <View style={[styles.passwordRow, errors.s1Password && styles.inputError]}>
                     <TextInput
                       style={styles.passwordInput}
                       placeholder="Min. 8 chars, 1 letter, 1 number"
                       placeholderTextColor={colors.textMuted}
                       secureTextEntry={!s1ShowPassword}
                       value={s1Password}
-                      onChangeText={setS1Password}
+                      onChangeText={(val) => {
+                        setS1Password(val);
+                        clearError('s1Password');
+                      }}
                     />
                     <TouchableOpacity
                       onPress={() => setS1ShowPassword(!s1ShowPassword)}
@@ -622,18 +856,27 @@ export const AdmissionWizardScreen: React.FC<WizardProps> = ({ initialStep = 1 }
                       <Text style={styles.eyeText}>{s1ShowPassword ? '👁️' : '🙈'}</Text>
                     </TouchableOpacity>
                   </View>
+                  {errors.s1Password && (
+                    <Text style={styles.inlineErrorText}>⚠️ {errors.s1Password}</Text>
+                  )}
                 </View>
 
                 <View style={styles.colHalf}>
                   <Text style={styles.label}>Confirm Password *</Text>
                   <TextInput
-                    style={styles.textInput}
+                    style={[styles.textInput, errors.s1ConfirmPassword && styles.inputError]}
                     placeholder="Re-enter chosen password"
                     placeholderTextColor={colors.textMuted}
                     secureTextEntry={!s1ShowPassword}
                     value={s1ConfirmPassword}
-                    onChangeText={setS1ConfirmPassword}
+                    onChangeText={(val) => {
+                      setS1ConfirmPassword(val);
+                      clearError('s1ConfirmPassword');
+                    }}
                   />
+                  {errors.s1ConfirmPassword && (
+                    <Text style={styles.inlineErrorText}>⚠️ {errors.s1ConfirmPassword}</Text>
+                  )}
                 </View>
               </View>
 
@@ -649,18 +892,53 @@ export const AdmissionWizardScreen: React.FC<WizardProps> = ({ initialStep = 1 }
                 </View>
               )}
 
-              <View style={styles.btnRow}>
-                <TouchableOpacity
-                  style={[styles.primaryBtn, loading && styles.disabledBtn]}
-                  onPress={handleStep1Submit}
-                  disabled={loading}
-                >
-                  {loading ? (
-                    <ActivityIndicator color={colors.textInverse} />
-                  ) : (
-                    <Text style={styles.primaryBtnText}>Create Account & Continue ➜ Programme</Text>
+              {/* OTP Verification Prompt */}
+              {s1OtpStepActive && (
+                <View style={styles.otpVerificationBox}>
+                  <Text style={styles.label}>Enter 6-Digit OTP sent to +91 {s1Mobile} *</Text>
+                  <TextInput
+                    style={[styles.textInput, errors.s1Otp && styles.inputError, { fontSize: 18, letterSpacing: 4, textAlign: 'center' }]}
+                    placeholder="• • • • • •"
+                    placeholderTextColor={colors.textMuted}
+                    keyboardType="numeric"
+                    maxLength={6}
+                    value={s1OtpInput}
+                    onChangeText={(val) => {
+                      setS1OtpInput(val);
+                      clearError('s1Otp');
+                    }}
+                  />
+                  {errors.s1Otp && (
+                    <Text style={styles.inlineErrorText}>⚠️ {errors.s1Otp}</Text>
                   )}
-                </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.primaryBtn, { marginTop: 10 }, loading && styles.disabledBtn]}
+                    onPress={handleStep1OtpVerify}
+                    disabled={loading}
+                  >
+                    {loading ? (
+                      <ActivityIndicator color={colors.textInverse} />
+                    ) : (
+                      <Text style={styles.primaryBtnText}>Verify OTP & Proceed ➜ Programme</Text>
+                    )}
+                  </TouchableOpacity>
+                </View>
+              )}
+
+              <View style={styles.btnRow}>
+                {!s1OtpStepActive && (
+                  <TouchableOpacity
+                    style={[styles.primaryBtn, loading && styles.disabledBtn]}
+                    onPress={handleStep1Submit}
+                    disabled={loading}
+                  >
+                    {loading ? (
+                      <ActivityIndicator color={colors.textInverse} />
+                    ) : (
+                      <Text style={styles.primaryBtnText}>Create Account & Verify OTP ➜</Text>
+                    )}
+                  </TouchableOpacity>
+                )}
 
                 <TouchableOpacity
                   style={styles.secondaryBtn}
@@ -694,8 +972,11 @@ export const AdmissionWizardScreen: React.FC<WizardProps> = ({ initialStep = 1 }
               {/* School / College Selector Cards */}
               <View style={styles.cardSelectorRow}>
                 <TouchableOpacity
-                  style={[styles.typeCard, s2Type === 'SCHOOL' && styles.typeCardActive]}
-                  onPress={() => setS2Type('SCHOOL')}
+                  style={[styles.typeCard, s2Type === 'SCHOOL' && styles.typeCardActive, errors.s2Type && styles.inputError]}
+                  onPress={() => {
+                    setS2Type('SCHOOL');
+                    clearError('s2Type');
+                  }}
                 >
                   <Text style={styles.typeIcon}>🏫</Text>
                   <Text style={[styles.typeTitle, s2Type === 'SCHOOL' && styles.typeTitleActive]}>
@@ -706,8 +987,11 @@ export const AdmissionWizardScreen: React.FC<WizardProps> = ({ initialStep = 1 }
                 </TouchableOpacity>
 
                 <TouchableOpacity
-                  style={[styles.typeCard, s2Type === 'COLLEGE' && styles.typeCardActive]}
-                  onPress={() => setS2Type('COLLEGE')}
+                  style={[styles.typeCard, s2Type === 'COLLEGE' && styles.typeCardActive, errors.s2Type && styles.inputError]}
+                  onPress={() => {
+                    setS2Type('COLLEGE');
+                    clearError('s2Type');
+                  }}
                 >
                   <Text style={styles.typeIcon}>🎓</Text>
                   <Text style={[styles.typeTitle, s2Type === 'COLLEGE' && styles.typeTitleActive]}>
@@ -717,11 +1001,14 @@ export const AdmissionWizardScreen: React.FC<WizardProps> = ({ initialStep = 1 }
                   {s2Type === 'COLLEGE' && <View style={styles.typeCheck}><Text style={styles.typeCheckText}>✓ Selected</Text></View>}
                 </TouchableOpacity>
               </View>
+              {errors.s2Type && (
+                <Text style={[styles.inlineErrorText, { marginBottom: 10 }]}>⚠️ {errors.s2Type}</Text>
+              )}
 
               <View style={styles.formGrid}>
                 <View style={styles.colHalf}>
                   <Text style={styles.label}>Class / Course *</Text>
-                  <View style={styles.pickerBox}>
+                  <View style={[styles.pickerBox, errors.s2Class && styles.inputError]}>
                     <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipScroll}>
                       {(s2Type === 'SCHOOL'
                         ? ['Nursery', 'LKG', 'UKG', 'Grade 1', 'Grade 2', 'Grade 3', 'Grade 4', 'Grade 5', 'Grade 6', 'Grade 7', 'Grade 8', 'Grade 9', 'Grade 10', 'Grade 11', 'Grade 12']
@@ -730,7 +1017,10 @@ export const AdmissionWizardScreen: React.FC<WizardProps> = ({ initialStep = 1 }
                         <TouchableOpacity
                           key={item}
                           style={[styles.chip, s2Class === item && styles.chipActive]}
-                          onPress={() => setS2Class(item)}
+                          onPress={() => {
+                            setS2Class(item);
+                            clearError('s2Class');
+                          }}
                         >
                           <Text style={[styles.chipText, s2Class === item && styles.chipTextActive]}>
                             {item}
@@ -739,6 +1029,9 @@ export const AdmissionWizardScreen: React.FC<WizardProps> = ({ initialStep = 1 }
                       ))}
                     </ScrollView>
                   </View>
+                  {errors.s2Class && (
+                    <Text style={styles.inlineErrorText}>⚠️ {errors.s2Class}</Text>
+                  )}
                 </View>
 
                 <View style={styles.colHalf}>
@@ -753,13 +1046,16 @@ export const AdmissionWizardScreen: React.FC<WizardProps> = ({ initialStep = 1 }
 
               <View style={styles.formGrid}>
                 <View style={styles.colHalf}>
-                  <Text style={styles.label}>Mode of Attendance</Text>
+                  <Text style={styles.label}>Mode of Attendance *</Text>
                   <View style={styles.radioGroup}>
                     {['Day Scholar', 'Day Boarding', 'Residential'].map((mode) => (
                       <TouchableOpacity
                         key={mode}
-                        style={[styles.radioPill, s2Mode === mode && styles.radioPillActive]}
-                        onPress={() => setS2Mode(mode)}
+                        style={[styles.radioPill, s2Mode === mode && styles.radioPillActive, errors.s2Mode && styles.inputError]}
+                        onPress={() => {
+                          setS2Mode(mode);
+                          clearError('s2Mode');
+                        }}
                       >
                         <Text style={[styles.radioText, s2Mode === mode && styles.radioTextActive]}>
                           {mode}
@@ -767,6 +1063,9 @@ export const AdmissionWizardScreen: React.FC<WizardProps> = ({ initialStep = 1 }
                       </TouchableOpacity>
                     ))}
                   </View>
+                  {errors.s2Mode && (
+                    <Text style={styles.inlineErrorText}>⚠️ {errors.s2Mode}</Text>
+                  )}
                 </View>
 
                 <View style={styles.colHalf}>
@@ -829,8 +1128,12 @@ export const AdmissionWizardScreen: React.FC<WizardProps> = ({ initialStep = 1 }
               <View style={styles.boardCardsGrid}>
                 {/* CBSE */}
                 <TouchableOpacity
-                  style={[styles.boardCard, s3Board === 'CBSE' && styles.boardCardActive]}
-                  onPress={() => setS3Board('CBSE')}
+                  style={[styles.boardCard, s3Board === 'CBSE' && styles.boardCardActive, errors.s3Board && styles.inputError]}
+                  onPress={() => {
+                    setS3Board('CBSE');
+                    clearError('s3Board');
+                    clearError('s3Waitlist');
+                  }}
                   activeOpacity={0.9}
                 >
                   <View style={styles.boardTopRow}>
@@ -856,8 +1159,12 @@ export const AdmissionWizardScreen: React.FC<WizardProps> = ({ initialStep = 1 }
 
                 {/* ICSE / ISC */}
                 <TouchableOpacity
-                  style={[styles.boardCard, s3Board === 'ICSE_ISC' && styles.boardCardActive]}
-                  onPress={() => setS3Board('ICSE_ISC')}
+                  style={[styles.boardCard, s3Board === 'ICSE_ISC' && styles.boardCardActive, errors.s3Board && styles.inputError]}
+                  onPress={() => {
+                    setS3Board('ICSE_ISC');
+                    clearError('s3Board');
+                    clearError('s3Waitlist');
+                  }}
                   activeOpacity={0.9}
                 >
                   <View style={styles.boardTopRow}>
@@ -883,8 +1190,11 @@ export const AdmissionWizardScreen: React.FC<WizardProps> = ({ initialStep = 1 }
 
                 {/* State Board */}
                 <TouchableOpacity
-                  style={[styles.boardCard, s3Board === 'STATE' && styles.boardCardActive]}
-                  onPress={() => setS3Board('STATE')}
+                  style={[styles.boardCard, s3Board === 'STATE' && styles.boardCardActive, errors.s3Board && styles.inputError]}
+                  onPress={() => {
+                    setS3Board('STATE');
+                    clearError('s3Board');
+                  }}
                   activeOpacity={0.9}
                 >
                   <View style={styles.boardTopRow}>
@@ -908,6 +1218,33 @@ export const AdmissionWizardScreen: React.FC<WizardProps> = ({ initialStep = 1 }
                   </TouchableOpacity>
                 </TouchableOpacity>
               </View>
+
+              {errors.s3Board && (
+                <Text style={[styles.inlineErrorText, { marginBottom: 10 }]}>⚠️ {errors.s3Board}</Text>
+              )}
+
+              {/* State Board Waitlist Confirmation Checkbox */}
+              {s3Board === 'STATE' && (
+                <View style={styles.waitlistBox}>
+                  <TouchableOpacity
+                    style={styles.waitlistRow}
+                    onPress={() => {
+                      setS3WaitlistConfirmed(!s3WaitlistConfirmed);
+                      clearError('s3Waitlist');
+                    }}
+                  >
+                    <View style={[styles.checkboxBox, s3WaitlistConfirmed && styles.checkboxBoxChecked]}>
+                      {s3WaitlistConfirmed && <Text style={styles.checkboxCheck}>✓</Text>}
+                    </View>
+                    <Text style={styles.waitlistLabel}>
+                      I understand that State Board admission for 2026–2027 is subject to waitlist clearance, and I confirm waitlist opt-in to proceed.
+                    </Text>
+                  </TouchableOpacity>
+                  {errors.s3Waitlist && (
+                    <Text style={[styles.inlineErrorText, { marginTop: 8 }]}>⚠️ {errors.s3Waitlist}</Text>
+                  )}
+                </View>
+              )}
 
               <View style={styles.btnRow}>
                 <TouchableOpacity
@@ -962,13 +1299,16 @@ export const AdmissionWizardScreen: React.FC<WizardProps> = ({ initialStep = 1 }
               {/* Language Choice (Classes 6 to 10) */}
               {s4SubjectsData?.languageChoices && (
                 <View style={styles.subjectBox}>
-                  <Text style={styles.subjectBoxTitle}>🌐 Select Second Language Choice</Text>
+                  <Text style={styles.subjectBoxTitle}>🌐 Select Second Language Choice *</Text>
                   <View style={styles.radioGroup}>
                     {s4SubjectsData.languageChoices.map((lang: string) => (
                       <TouchableOpacity
                         key={lang}
-                        style={[styles.radioPill, s4SelectedLanguage === lang && styles.radioPillActive]}
-                        onPress={() => setS4SelectedLanguage(lang)}
+                        style={[styles.radioPill, s4SelectedLanguage === lang && styles.radioPillActive, errors.s4SelectedLanguage && styles.inputError]}
+                        onPress={() => {
+                          setS4SelectedLanguage(lang);
+                          clearError('s4SelectedLanguage');
+                        }}
                       >
                         <Text style={[styles.radioText, s4SelectedLanguage === lang && styles.radioTextActive]}>
                           {lang}
@@ -976,23 +1316,32 @@ export const AdmissionWizardScreen: React.FC<WizardProps> = ({ initialStep = 1 }
                       </TouchableOpacity>
                     ))}
                   </View>
+                  {errors.s4SelectedLanguage && (
+                    <Text style={styles.inlineErrorText}>⚠️ {errors.s4SelectedLanguage}</Text>
+                  )}
                 </View>
               )}
 
               {/* Stream combinations (Classes 11 & 12) */}
               {s4SubjectsData?.streams && (
                 <View style={styles.subjectBox}>
-                  <Text style={styles.subjectBoxTitle}>🔬 Select Senior Secondary Stream & Electives</Text>
+                  <Text style={styles.subjectBoxTitle}>🔬 Select Senior Secondary Stream & Electives *</Text>
                   {s4SubjectsData.streams.map((stream: any) => (
                     <TouchableOpacity
                       key={stream.id}
-                      style={[styles.streamCard, s4SelectedStream === stream.id && styles.streamCardActive]}
-                      onPress={() => setS4SelectedStream(stream.id)}
+                      style={[styles.streamCard, s4SelectedStream === stream.id && styles.streamCardActive, errors.s4SelectedStream && styles.inputError]}
+                      onPress={() => {
+                        setS4SelectedStream(stream.id);
+                        clearError('s4SelectedStream');
+                      }}
                     >
                       <Text style={styles.streamName}>{stream.name}</Text>
                       <Text style={styles.streamSubjects}>{stream.compulsory.join(' • ')}</Text>
                     </TouchableOpacity>
                   ))}
+                  {errors.s4SelectedStream && (
+                    <Text style={styles.inlineErrorText}>⚠️ {errors.s4SelectedStream}</Text>
+                  )}
                 </View>
               )}
 
@@ -1049,12 +1398,18 @@ export const AdmissionWizardScreen: React.FC<WizardProps> = ({ initialStep = 1 }
                 <View style={styles.colHalf}>
                   <Text style={styles.label}>Student Full Name *</Text>
                   <TextInput
-                    style={styles.textInput}
+                    style={[styles.textInput, errors.s5FullName && styles.inputError]}
                     placeholder="Enter student's official name"
                     placeholderTextColor={colors.textMuted}
                     value={s5FullName}
-                    onChangeText={setS5FullName}
+                    onChangeText={(val) => {
+                      setS5FullName(val);
+                      clearError('s5FullName');
+                    }}
                   />
+                  {errors.s5FullName && (
+                    <Text style={styles.inlineErrorText}>⚠️ {errors.s5FullName}</Text>
+                  )}
                 </View>
 
                 <View style={styles.colHalf}>
@@ -1062,14 +1417,19 @@ export const AdmissionWizardScreen: React.FC<WizardProps> = ({ initialStep = 1 }
                   <TextInput
                     style={[
                       styles.textInput,
-                      !s5AgeValidation.valid && { borderColor: colors.statusDanger }
+                      (errors.s5Dob || !s5AgeValidation.valid) && styles.inputError
                     ]}
                     placeholder="YYYY-MM-DD"
                     placeholderTextColor={colors.textMuted}
                     value={s5Dob}
-                    onChangeText={setS5Dob}
+                    onChangeText={(val) => {
+                      setS5Dob(val);
+                      clearError('s5Dob');
+                    }}
                   />
-                  {s5Dob ? (
+                  {errors.s5Dob ? (
+                    <Text style={styles.inlineErrorText}>⚠️ {errors.s5Dob}</Text>
+                  ) : s5Dob ? (
                     s5AgeValidation.valid ? (
                       <Text style={styles.validationSuccess}>
                         ✓ Age eligible: Calculated {s5AgeValidation.age} years as of June 1, 2026.
@@ -1090,35 +1450,53 @@ export const AdmissionWizardScreen: React.FC<WizardProps> = ({ initialStep = 1 }
                     {['Male', 'Female', 'Other'].map(g => (
                       <TouchableOpacity
                         key={g}
-                        style={[styles.radioPill, s5Gender === g && styles.radioPillActive]}
-                        onPress={() => setS5Gender(g)}
+                        style={[styles.radioPill, s5Gender === g && styles.radioPillActive, errors.s5Gender && styles.inputError]}
+                        onPress={() => {
+                          setS5Gender(g);
+                          clearError('s5Gender');
+                        }}
                       >
                         <Text style={[styles.radioText, s5Gender === g && styles.radioTextActive]}>{g}</Text>
                       </TouchableOpacity>
                     ))}
                   </View>
+                  {errors.s5Gender && (
+                    <Text style={styles.inlineErrorText}>⚠️ {errors.s5Gender}</Text>
+                  )}
                 </View>
 
                 <View style={styles.colThird}>
-                  <Text style={styles.label}>Blood Group</Text>
+                  <Text style={styles.label}>Blood Group *</Text>
                   <TextInput
-                    style={styles.textInput}
+                    style={[styles.textInput, errors.s5BloodGroup && styles.inputError]}
                     placeholder="e.g. O+, A+, B+"
                     placeholderTextColor={colors.textMuted}
                     value={s5BloodGroup}
-                    onChangeText={setS5BloodGroup}
+                    onChangeText={(val) => {
+                      setS5BloodGroup(val);
+                      clearError('s5BloodGroup');
+                    }}
                   />
+                  {errors.s5BloodGroup && (
+                    <Text style={styles.inlineErrorText}>⚠️ {errors.s5BloodGroup}</Text>
+                  )}
                 </View>
 
                 <View style={styles.colThird}>
-                  <Text style={styles.label}>Nationality</Text>
+                  <Text style={styles.label}>Nationality *</Text>
                   <TextInput
-                    style={styles.textInput}
+                    style={[styles.textInput, errors.s5Nationality && styles.inputError]}
                     placeholder="e.g. Indian"
                     placeholderTextColor={colors.textMuted}
                     value={s5Nationality}
-                    onChangeText={setS5Nationality}
+                    onChangeText={(val) => {
+                      setS5Nationality(val);
+                      clearError('s5Nationality');
+                    }}
                   />
+                  {errors.s5Nationality && (
+                    <Text style={styles.inlineErrorText}>⚠️ {errors.s5Nationality}</Text>
+                  )}
                 </View>
               </View>
 
@@ -1149,13 +1527,19 @@ export const AdmissionWizardScreen: React.FC<WizardProps> = ({ initialStep = 1 }
               <View style={styles.inputGroup}>
                 <Text style={styles.label}>Residential Address *</Text>
                 <TextInput
-                  style={[styles.textInput, { height: 70 }]}
+                  style={[styles.textInput, { height: 70 }, errors.s5Address && styles.inputError]}
                   placeholder="Door No, Street Name, City, State, Pincode"
                   placeholderTextColor={colors.textMuted}
                   multiline
                   value={s5Address}
-                  onChangeText={setS5Address}
+                  onChangeText={(val) => {
+                    setS5Address(val);
+                    clearError('s5Address');
+                  }}
                 />
+                {errors.s5Address && (
+                  <Text style={styles.inlineErrorText}>⚠️ {errors.s5Address}</Text>
+                )}
               </View>
 
               <View style={styles.btnRow}>
@@ -1203,22 +1587,28 @@ export const AdmissionWizardScreen: React.FC<WizardProps> = ({ initialStep = 1 }
                 <View style={styles.colHalf}>
                   <Text style={styles.label}>Father's Full Name</Text>
                   <TextInput
-                    style={styles.textInput}
+                    style={[styles.textInput, errors.s6ParentName && styles.inputError]}
                     placeholder="Father Name"
                     placeholderTextColor={colors.textMuted}
                     value={s6FatherName}
-                    onChangeText={setS6FatherName}
+                    onChangeText={(val) => {
+                      setS6FatherName(val);
+                      clearError('s6ParentName');
+                    }}
                   />
                 </View>
 
                 <View style={styles.colHalf}>
                   <Text style={styles.label}>Father's Occupation</Text>
                   <TextInput
-                    style={styles.textInput}
+                    style={[styles.textInput, errors.s6ParentOccupation && styles.inputError]}
                     placeholder="e.g. Software Architect / Business"
                     placeholderTextColor={colors.textMuted}
                     value={s6FatherOccupation}
-                    onChangeText={setS6FatherOccupation}
+                    onChangeText={(val) => {
+                      setS6FatherOccupation(val);
+                      clearError('s6ParentOccupation');
+                    }}
                   />
                 </View>
               </View>
@@ -1227,22 +1617,28 @@ export const AdmissionWizardScreen: React.FC<WizardProps> = ({ initialStep = 1 }
                 <View style={styles.colHalf}>
                   <Text style={styles.label}>Mother's Full Name</Text>
                   <TextInput
-                    style={styles.textInput}
+                    style={[styles.textInput, errors.s6ParentName && styles.inputError]}
                     placeholder="Mother Name"
                     placeholderTextColor={colors.textMuted}
                     value={s6MotherName}
-                    onChangeText={setS6MotherName}
+                    onChangeText={(val) => {
+                      setS6MotherName(val);
+                      clearError('s6ParentName');
+                    }}
                   />
                 </View>
 
                 <View style={styles.colHalf}>
                   <Text style={styles.label}>Mother's Occupation</Text>
                   <TextInput
-                    style={styles.textInput}
+                    style={[styles.textInput, errors.s6ParentOccupation && styles.inputError]}
                     placeholder="e.g. Professor / Banking"
                     placeholderTextColor={colors.textMuted}
                     value={s6MotherOccupation}
-                    onChangeText={setS6MotherOccupation}
+                    onChangeText={(val) => {
+                      setS6MotherOccupation(val);
+                      clearError('s6ParentOccupation');
+                    }}
                   />
                 </View>
               </View>
@@ -1255,7 +1651,10 @@ export const AdmissionWizardScreen: React.FC<WizardProps> = ({ initialStep = 1 }
                     placeholder="Legal guardian name"
                     placeholderTextColor={colors.textMuted}
                     value={s6GuardianName}
-                    onChangeText={setS6GuardianName}
+                    onChangeText={(val) => {
+                      setS6GuardianName(val);
+                      clearError('s6ParentName');
+                    }}
                   />
                 </View>
 
@@ -1271,29 +1670,48 @@ export const AdmissionWizardScreen: React.FC<WizardProps> = ({ initialStep = 1 }
                 </View>
               </View>
 
+              {errors.s6ParentName && (
+                <Text style={[styles.inlineErrorText, { marginBottom: 10 }]}>⚠️ {errors.s6ParentName}</Text>
+              )}
+              {errors.s6ParentOccupation && (
+                <Text style={[styles.inlineErrorText, { marginBottom: 10 }]}>⚠️ {errors.s6ParentOccupation}</Text>
+              )}
+
               <View style={styles.formGrid}>
                 <View style={styles.colThird}>
                   <Text style={styles.label}>Parent Mobile Number *</Text>
                   <TextInput
-                    style={styles.textInput}
+                    style={[styles.textInput, errors.s6ParentMobile && styles.inputError]}
                     placeholder="10-digit mobile"
                     placeholderTextColor={colors.textMuted}
                     keyboardType="numeric"
                     maxLength={10}
                     value={s6ParentMobile}
-                    onChangeText={setS6ParentMobile}
+                    onChangeText={(val) => {
+                      setS6ParentMobile(val);
+                      clearError('s6ParentMobile');
+                    }}
                   />
+                  {errors.s6ParentMobile && (
+                    <Text style={styles.inlineErrorText}>⚠️ {errors.s6ParentMobile}</Text>
+                  )}
                 </View>
 
                 <View style={styles.colThird}>
-                  <Text style={styles.label}>Parent Email Address</Text>
+                  <Text style={styles.label}>Parent Email Address *</Text>
                   <TextInput
-                    style={styles.textInput}
+                    style={[styles.textInput, errors.s6ParentEmail && styles.inputError]}
                     placeholder="parent@example.com"
                     placeholderTextColor={colors.textMuted}
                     value={s6ParentEmail}
-                    onChangeText={setS6ParentEmail}
+                    onChangeText={(val) => {
+                      setS6ParentEmail(val);
+                      clearError('s6ParentEmail');
+                    }}
                   />
+                  {errors.s6ParentEmail && (
+                    <Text style={styles.inlineErrorText}>⚠️ {errors.s6ParentEmail}</Text>
+                  )}
                 </View>
 
                 <View style={styles.colThird}>
@@ -1353,23 +1771,35 @@ export const AdmissionWizardScreen: React.FC<WizardProps> = ({ initialStep = 1 }
                 <View style={styles.colHalf}>
                   <Text style={styles.label}>Last School / College Name</Text>
                   <TextInput
-                    style={styles.textInput}
+                    style={[styles.textInput, errors.s7LastSchool && styles.inputError]}
                     placeholder="e.g. Greenwood International High School"
                     placeholderTextColor={colors.textMuted}
                     value={s7LastSchool}
-                    onChangeText={setS7LastSchool}
+                    onChangeText={(val) => {
+                      setS7LastSchool(val);
+                      clearError('s7LastSchool');
+                    }}
                   />
+                  {errors.s7LastSchool && (
+                    <Text style={styles.inlineErrorText}>⚠️ {errors.s7LastSchool}</Text>
+                  )}
                 </View>
 
                 <View style={styles.colHalf}>
                   <Text style={styles.label}>Affiliated Board / University</Text>
                   <TextInput
-                    style={styles.textInput}
+                    style={[styles.textInput, errors.s7Board && styles.inputError]}
                     placeholder="CBSE / ICSE / State / Other"
                     placeholderTextColor={colors.textMuted}
                     value={s7Board}
-                    onChangeText={setS7Board}
+                    onChangeText={(val) => {
+                      setS7Board(val);
+                      clearError('s7Board');
+                    }}
                   />
+                  {errors.s7Board && (
+                    <Text style={styles.inlineErrorText}>⚠️ {errors.s7Board}</Text>
+                  )}
                 </View>
               </View>
 
@@ -1377,23 +1807,35 @@ export const AdmissionWizardScreen: React.FC<WizardProps> = ({ initialStep = 1 }
                 <View style={styles.colThird}>
                   <Text style={styles.label}>Passing Year</Text>
                   <TextInput
-                    style={styles.textInput}
+                    style={[styles.textInput, errors.s7PassingYear && styles.inputError]}
                     placeholder="e.g. 2025"
                     placeholderTextColor={colors.textMuted}
                     value={s7PassingYear}
-                    onChangeText={setS7PassingYear}
+                    onChangeText={(val) => {
+                      setS7PassingYear(val);
+                      clearError('s7PassingYear');
+                    }}
                   />
+                  {errors.s7PassingYear && (
+                    <Text style={styles.inlineErrorText}>⚠️ {errors.s7PassingYear}</Text>
+                  )}
                 </View>
 
                 <View style={styles.colThird}>
                   <Text style={styles.label}>Marks Percentage / CGPA</Text>
                   <TextInput
-                    style={styles.textInput}
+                    style={[styles.textInput, errors.s7Marks && styles.inputError]}
                     placeholder="e.g. 91.4% or 9.4 CGPA"
                     placeholderTextColor={colors.textMuted}
                     value={s7Marks}
-                    onChangeText={setS7Marks}
+                    onChangeText={(val) => {
+                      setS7Marks(val);
+                      clearError('s7Marks');
+                    }}
                   />
+                  {errors.s7Marks && (
+                    <Text style={styles.inlineErrorText}>⚠️ {errors.s7Marks}</Text>
+                  )}
                 </View>
 
                 <View style={styles.colThird}>
@@ -1478,7 +1920,10 @@ export const AdmissionWizardScreen: React.FC<WizardProps> = ({ initialStep = 1 }
                 <View style={[styles.facilityCard, s8HostelOpted && styles.facilityCardActive]}>
                   <TouchableOpacity
                     style={styles.facilityCheckboxRow}
-                    onPress={() => setS8HostelOpted(!s8HostelOpted)}
+                    onPress={() => {
+                      setS8HostelOpted(!s8HostelOpted);
+                      clearError('s8RoomType');
+                    }}
                   >
                     <View style={[styles.checkboxBox, s8HostelOpted && styles.checkboxBoxChecked]}>
                       {s8HostelOpted && <Text style={styles.checkboxCheck}>✓</Text>}
@@ -1499,8 +1944,11 @@ export const AdmissionWizardScreen: React.FC<WizardProps> = ({ initialStep = 1 }
                         {['Single AC', '2-Sharing AC', '3-Sharing Standard', '4-Bed Dormitory'].map((room) => (
                           <TouchableOpacity
                             key={room}
-                            style={[styles.radioPill, s8RoomType === room && styles.radioPillActive]}
-                            onPress={() => setS8RoomType(room)}
+                            style={[styles.radioPill, s8RoomType === room && styles.radioPillActive, errors.s8RoomType && styles.inputError]}
+                            onPress={() => {
+                              setS8RoomType(room);
+                              clearError('s8RoomType');
+                            }}
                           >
                             <Text style={[styles.radioText, s8RoomType === room && styles.radioTextActive]}>
                               {room}
@@ -1508,6 +1956,9 @@ export const AdmissionWizardScreen: React.FC<WizardProps> = ({ initialStep = 1 }
                           </TouchableOpacity>
                         ))}
                       </View>
+                      {errors.s8RoomType && (
+                        <Text style={[styles.inlineErrorText, { marginTop: 6 }]}>⚠️ {errors.s8RoomType}</Text>
+                      )}
                     </View>
                   )}
                 </View>
@@ -1516,7 +1967,10 @@ export const AdmissionWizardScreen: React.FC<WizardProps> = ({ initialStep = 1 }
                 <View style={[styles.facilityCard, s8TransportOpted && styles.facilityCardActive]}>
                   <TouchableOpacity
                     style={styles.facilityCheckboxRow}
-                    onPress={() => setS8TransportOpted(!s8TransportOpted)}
+                    onPress={() => {
+                      setS8TransportOpted(!s8TransportOpted);
+                      clearError('s8PickupArea');
+                    }}
                   >
                     <View style={[styles.checkboxBox, s8TransportOpted && styles.checkboxBoxChecked]}>
                       {s8TransportOpted && <Text style={styles.checkboxCheck}>✓</Text>}
@@ -1534,12 +1988,18 @@ export const AdmissionWizardScreen: React.FC<WizardProps> = ({ initialStep = 1 }
                     <View style={styles.conditionalFieldBox}>
                       <Text style={styles.conditionalLabel}>Enter Preferred Pickup Area / Landmark *</Text>
                       <TextInput
-                        style={styles.textInput}
+                        style={[styles.textInput, errors.s8PickupArea && styles.inputError]}
                         placeholder="e.g. Indiranagar Metro, Whitefield, Koramangala 4th Block"
                         placeholderTextColor={colors.textMuted}
                         value={s8PickupArea}
-                        onChangeText={setS8PickupArea}
+                        onChangeText={(val) => {
+                          setS8PickupArea(val);
+                          clearError('s8PickupArea');
+                        }}
                       />
+                      {errors.s8PickupArea && (
+                        <Text style={[styles.inlineErrorText, { marginTop: 6 }]}>⚠️ {errors.s8PickupArea}</Text>
+                      )}
                     </View>
                   )}
                 </View>
@@ -1608,13 +2068,19 @@ export const AdmissionWizardScreen: React.FC<WizardProps> = ({ initialStep = 1 }
                     <Text style={styles.uploadSlotTitle}>Student Photo *</Text>
                     <Text style={styles.uploadSlotDesc}>Passport size JPG/PNG (max 5MB)</Text>
                     <TouchableOpacity
-                      style={[styles.uploadSlotBtn, s9PhotoUploaded && styles.uploadSlotBtnActive]}
-                      onPress={() => setS9PhotoUploaded(!s9PhotoUploaded)}
+                      style={[styles.uploadSlotBtn, s9PhotoUploaded && styles.uploadSlotBtnActive, errors.s9Photo && styles.inputError]}
+                      onPress={() => {
+                        setS9PhotoUploaded(!s9PhotoUploaded);
+                        clearError('s9Photo');
+                      }}
                     >
                       <Text style={styles.uploadSlotBtnText}>
                         {s9PhotoUploaded ? '✓ photo-uploaded.jpg (Replace)' : '⬆ Upload Student Photo'}
                       </Text>
                     </TouchableOpacity>
+                    {errors.s9Photo && (
+                      <Text style={styles.inlineErrorText}>⚠️ {errors.s9Photo}</Text>
+                    )}
                   </View>
 
                   {/* ID Proof Slot */}
@@ -1622,13 +2088,19 @@ export const AdmissionWizardScreen: React.FC<WizardProps> = ({ initialStep = 1 }
                     <Text style={styles.uploadSlotTitle}>Identity Proof *</Text>
                     <Text style={styles.uploadSlotDesc}>Aadhaar card or Birth Certificate</Text>
                     <TouchableOpacity
-                      style={[styles.uploadSlotBtn, s9IdUploaded && styles.uploadSlotBtnActive]}
-                      onPress={() => setS9IdUploaded(!s9IdUploaded)}
+                      style={[styles.uploadSlotBtn, s9IdUploaded && styles.uploadSlotBtnActive, errors.s9Id && styles.inputError]}
+                      onPress={() => {
+                        setS9IdUploaded(!s9IdUploaded);
+                        clearError('s9Id');
+                      }}
                     >
                       <Text style={styles.uploadSlotBtnText}>
                         {s9IdUploaded ? '✓ aadhaar-doc.pdf (Replace)' : '⬆ Upload ID Proof'}
                       </Text>
                     </TouchableOpacity>
+                    {errors.s9Id && (
+                      <Text style={styles.inlineErrorText}>⚠️ {errors.s9Id}</Text>
+                    )}
                   </View>
 
                   {/* Previous Marksheet */}
@@ -1636,13 +2108,19 @@ export const AdmissionWizardScreen: React.FC<WizardProps> = ({ initialStep = 1 }
                     <Text style={styles.uploadSlotTitle}>Previous Marksheet</Text>
                     <Text style={styles.uploadSlotDesc}>Last academic session report card</Text>
                     <TouchableOpacity
-                      style={[styles.uploadSlotBtn, s9MarksheetUploaded && styles.uploadSlotBtnActive]}
-                      onPress={() => setS9MarksheetUploaded(!s9MarksheetUploaded)}
+                      style={[styles.uploadSlotBtn, s9MarksheetUploaded && styles.uploadSlotBtnActive, errors.s9Marksheet && styles.inputError]}
+                      onPress={() => {
+                        setS9MarksheetUploaded(!s9MarksheetUploaded);
+                        clearError('s9Marksheet');
+                      }}
                     >
                       <Text style={styles.uploadSlotBtnText}>
                         {s9MarksheetUploaded ? '✓ marksheet-2025.pdf (Replace)' : '⬆ Upload Marksheet'}
                       </Text>
                     </TouchableOpacity>
+                    {errors.s9Marksheet && (
+                      <Text style={styles.inlineErrorText}>⚠️ {errors.s9Marksheet}</Text>
+                    )}
                   </View>
 
                   {/* Transfer Certificate */}
@@ -1740,8 +2218,11 @@ export const AdmissionWizardScreen: React.FC<WizardProps> = ({ initialStep = 1 }
 
               {/* DECLARATION CHECKBOX */}
               <TouchableOpacity
-                style={styles.declarationRow}
-                onPress={() => setS9Declaration(!s9Declaration)}
+                style={[styles.declarationRow, errors.s9Declaration && styles.inputError]}
+                onPress={() => {
+                  setS9Declaration(!s9Declaration);
+                  clearError('s9Declaration');
+                }}
               >
                 <View style={[styles.checkboxBox, s9Declaration && styles.checkboxBoxChecked]}>
                   {s9Declaration && <Text style={styles.checkboxCheck}>✓</Text>}
@@ -1750,6 +2231,9 @@ export const AdmissionWizardScreen: React.FC<WizardProps> = ({ initialStep = 1 }
                   I hereby solemnly declare that all statements made in this admission application are true, complete and correct to the best of my knowledge and belief. I understand that any false declaration will lead to cancellation of admission.
                 </Text>
               </TouchableOpacity>
+              {errors.s9Declaration && (
+                <Text style={[styles.inlineErrorText, { marginBottom: 12 }]}>⚠️ {errors.s9Declaration}</Text>
+              )}
 
               {/* SUBMIT BUTTONS */}
               <View style={styles.btnRow}>
@@ -1962,6 +2446,46 @@ const styles = StyleSheet.create({
     color: colors.textPrimary,
     backgroundColor: colors.bgSurface,
     outlineWidth: 0 as any
+  },
+  inputError: {
+    borderColor: colors.statusDanger,
+    backgroundColor: '#FFF5F5'
+  },
+  inlineErrorText: {
+    color: colors.statusDanger,
+    fontSize: 12,
+    fontWeight: '600',
+    marginTop: 4,
+    lineHeight: 16
+  },
+  otpVerificationBox: {
+    backgroundColor: '#EFF6FF',
+    padding: spacing.lg,
+    borderRadius: borderRadius.lg,
+    borderWidth: 1.5,
+    borderColor: colors.brandPrimary,
+    marginVertical: spacing.md
+  },
+  waitlistBox: {
+    backgroundColor: '#FEF2F2',
+    borderColor: '#FECACA',
+    borderWidth: 1,
+    borderRadius: borderRadius.md,
+    padding: spacing.md,
+    marginTop: spacing.md,
+    marginBottom: spacing.sm
+  },
+  waitlistRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12
+  },
+  waitlistLabel: {
+    flex: 1,
+    fontSize: 13,
+    color: '#991B1B',
+    fontWeight: '600',
+    lineHeight: 18
   },
   readOnlyInput: {
     backgroundColor: colors.bgPage,

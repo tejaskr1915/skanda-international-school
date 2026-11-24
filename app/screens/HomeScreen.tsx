@@ -110,6 +110,7 @@ export const HomeScreen: React.FC = () => {
           <ImageBackground
             source={{ uri: 'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&w=1600&q=80' }}
             style={styles.heroBackground}
+            imageStyle={styles.heroBackgroundImage}
             resizeMode="cover"
           >
             <View style={styles.heroGradientOverlay}>
@@ -665,14 +666,36 @@ const styles = StyleSheet.create({
     overflow: 'hidden'
   },
   heroBackground: {
-    width: '100%'
+    width: '100%',
+    opacity: 1,
+    ...(Platform.OS === 'web'
+      ? ({
+          backgroundSize: 'cover',
+          backgroundPosition: 'right center'
+        } as any)
+      : {})
+  },
+  heroBackgroundImage: {
+    opacity: 1,
+    ...(Platform.OS === 'web'
+      ? ({
+          objectFit: 'cover',
+          objectPosition: 'right center'
+        } as any)
+      : {})
   },
   heroGradientOverlay: {
     width: '100%',
-    backgroundColor: 'rgba(248, 250, 252, 0.92)',
     paddingTop: 48,
     paddingBottom: 24,
-    paddingHorizontal: spacing.lg
+    paddingHorizontal: spacing.lg,
+    backgroundColor: 'rgba(255, 255, 255, 0.78)',
+    ...(Platform.OS === 'web'
+      ? ({
+          backgroundImage:
+            'linear-gradient(90deg, rgba(255, 255, 255, 0.90) 0%, rgba(255, 255, 255, 0.68) 48%, rgba(255, 255, 255, 0.22) 100%)'
+        } as any)
+      : {})
   },
   heroContent: {
     maxWidth: 1200,

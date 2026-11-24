@@ -18,19 +18,31 @@ export const ApplyLandingScreen: React.FC = () => {
 
       <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
         <View style={styles.contentWrapper}>
+          {/* Top Bar with Back Button & Session Badge */}
+          <View style={styles.topNavRow}>
+            <TouchableOpacity
+              style={styles.backHomeBtn}
+              onPress={() => navigateTo('/')}
+              activeOpacity={0.88}
+            >
+              <Text style={styles.backHomeBtnText}>← Back to Home</Text>
+            </TouchableOpacity>
+
+            <View style={styles.sessionPill}>
+              <Text style={styles.sessionText}>Active Session: 2026–2027</Text>
+            </View>
+          </View>
+
           {/* Main Title & Top CTA Header */}
           <View style={styles.titleRow}>
             <View style={styles.titleCol}>
-              <View style={styles.sessionPill}>
-                <Text style={styles.sessionText}>Active Session: 2026-2027</Text>
-              </View>
               <Text style={styles.pageTitle}>Admissions 2026–2027</Text>
               <Text style={styles.pageSubtitle}>
                 Begin your journey with Skanda International School. Complete your application online in simple steps.
               </Text>
             </View>
 
-            {/* Prominent Primary CTA placed ONLY in Top Hero Header */}
+            {/* Prominent Primary CTA placed in Top Header */}
             <TouchableOpacity
               style={styles.primaryActionBtnTop}
               onPress={() => navigateTo('/apply/step/1')}
@@ -164,6 +176,28 @@ const styles = StyleSheet.create({
     paddingTop: spacing.xl,
     paddingBottom: spacing.xxl
   },
+  topNavRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginBottom: spacing.md
+  },
+  backHomeBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#CBD5E1',
+    paddingHorizontal: 14,
+    paddingVertical: 7,
+    borderRadius: 8,
+    ...shadows.card
+  },
+  backHomeBtnText: {
+    color: '#0F172A',
+    fontSize: 13,
+    fontWeight: '600'
+  },
   titleRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -171,6 +205,23 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: spacing.xl,
     gap: 12
+  },
+  titleCol: {
+    flex: 1,
+    minWidth: 280
+  },
+  primaryActionBtnTop: {
+    backgroundColor: '#1D4ED8',
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3
   },
   pageTitle: {
     fontSize: 28,
