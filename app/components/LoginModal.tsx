@@ -447,11 +447,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: spacing.sm,
-    shadowColor: colors.brandPrimary,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.28,
-    shadowRadius: 8,
-    elevation: 3
+    ...(Platform.select({
+      web: { boxShadow: '0px 4px 12px rgba(29, 78, 216, 0.25)' } as any,
+      default: {
+        shadowColor: colors.brandPrimary,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.28,
+        shadowRadius: 8,
+        elevation: 3
+      }
+    }) as any)
   },
   primaryBtnText: {
     color: colors.textInverse,

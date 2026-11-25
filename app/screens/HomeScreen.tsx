@@ -1517,11 +1517,16 @@ const styles = StyleSheet.create({
   searchInputWrapperFocused: {
     borderColor: colors.brandPrimary,
     backgroundColor: '#FFFFFF',
-    shadowColor: colors.brandPrimary,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
-    elevation: 4
+    ...(Platform.select({
+      web: { boxShadow: '0px 2px 8px rgba(29, 78, 216, 0.15)' } as any,
+      default: {
+        shadowColor: colors.brandPrimary,
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.15,
+        shadowRadius: 8,
+        elevation: 4
+      }
+    }) as any)
   },
   searchIcon: {
     fontSize: 16,

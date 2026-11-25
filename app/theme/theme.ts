@@ -1,5 +1,6 @@
 // Theme definition for Skanda International School
 // Design System: Royal Blue & Crisp White
+import { Platform } from 'react-native';
 
 export const colors = {
   brandPrimary: '#1D4ED8', // Royal Blue
@@ -49,27 +50,42 @@ export const borderRadius = {
 };
 
 export const shadows = {
-  card: {
-    shadowColor: '#0F172A',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2
-  },
-  hover: {
-    shadowColor: '#1D4ED8',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.12,
-    shadowRadius: 16,
-    elevation: 4
-  },
-  modal: {
-    shadowColor: '#0F172A',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.18,
-    shadowRadius: 24,
-    elevation: 10
-  }
+  card: Platform.select({
+    web: {
+      boxShadow: '0px 2px 8px rgba(15, 23, 42, 0.05)'
+    } as any,
+    default: {
+      shadowColor: '#0F172A',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.05,
+      shadowRadius: 8,
+      elevation: 2
+    }
+  }),
+  hover: Platform.select({
+    web: {
+      boxShadow: '0px 4px 16px rgba(29, 78, 216, 0.12)'
+    } as any,
+    default: {
+      shadowColor: '#1D4ED8',
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.12,
+      shadowRadius: 16,
+      elevation: 4
+    }
+  }),
+  modal: Platform.select({
+    web: {
+      boxShadow: '0px 10px 24px rgba(15, 23, 42, 0.18)'
+    } as any,
+    default: {
+      shadowColor: '#0F172A',
+      shadowOffset: { width: 0, height: 10 },
+      shadowOpacity: 0.18,
+      shadowRadius: 24,
+      elevation: 10
+    }
+  })
 };
 
 export const theme = {

@@ -430,11 +430,16 @@ const styles = StyleSheet.create({
   searchContainerFocused: {
     borderColor: colors.brandPrimary,
     backgroundColor: '#FFFFFF',
-    shadowColor: colors.brandPrimary,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.12,
-    shadowRadius: 6,
-    elevation: 3
+    ...(Platform.select({
+      web: { boxShadow: '0px 2px 8px rgba(29, 78, 216, 0.12)' } as any,
+      default: {
+        shadowColor: colors.brandPrimary,
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.12,
+        shadowRadius: 6,
+        elevation: 3
+      }
+    }) as any)
   },
   searchIcon: {
     fontSize: 14,
@@ -449,9 +454,8 @@ const styles = StyleSheet.create({
     padding: 0,
     ...(Platform.OS === 'web'
       ? ({
+          outlineWidth: 0,
           outlineStyle: 'none',
-          outline: 'none',
-          border: 'none',
           boxShadow: 'none'
         } as any)
       : {})

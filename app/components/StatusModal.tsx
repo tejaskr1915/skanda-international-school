@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Modal, ActivityIndicator } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Modal, ActivityIndicator, Platform } from 'react-native';
 import api from '../services/api';
 import { colors, borderRadius, spacing, shadows } from '../theme/theme';
 

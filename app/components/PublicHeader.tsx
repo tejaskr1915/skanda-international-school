@@ -345,11 +345,16 @@ const styles = StyleSheet.create({
     backgroundColor: colors.brandPrimary,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: colors.brandPrimary,
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.25,
-    shadowRadius: 5,
-    elevation: 3,
+    ...(Platform.select({
+      web: { boxShadow: '0px 3px 8px rgba(29, 78, 216, 0.25)' } as any,
+      default: {
+        shadowColor: colors.brandPrimary,
+        shadowOffset: { width: 0, height: 3 },
+        shadowOpacity: 0.25,
+        shadowRadius: 5,
+        elevation: 3
+      }
+    }) as any),
     overflow: 'hidden'
   },
   logoImage: {
