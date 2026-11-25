@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Modal, ScrollView, Platform } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Modal, ScrollView, Platform, Image } from 'react-native';
 import { useAuth } from '../context/AuthContext';
 import { colors, shadows, borderRadius, spacing } from '../theme/theme';
 import { generateApplicationPdf } from '../utils/pdfGenerator';
+import { IMAGES } from '../assets/images';
 
 interface SearchItem {
   id: string;
@@ -114,7 +115,12 @@ export const StudentHeader: React.FC = () => {
           activeOpacity={0.8}
         >
           <View style={styles.logoBadge}>
-            <Text style={styles.logoLetter}>S</Text>
+            <Image
+              source={IMAGES.logo}
+              defaultSource={IMAGES.fallback}
+              style={styles.logoImage}
+              resizeMode="contain"
+            />
           </View>
           <View>
             <Text style={styles.brandTitle}>Skanda</Text>
@@ -383,7 +389,12 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.md,
     backgroundColor: colors.brandPrimary,
     alignItems: 'center',
-    justifyContent: 'center'
+    justifyContent: 'center',
+    overflow: 'hidden'
+  },
+  logoImage: {
+    width: 38,
+    height: 38
   },
   logoLetter: {
     color: colors.textInverse,

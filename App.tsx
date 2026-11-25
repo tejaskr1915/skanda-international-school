@@ -18,11 +18,17 @@ const MainNavigator: React.FC = () => {
 
     // 2. Apply Landing
     if (currentRoute === '/apply') {
+      if (user && application && application.status !== 'DRAFT') {
+        return <StudentDashboardScreen lockNotice="Your application has already been submitted and locked for review" />;
+      }
       return <ApplyLandingScreen />;
     }
 
     // 3. Multi-Step Wizard (/apply/step/1 through /apply/step/9)
     if (currentRoute.startsWith('/apply/step/')) {
+      if (user && application && application.status !== 'DRAFT') {
+        return <StudentDashboardScreen lockNotice="Your application has already been submitted and locked for review" />;
+      }
       const stepParam = parseInt(currentRoute.replace('/apply/step/', ''), 10);
       const stepNumber = !isNaN(stepParam) && stepParam >= 1 && stepParam <= 9 ? stepParam : 1;
       return <AdmissionWizardScreen initialStep={stepNumber} />;

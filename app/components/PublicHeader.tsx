@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Platform, useWindowDimensions } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Platform, useWindowDimensions, Image } from 'react-native';
 import { useAuth } from '../context/AuthContext';
 import { colors, shadows, borderRadius, spacing } from '../theme/theme';
+import { IMAGES } from '../assets/images';
 
 interface PublicHeaderProps {
   onOpenLogin: () => void;
@@ -59,7 +60,12 @@ export const PublicHeader: React.FC<PublicHeaderProps> = ({ onOpenLogin }) => {
           activeOpacity={0.8}
         >
           <View style={styles.logoBadge}>
-            <Text style={styles.logoLetter}>S</Text>
+            <Image
+              source={IMAGES.logo}
+              defaultSource={IMAGES.fallback}
+              style={styles.logoImage}
+              resizeMode="contain"
+            />
           </View>
           <View style={styles.brandTextContainer}>
             <Text style={styles.brandTitle}>Skanda</Text>
@@ -261,7 +267,12 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.25,
     shadowRadius: 5,
-    elevation: 3
+    elevation: 3,
+    overflow: 'hidden'
+  },
+  logoImage: {
+    width: 42,
+    height: 42
   },
   logoLetter: {
     color: '#FFFFFF',

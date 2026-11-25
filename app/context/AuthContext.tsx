@@ -44,7 +44,7 @@ interface AuthContextType {
   token: string | null;
   isLoading: boolean;
   currentRoute: string;
-  navigateTo: (route: string) => void;
+  navigateTo: (route: string, options?: { replace?: boolean }) => void;
   setAuthSession: (token: string, user: ApplicantUser, application: ApplicationData) => void;
   logout: () => void;
   refreshApplication: () => Promise<ApplicationData | null>;
@@ -67,18 +67,39 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     if (Platform.OS === 'web' && typeof window !== 'undefined') {
       const path = window.location.pathname || '/';
-      setCurrentRoute(path);
+      // If submitted, block initial landing on apply wizard
+      if (application && application.status !== 'DRAFT' && (path.startsWith('/apply') || path === '/apply')) {
+        window.history.replaceState({}, '', '/student/dashboard');
+        setCurrentRoute('/student/dashboard');
+      } else {
+        setCurrentRoute(path);
+      }
 
       const handlePopState = () => {
-        setCurrentRoute(window.location.pathname || '/');
+        const currentPath = window.location.pathname || '/';
+        // Submitted Route Guard on Browser Back navigation
+        if (application && application.status !== 'DRAFT' && (currentPath.startsWith('/apply') || currentPath === '/apply')) {
+          window.history.replaceState({}, '', '/student/dashboard');
+          setCurrentRoute('/student/dashboard');
+          return;
+        }
+        setCurrentRoute(currentPath);
       };
       window.addEventListener('popstate', handlePopState);
       return () => window.removeEventListener('popstate', handlePopState);
     }
-  }, []);
+  }, [application]);
 
-  const navigateTo = (route: string) => {
+  const navigateTo = (route: string, options?: { replace?: boolean }) => {
     // CRITICAL NAVIGATION GUARD:
+    // If application is already SUBMITTED / not DRAFT, block navigating to /apply or wizard steps
+    if (user && application && application.status !== 'DRAFT') {
+      if (route === '/apply' || route.startsWith('/apply/step/')) {
+        route = '/student/dashboard';
+        options = { ...options, replace: true };
+      }
+    }
+
     // If attempting to go to /student/dashboard while application is DRAFT, redirect to current step
     if (route === '/student/dashboard') {
       if (!user) {
@@ -91,7 +112,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     setCurrentRoute(route);
     if (Platform.OS === 'web' && typeof window !== 'undefined') {
-      window.history.pushState({}, '', route);
+      if (options?.replace) {
+        window.history.replaceState({}, '', route);
+      } else {
+        window.history.pushState({}, '', route);
+      }
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };

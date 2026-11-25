@@ -228,6 +228,12 @@ test.describe('Skanda International School - Phase 1 E2E Verification Suite', ()
   });
 
   test('4. Real-Time Top Header Search Bar Functionality', async ({ page }) => {
+    // Ensure draft status for step navigation
+    await prisma.application.update({
+      where: { id: draftAppId },
+      data: { status: 'DRAFT', currentStep: 9 }
+    });
+
     await page.goto('/');
     await page.evaluate((tok) => {
       localStorage.setItem('skanda_token', tok);
@@ -309,5 +315,91 @@ test.describe('Skanda International School - Phase 1 E2E Verification Suite', ()
       return document.documentElement.scrollWidth > window.innerWidth;
     });
     expect(hasHorizontalOverflow493).toBe(false);
+  });
+
+  test('6. Verification of the 6 Form Rules: Programme Mode, Dynamic Specialization Dropdown, DOB Date Picker, Emergency Contact 10-digit limit, Nursery Skip, and Submitted Back-Nav Route Guard', async ({ page }) => {
+    // 1. Visit /apply/step/2 with seed draft token
+    await page.goto('/');
+    await page.evaluate((tok) => {
+      localStorage.setItem('skanda_token', tok);
+    }, draftToken);
+
+    await page.goto('/apply/step/2');
+    await page.waitForLoadState('networkidle');
+
+    // Rule 1: Step 2 Mode selector has no 'Residential' option, contains 'Day Scholar'
+    await expect(page.locator('text=Residential')).toHaveCount(0);
+    await expect(page.locator('text=Day Scholar').first()).toBeVisible();
+    await expect(page.locator('text=Regular Full-Time').first()).toBeVisible();
+
+    // Rule 1: Board / Specialization is a dropdown (<select>)
+    const specSelect = page.locator('select#s2Specialization-select');
+    await expect(specSelect).toBeVisible();
+    const schoolOptions = await specSelect.locator('option').allInnerTexts();
+    expect(schoolOptions).toContain('CBSE');
+    expect(schoolOptions).toContain('ICSE / ISC');
+    expect(schoolOptions).toContain('State Board (Karnataka)');
+
+    // Rule 2: Step 5 Date of Birth is an interactive Calendar Date Picker
+    await page.goto('/apply/step/5');
+    await page.waitForLoadState('networkidle');
+    const dobInput = page.locator('input#s5Dob-picker[type="date"]');
+    await expect(dobInput).toBeVisible();
+    const maxDate = await dobInput.getAttribute('max');
+    expect(maxDate).toBeTruthy();
+
+    // Rule 3: Step 6 Emergency contact 10-digit limit
+    await page.goto('/apply/step/6');
+    await page.waitForLoadState('networkidle');
+    const emergencyInput = page.locator('input[data-testid="emergency-contact-input"]');
+    await expect(emergencyInput).toBeVisible();
+    await emergencyInput.fill('98765432109999');
+    const emergencyVal = await emergencyInput.inputValue();
+    expect(emergencyVal).toBe('9876543210');
+
+    // Rule 4: Step 7 Skip for Nursery admissions
+    await page.goto('/apply/step/7');
+    await page.waitForLoadState('networkidle');
+    const nurseryToggle = page.locator('[data-testid="skip-nursery-toggle"]');
+    await expect(nurseryToggle).toBeVisible();
+
+    // Rule 5: Submitted Route Guard
+    const submittedUser = await prisma.applicantUser.create({
+      data: {
+        fullName: 'Submitted Guard Test',
+        mobile: `90${Date.now().toString().slice(-8)}`,
+        email: `submitted_guard_${Date.now()}@skandatest.edu`,
+        passwordHash: 'dummyhash',
+        isVerified: true,
+        applications: {
+          create: {
+            applicationNo: `SIS-2026-GUARD`,
+            academicYear: '2026-2027',
+            status: 'SUBMITTED',
+            currentStep: 9,
+            submittedAt: new Date()
+          }
+        }
+      },
+      include: { applications: true }
+    });
+
+    const submittedToken = jwt.sign({ userId: submittedUser.id, mobile: submittedUser.mobile }, JWT_SECRET, { expiresIn: '7d' });
+
+    await page.evaluate((tok) => {
+      localStorage.setItem('skanda_token', tok);
+    }, submittedToken);
+
+    await page.goto('/apply/step/2');
+    await page.waitForLoadState('networkidle');
+    await page.waitForTimeout(800);
+
+    // Should be guarded and redirected to /student/dashboard
+    expect(page.url()).toContain('/student/dashboard');
+    await expect(page.locator('text=Your application has already been submitted and locked for review').first()).toBeVisible();
+
+    // Cleanup
+    await prisma.application.deleteMany({ where: { applicantUserId: submittedUser.id } });
+    await prisma.applicantUser.deleteMany({ where: { id: submittedUser.id } });
   });
 });

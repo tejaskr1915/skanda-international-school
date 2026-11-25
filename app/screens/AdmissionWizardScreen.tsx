@@ -79,8 +79,25 @@ export const AdmissionWizardScreen: React.FC<WizardProps> = ({ initialStep = 1 }
   const [s2Type, setS2Type] = useState<'SCHOOL' | 'COLLEGE'>(application?.institutionType || 'SCHOOL');
   const [s2Class, setS2Class] = useState(application?.classOrCourse || '');
   const [s2AcademicYear, setS2AcademicYear] = useState(application?.academicYear || '2026-2027');
-  const [s2Mode, setS2Mode] = useState(application?.mode || '');
+  const [s2Mode, setS2Mode] = useState(application?.mode === 'Residential' ? 'Day Scholar' : (application?.mode || ''));
   const [s2Specialization, setS2Specialization] = useState(application?.specializationOrStream || '');
+
+  // Board / Specialization options based on Institution Type
+  const schoolSpecializationOptions = [
+    'CBSE',
+    'ICSE / ISC',
+    'State Board (Karnataka)'
+  ];
+
+  const collegeSpecializationOptions = [
+    'Computer Science & Engineering (CSE)',
+    'Electronics & Communication (ECE)',
+    'Commerce & Management (B.Com / BBA)',
+    'Pure Sciences (B.Sc)',
+    'Arts & Humanities (BA)'
+  ];
+
+  const specializationOptions = s2Type === 'SCHOOL' ? schoolSpecializationOptions : collegeSpecializationOptions;
 
   // Step 3: Board Selection
   const [s3Board, setS3Board] = useState<'CBSE' | 'ICSE_ISC' | 'STATE' | ''>(application?.board || '');
@@ -113,6 +130,10 @@ export const AdmissionWizardScreen: React.FC<WizardProps> = ({ initialStep = 1 }
   const [s6AnnualIncome, setS6AnnualIncome] = useState(application?.parentDetails?.annualIncome || '');
 
   // Step 7: Previous Education
+  const isNurseryAdmission = ['Nursery', 'Pre-KG', 'LKG', 'UKG', 'Kindergarten', 'Pre-Primary'].includes(s2Class);
+  const [s7SkippedForNursery, setS7SkippedForNursery] = useState<boolean>(
+    isNurseryAdmission || !!application?.previousEducation?.skippedForNursery
+  );
   const [s7LastSchool, setS7LastSchool] = useState(application?.previousEducation?.lastSchool || '');
   const [s7Board, setS7Board] = useState(application?.previousEducation?.board || '');
   const [s7PassingYear, setS7PassingYear] = useState(application?.previousEducation?.passingYear || '');
@@ -154,6 +175,20 @@ export const AdmissionWizardScreen: React.FC<WizardProps> = ({ initialStep = 1 }
     loadMeta();
   }, []);
 
+  // Submitted Route Guard: If application is already submitted, lock access and redirect to dashboard
+  useEffect(() => {
+    if (application && application.status !== 'DRAFT') {
+      navigateTo('/student/dashboard', { replace: true });
+    }
+  }, [application]);
+
+  // Sync Nursery admission with previous education skip state
+  useEffect(() => {
+    if (isNurseryAdmission) {
+      setS7SkippedForNursery(true);
+    }
+  }, [s2Class]);
+
   // Sync state if application updates
   useEffect(() => {
     if (application) {
@@ -163,7 +198,7 @@ export const AdmissionWizardScreen: React.FC<WizardProps> = ({ initialStep = 1 }
       if (application.institutionType) setS2Type(application.institutionType);
       if (application.classOrCourse) setS2Class(application.classOrCourse);
       if (application.academicYear) setS2AcademicYear(application.academicYear);
-      if (application.mode) setS2Mode(application.mode);
+      if (application.mode) setS2Mode(application.mode === 'Residential' ? 'Day Scholar' : application.mode);
       if (application.specializationOrStream) setS2Specialization(application.specializationOrStream);
       if (application.board) setS3Board(application.board);
       if (application.selectedSubjects) {
@@ -192,6 +227,9 @@ export const AdmissionWizardScreen: React.FC<WizardProps> = ({ initialStep = 1 }
         if (application.parentDetails.annualIncome) setS6AnnualIncome(application.parentDetails.annualIncome);
       }
       if (application.previousEducation) {
+        if (application.previousEducation.skippedForNursery !== undefined) {
+          setS7SkippedForNursery(!!application.previousEducation.skippedForNursery);
+        }
         if (application.previousEducation.lastSchool) setS7LastSchool(application.previousEducation.lastSchool);
         if (application.previousEducation.board) setS7Board(application.previousEducation.board);
         if (application.previousEducation.passingYear) setS7PassingYear(application.previousEducation.passingYear);
@@ -305,7 +343,7 @@ export const AdmissionWizardScreen: React.FC<WizardProps> = ({ initialStep = 1 }
     if (!s2Type) errs.s2Type = 'Please select institution type (School or College).';
     if (!s2Class) errs.s2Class = 'Please select a Class or Course.';
     if (!s2AcademicYear) errs.s2AcademicYear = 'Academic year is required.';
-    if (!s2Mode) errs.s2Mode = 'Please select Mode of Attendance (Day Scholar, Day Boarding, or Residential).';
+    if (!s2Mode || s2Mode === 'Residential') errs.s2Mode = 'Please select Mode of Attendance (Day Scholar, Day Boarding, or Regular Full-Time).';
     return errs;
   };
 
@@ -348,9 +386,9 @@ export const AdmissionWizardScreen: React.FC<WizardProps> = ({ initialStep = 1 }
       errs.s5BloodGroup = 'Blood group is required (e.g. O+, A+, B+).';
     }
     if (!s5Dob.trim()) {
-      errs.s5Dob = 'Date of birth is required (YYYY-MM-DD).';
+      errs.s5Dob = 'Date of birth is required.';
     } else if (isNaN(new Date(s5Dob).getTime())) {
-      errs.s5Dob = 'Please enter a valid date in YYYY-MM-DD format.';
+      errs.s5Dob = 'Please select a valid date of birth.';
     } else if (!s5AgeValidation.valid) {
       errs.s5Dob = s5AgeValidation.message || 'Age requirement not met for the selected class.';
     }
@@ -384,11 +422,21 @@ export const AdmissionWizardScreen: React.FC<WizardProps> = ({ initialStep = 1 }
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s6ParentEmail.trim())) {
       errs.s6ParentEmail = 'Please enter a valid email address.';
     }
+
+    // Emergency Contact: Strictly 10 digits
+    const cleanEmergency = s6EmergencyContact.replace(/\D/g, '');
+    if (!cleanEmergency || cleanEmergency.length !== 10) {
+      errs.s6EmergencyContact = 'Emergency contact must be exactly 10 digits.';
+    }
     return errs;
   };
 
   const validateStep7 = () => {
     const errs: Record<string, string> = {};
+    const isNursery = isNurseryAdmission || s7SkippedForNursery;
+    if (isNursery) {
+      return errs; // Bypass all previous school/marksheet/TC validation rules
+    }
     const isGrade2OrHigher = !['Nursery', 'LKG', 'UKG', 'Grade 1'].includes(s2Class);
     if (isGrade2OrHigher) {
       if (!s7LastSchool.trim()) {
@@ -422,7 +470,8 @@ export const AdmissionWizardScreen: React.FC<WizardProps> = ({ initialStep = 1 }
 
   const validateStep9 = () => {
     const errs: Record<string, string> = {};
-    const isGrade2OrHigher = !['Nursery', 'LKG', 'UKG', 'Grade 1'].includes(s2Class);
+    const isNursery = isNurseryAdmission || s7SkippedForNursery;
+    const isGrade2OrHigher = !isNursery && !['Nursery', 'LKG', 'UKG', 'Grade 1'].includes(s2Class);
     if (!s9PhotoUploaded) {
       errs.s9Photo = 'Student passport photograph is mandatory (max 5MB, JPG/PNG).';
     }
@@ -617,7 +666,8 @@ export const AdmissionWizardScreen: React.FC<WizardProps> = ({ initialStep = 1 }
       return;
     }
     setErrors({});
-    const cleanPhone = s6ParentMobile.replace(/\D/g, '');
+    const cleanPhone = s6ParentMobile.replace(/\D/g, '').slice(0, 10);
+    const cleanEmergency = s6EmergencyContact.replace(/\D/g, '').slice(0, 10);
     handleSaveStep(6, {
       fatherName: s6FatherName.trim(),
       motherName: s6MotherName.trim(),
@@ -626,13 +676,14 @@ export const AdmissionWizardScreen: React.FC<WizardProps> = ({ initialStep = 1 }
       motherOccupation: s6MotherOccupation.trim(),
       mobile: cleanPhone,
       email: s6ParentEmail.trim(),
-      emergencyContact: s6EmergencyContact.trim(),
+      emergencyContact: cleanEmergency,
       annualIncome: s6AnnualIncome.trim()
     });
   };
 
   // STEP 7: Previous Education
   const handleStep7Submit = () => {
+    const isNursery = isNurseryAdmission || s7SkippedForNursery;
     const errs = validateStep7();
     if (Object.keys(errs).length > 0) {
       setErrors(errs);
@@ -641,13 +692,14 @@ export const AdmissionWizardScreen: React.FC<WizardProps> = ({ initialStep = 1 }
     }
     setErrors({});
     handleSaveStep(7, {
-      lastSchool: s7LastSchool.trim(),
-      board: s7Board.trim(),
-      passingYear: s7PassingYear.trim(),
-      percentageMarks: s7Marks.trim(),
-      medium: s7Medium.trim(),
-      reasonForLeaving: s7Reason.trim(),
-      tcNumber: s7TcDetails.trim()
+      skippedForNursery: isNursery,
+      lastSchool: isNursery ? 'N/A (First-Time Nursery Admission)' : s7LastSchool.trim(),
+      board: isNursery ? 'N/A' : s7Board.trim(),
+      passingYear: isNursery ? '' : s7PassingYear.trim(),
+      percentageMarks: isNursery ? '' : s7Marks.trim(),
+      medium: isNursery ? '' : s7Medium.trim(),
+      reasonForLeaving: isNursery ? '' : s7Reason.trim(),
+      tcNumber: isNursery ? '' : s7TcDetails.trim()
     });
   };
 
@@ -702,6 +754,8 @@ export const AdmissionWizardScreen: React.FC<WizardProps> = ({ initialStep = 1 }
         updateApplicationLocally(res.application);
         setSubmissionSuccess(true);
         setStatusMessage({ text: '🎉 Application submitted successfully! Welcome to Skanda International School.', type: 'success' });
+        // Lock Back-Navigation: replace history so back gesture / back button cannot return to form steps
+        navigateTo('/student/dashboard', { replace: true });
       }
     } catch (err: any) {
       setStatusMessage({ text: err.message || 'Submission failed. Please check all fields.', type: 'error' });
@@ -975,6 +1029,9 @@ export const AdmissionWizardScreen: React.FC<WizardProps> = ({ initialStep = 1 }
                   style={[styles.typeCard, s2Type === 'SCHOOL' && styles.typeCardActive, errors.s2Type && styles.inputError]}
                   onPress={() => {
                     setS2Type('SCHOOL');
+                    if (!schoolSpecializationOptions.includes(s2Specialization)) {
+                      setS2Specialization('');
+                    }
                     clearError('s2Type');
                   }}
                 >
@@ -990,6 +1047,9 @@ export const AdmissionWizardScreen: React.FC<WizardProps> = ({ initialStep = 1 }
                   style={[styles.typeCard, s2Type === 'COLLEGE' && styles.typeCardActive, errors.s2Type && styles.inputError]}
                   onPress={() => {
                     setS2Type('COLLEGE');
+                    if (!collegeSpecializationOptions.includes(s2Specialization)) {
+                      setS2Specialization('');
+                    }
                     clearError('s2Type');
                   }}
                 >
@@ -1048,7 +1108,7 @@ export const AdmissionWizardScreen: React.FC<WizardProps> = ({ initialStep = 1 }
                 <View style={styles.colHalf}>
                   <Text style={styles.label}>Mode of Attendance *</Text>
                   <View style={styles.radioGroup}>
-                    {['Day Scholar', 'Day Boarding', 'Residential'].map((mode) => (
+                    {['Day Scholar', 'Day Boarding', 'Regular Full-Time'].map((mode) => (
                       <TouchableOpacity
                         key={mode}
                         style={[styles.radioPill, s2Mode === mode && styles.radioPillActive, errors.s2Mode && styles.inputError]}
@@ -1069,14 +1129,60 @@ export const AdmissionWizardScreen: React.FC<WizardProps> = ({ initialStep = 1 }
                 </View>
 
                 <View style={styles.colHalf}>
-                  <Text style={styles.label}>Board / Specialization Focus</Text>
-                  <TextInput
-                    style={styles.textInput}
-                    placeholder="e.g. Science / General / STEM"
-                    placeholderTextColor={colors.textMuted}
-                    value={s2Specialization}
-                    onChangeText={setS2Specialization}
-                  />
+                  <Text style={styles.label}>Board / Specialization Focus *</Text>
+                  {Platform.OS === 'web' ? (
+                    <View style={[styles.selectWrapper, errors.s2Specialization && styles.inputError]}>
+                      <select
+                        id="s2Specialization-select"
+                        value={s2Specialization}
+                        onChange={(e: any) => {
+                          setS2Specialization(e.target.value);
+                          clearError('s2Specialization');
+                        }}
+                        style={{
+                          width: '100%',
+                          padding: '12px 14px',
+                          fontSize: '14px',
+                          color: s2Specialization ? colors.textPrimary : colors.textMuted,
+                          backgroundColor: colors.bgSurface,
+                          border: 'none',
+                          outline: 'none',
+                          fontFamily: 'inherit',
+                          cursor: 'pointer',
+                          borderRadius: borderRadius.md
+                        }}
+                      >
+                        <option value="">Select Board / Specialization...</option>
+                        {specializationOptions.map((opt) => (
+                          <option key={opt} value={opt} style={{ color: colors.textPrimary }}>
+                            {opt}
+                          </option>
+                        ))}
+                      </select>
+                    </View>
+                  ) : (
+                    <View style={[styles.pickerBox, errors.s2Specialization && styles.inputError]}>
+                      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipScroll}>
+                        {specializationOptions.map((opt) => (
+                          <TouchableOpacity
+                            key={opt}
+                            style={[styles.chip, s2Specialization === opt && styles.chipActive]}
+                            onPress={() => {
+                              setS2Specialization(opt);
+                              clearError('s2Specialization');
+                            }}
+                          >
+                            <Text style={[styles.chipText, s2Specialization === opt && styles.chipTextActive]}>
+                              {opt}
+                            </Text>
+                          </TouchableOpacity>
+                        ))}
+                      </ScrollView>
+                    </View>
+                  )}
+                  {errors.s2Specialization && (
+                    <Text style={styles.inlineErrorText}>⚠️ {errors.s2Specialization}</Text>
+                  )}
                 </View>
               </View>
 
@@ -1413,20 +1519,54 @@ export const AdmissionWizardScreen: React.FC<WizardProps> = ({ initialStep = 1 }
                 </View>
 
                 <View style={styles.colHalf}>
-                  <Text style={styles.label}>Date of Birth (YYYY-MM-DD) *</Text>
-                  <TextInput
-                    style={[
-                      styles.textInput,
-                      (errors.s5Dob || !s5AgeValidation.valid) && styles.inputError
-                    ]}
-                    placeholder="YYYY-MM-DD"
-                    placeholderTextColor={colors.textMuted}
-                    value={s5Dob}
-                    onChangeText={(val) => {
-                      setS5Dob(val);
-                      clearError('s5Dob');
-                    }}
-                  />
+                  <Text style={styles.label}>Date of Birth *</Text>
+                  {Platform.OS === 'web' ? (
+                    <View
+                      style={[
+                        styles.datePickerWrapper,
+                        (errors.s5Dob || !s5AgeValidation.valid) && styles.inputError
+                      ]}
+                    >
+                      <Text style={styles.datePickerIcon}>📅</Text>
+                      <input
+                        type="date"
+                        id="s5Dob-picker"
+                        name="dateOfBirth"
+                        max={new Date().toISOString().split('T')[0]}
+                        value={s5Dob}
+                        onChange={(e: any) => {
+                          const val = e.target.value;
+                          setS5Dob(val);
+                          clearError('s5Dob');
+                        }}
+                        style={{
+                          flex: 1,
+                          border: 'none',
+                          outline: 'none',
+                          fontSize: '14px',
+                          color: s5Dob ? colors.textPrimary : colors.textMuted,
+                          backgroundColor: 'transparent',
+                          fontFamily: 'inherit',
+                          cursor: 'pointer',
+                          padding: '3px 0'
+                        }}
+                      />
+                    </View>
+                  ) : (
+                    <TextInput
+                      style={[
+                        styles.textInput,
+                        (errors.s5Dob || !s5AgeValidation.valid) && styles.inputError
+                      ]}
+                      placeholder="YYYY-MM-DD"
+                      placeholderTextColor={colors.textMuted}
+                      value={s5Dob}
+                      onChangeText={(val) => {
+                        setS5Dob(val);
+                        clearError('s5Dob');
+                      }}
+                    />
+                  )}
                   {errors.s5Dob ? (
                     <Text style={styles.inlineErrorText}>⚠️ {errors.s5Dob}</Text>
                   ) : s5Dob ? (
@@ -1439,7 +1579,9 @@ export const AdmissionWizardScreen: React.FC<WizardProps> = ({ initialStep = 1 }
                         ⚠️ {s5AgeValidation.message}
                       </Text>
                     )
-                  ) : null}
+                  ) : (
+                    <Text style={styles.fieldHint}>Select Date of Birth via calendar picker</Text>
+                  )}
                 </View>
               </View>
 
@@ -1684,11 +1826,13 @@ export const AdmissionWizardScreen: React.FC<WizardProps> = ({ initialStep = 1 }
                     style={[styles.textInput, errors.s6ParentMobile && styles.inputError]}
                     placeholder="10-digit mobile"
                     placeholderTextColor={colors.textMuted}
-                    keyboardType="numeric"
+                    keyboardType="number-pad"
+                    inputMode="numeric"
                     maxLength={10}
                     value={s6ParentMobile}
                     onChangeText={(val) => {
-                      setS6ParentMobile(val);
+                      const clean = val.replace(/\D/g, '').slice(0, 10);
+                      setS6ParentMobile(clean);
                       clearError('s6ParentMobile');
                     }}
                   />
@@ -1703,6 +1847,7 @@ export const AdmissionWizardScreen: React.FC<WizardProps> = ({ initialStep = 1 }
                     style={[styles.textInput, errors.s6ParentEmail && styles.inputError]}
                     placeholder="parent@example.com"
                     placeholderTextColor={colors.textMuted}
+                    keyboardType="email-address"
                     value={s6ParentEmail}
                     onChangeText={(val) => {
                       setS6ParentEmail(val);
@@ -1715,14 +1860,26 @@ export const AdmissionWizardScreen: React.FC<WizardProps> = ({ initialStep = 1 }
                 </View>
 
                 <View style={styles.colThird}>
-                  <Text style={styles.label}>Emergency Contact</Text>
+                  <Text style={styles.label}>Emergency Contact *</Text>
                   <TextInput
-                    style={styles.textInput}
-                    placeholder="Phone number"
+                    nativeID="emergency-contact-input"
+                    testID="emergency-contact-input"
+                    style={[styles.textInput, errors.s6EmergencyContact && styles.inputError]}
+                    placeholder="10-digit emergency number"
                     placeholderTextColor={colors.textMuted}
+                    keyboardType="number-pad"
+                    inputMode="numeric"
+                    maxLength={10}
                     value={s6EmergencyContact}
-                    onChangeText={setS6EmergencyContact}
+                    onChangeText={(val) => {
+                      const clean = val.replace(/\D/g, '').slice(0, 10);
+                      setS6EmergencyContact(clean);
+                      clearError('s6EmergencyContact');
+                    }}
                   />
+                  {errors.s6EmergencyContact && (
+                    <Text style={styles.inlineErrorText}>⚠️ {errors.s6EmergencyContact}</Text>
+                  )}
                 </View>
               </View>
 
@@ -1765,6 +1922,62 @@ export const AdmissionWizardScreen: React.FC<WizardProps> = ({ initialStep = 1 }
                 <Text style={styles.stepSubtitle}>
                   Academic performance and transfer certificate details from your previous school or college.
                 </Text>
+              </View>
+
+              {/* NURSERY ADMISSION SKIP BANNER / TOGGLE */}
+              <View style={[styles.nurserySkipCard, (isNurseryAdmission || s7SkippedForNursery) && styles.nurserySkipCardActive]}>
+                <View style={styles.nurserySkipHeader}>
+                  <View style={{ flex: 1, minWidth: 220 }}>
+                    <Text style={styles.nurserySkipTitle}>
+                      🌱 First-Time Nursery / Pre-Primary Admission
+                    </Text>
+                    <Text style={styles.nurserySkipSubtitle}>
+                      {isNurseryAdmission
+                        ? 'Nursery / Pre-Primary class detected. Previous school history, marksheet, and TC are not required.'
+                        : 'If enrolling for early childhood / first-time schooling without previous institution history, you can skip this step.'}
+                    </Text>
+                  </View>
+                  <TouchableOpacity
+                    testID="skip-nursery-toggle"
+                    style={[
+                      styles.nurseryToggleBtn,
+                      s7SkippedForNursery && styles.nurseryToggleBtnActive
+                    ]}
+                    onPress={() => {
+                      setS7SkippedForNursery(!s7SkippedForNursery);
+                      clearError('s7LastSchool');
+                      clearError('s7Board');
+                      clearError('s7PassingYear');
+                      clearError('s7Marks');
+                    }}
+                  >
+                    <Text
+                      style={[
+                        styles.nurseryToggleBtnText,
+                        s7SkippedForNursery && styles.nurseryToggleBtnTextActive
+                      ]}
+                    >
+                      {s7SkippedForNursery ? '✓ Skipped for Nursery' : 'Skip for Nursery Admissions'}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+
+                {s7SkippedForNursery && (
+                  <View style={styles.nurserySkipActionRow}>
+                    <Text style={styles.nurserySkipBadge}>
+                      ✓ Previous school & TC validation rules bypassed
+                    </Text>
+                    <TouchableOpacity
+                      testID="skip-to-facilities-btn"
+                      style={styles.nurserySkipNextBtn}
+                      onPress={handleStep7Submit}
+                    >
+                      <Text style={styles.nurserySkipNextBtnText}>
+                        Advance to Step 8 (Facilities) ➜
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                )}
               </View>
 
               <View style={styles.formGrid}>
@@ -3137,5 +3350,106 @@ const styles = StyleSheet.create({
     color: colors.textPrimary,
     fontSize: 13,
     fontWeight: '600'
+  },
+  selectWrapper: {
+    borderWidth: 1,
+    borderColor: colors.borderDefault,
+    borderRadius: borderRadius.md,
+    backgroundColor: colors.bgSurface,
+    overflow: 'hidden'
+  },
+  datePickerWrapper: {
+    borderWidth: 1,
+    borderColor: colors.borderDefault,
+    borderRadius: borderRadius.md,
+    backgroundColor: colors.bgSurface,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10
+  },
+  datePickerIcon: {
+    fontSize: 16
+  },
+  fieldHint: {
+    fontSize: 11,
+    color: colors.textMuted,
+    marginTop: 4
+  },
+  nurserySkipCard: {
+    backgroundColor: '#F8FAFC',
+    borderWidth: 1.5,
+    borderColor: '#CBD5E1',
+    borderRadius: borderRadius.lg,
+    padding: spacing.md,
+    marginBottom: spacing.lg
+  },
+  nurserySkipCardActive: {
+    backgroundColor: '#EFF6FF',
+    borderColor: '#3B82F6'
+  },
+  nurserySkipHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: 12
+  },
+  nurserySkipTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: colors.textPrimary
+  },
+  nurserySkipSubtitle: {
+    fontSize: 13,
+    color: colors.textSecondary,
+    marginTop: 4
+  },
+  nurseryToggleBtn: {
+    borderWidth: 1.5,
+    borderColor: colors.brandPrimary,
+    borderRadius: borderRadius.full,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    backgroundColor: colors.bgSurface
+  },
+  nurseryToggleBtnActive: {
+    backgroundColor: colors.brandPrimary
+  },
+  nurseryToggleBtnText: {
+    color: colors.brandPrimary,
+    fontWeight: '700',
+    fontSize: 13
+  },
+  nurseryToggleBtnTextActive: {
+    color: colors.textInverse
+  },
+  nurserySkipActionRow: {
+    marginTop: 12,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#DBEAFE',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: 10
+  },
+  nurserySkipBadge: {
+    fontSize: 12,
+    color: '#1D4ED8',
+    fontWeight: '600'
+  },
+  nurserySkipNextBtn: {
+    backgroundColor: colors.brandPrimary,
+    borderRadius: borderRadius.md,
+    paddingHorizontal: 16,
+    paddingVertical: 8
+  },
+  nurserySkipNextBtnText: {
+    color: colors.textInverse,
+    fontWeight: '700',
+    fontSize: 13
   }
 });

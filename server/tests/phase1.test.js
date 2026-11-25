@@ -229,6 +229,22 @@ describe('Skanda International School - Phase 1 Integration Tests', () => {
       expect(res.body.message).toMatch(/pickup area.*required/i);
     });
 
+    test('PUT Step 6 (Parent Details) rejects invalid emergency contact (< 10 digits)', async () => {
+      const res = await request(app)
+        .put('/api/applications/step/6')
+        .set('Authorization', `Bearer ${authToken}`)
+        .send({
+          fatherName: 'Rajesh Sharma',
+          mobile: '9876543210',
+          email: 'rajesh.sharma@example.com',
+          emergencyContact: '98765' // Invalid < 10 digits
+        });
+
+      expect(res.status).toBe(400);
+      expect(res.body.success).toBe(false);
+      expect(res.body.message).toMatch(/emergency contact must be exactly 10 digits/i);
+    });
+
     test('PUT Step 6 (Parent Details) saves father, mother, and guardian contacts', async () => {
       const res = await request(app)
         .put('/api/applications/step/6')
@@ -239,12 +255,28 @@ describe('Skanda International School - Phase 1 Integration Tests', () => {
           mobile: '9876543210',
           email: 'rajesh.sharma@example.com',
           fatherOccupation: 'Software Architect',
-          motherOccupation: 'Professor'
+          motherOccupation: 'Professor',
+          emergencyContact: '9876543210'
         });
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
       expect(res.body.application.parentDetails.fatherName).toBe('Rajesh Sharma');
+      expect(res.body.application.parentDetails.emergencyContact).toBe('9876543210');
+    });
+
+    test('PUT Step 7 (Previous Education) saves skippedForNursery flag without errors', async () => {
+      const res = await request(app)
+        .put('/api/applications/step/7')
+        .set('Authorization', `Bearer ${authToken}`)
+        .send({
+          skippedForNursery: true
+        });
+
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+      expect(res.body.application.previousEducation.skippedForNursery).toBe(true);
+      expect(res.body.application.previousEducation.lastSchool).toMatch(/Nursery/i);
     });
 
     test('PUT Step 8 (Facilities) saves successfully when valid options provided', async () => {
@@ -333,6 +365,7 @@ describe('Skanda International School - Phase 1 Integration Tests', () => {
 
       expect(res.status).toBe(403);
       expect(res.body.success).toBe(false);
+      expect(res.body.code).toBe('APPLICATION_ALREADY_SUBMITTED');
       expect(res.body.message).toMatch(/already been submitted and is locked/i);
     });
   });

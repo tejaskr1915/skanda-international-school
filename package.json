@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
+    "setup": "node scripts/ensure-env.js && npm install && npm --prefix server install && npx prisma generate && npx --prefix server prisma generate && npx prisma db push && node prisma/seed.js",
+    "seed": "node prisma/seed.js",
+    "dev": "concurrently -k -p \"[{name}]\" -n \"API,WEB\" -c \"blue,green\" \"npm run server\" \"npx expo start --web --clear --lan\"",
     "start": "expo start --lan",
     "android": "expo start --android --lan",
     "ios": "expo start --ios --lan",
@@ -12,6 +15,10 @@
     "test:api": "npm --prefix server test",
     "test:e2e": "playwright test",
     "test": "npm run test:api && npm run test:e2e"
+  },
+  "prisma": {
+    "schema": "prisma/schema.prisma",
+    "seed": "node prisma/seed.js"
   },
   "dependencies": {
     "@expo/metro-runtime": "~4.0.1",
@@ -28,8 +35,11 @@
   "devDependencies": {
     "@babel/core": "^7.20.0",
     "@playwright/test": "^1.65.1",
+    "@prisma/client": "^6.19.3",
     "@types/react": "~18.3.12",
     "babel-preset-expo": "^58.0.26",
+    "concurrently": "^10.0.7",
+    "prisma": "^6.19.3",
     "typescript": "^5.9.3"
   },
   "private": true

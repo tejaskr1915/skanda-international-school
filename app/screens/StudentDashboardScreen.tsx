@@ -1,12 +1,17 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Platform } from 'react-native';
 import { useAuth } from '../context/AuthContext';
+import api from '../services/api';
 import { colors, borderRadius, spacing, shadows } from '../theme/theme';
 import { StudentHeader } from '../components/StudentHeader';
 import { StudentFooter } from '../components/StudentFooter';
 import { generateApplicationPdf } from '../utils/pdfGenerator';
 
-export const StudentDashboardScreen: React.FC = () => {
+interface StudentDashboardProps {
+  lockNotice?: string;
+}
+
+export const StudentDashboardScreen: React.FC<StudentDashboardProps> = ({ lockNotice }) => {
   const { user, application, navigateTo } = useAuth();
   const [activeTab, setActiveTab] = useState('Dashboard');
   const [pdfDownloading, setPdfDownloading] = useState(false);
@@ -82,7 +87,6 @@ export const StudentDashboardScreen: React.FC = () => {
             return (
               <TouchableOpacity
                 key={item.id}
-                nativeID={`sidebar-${item.id.toLowerCase()}`}
                 testID={`sidebar-${item.id.toLowerCase()}`}
                 style={[styles.sidebarItem, isActive && styles.sidebarItemActive]}
                 onPress={() => setActiveTab(item.id)}
@@ -110,6 +114,19 @@ export const StudentDashboardScreen: React.FC = () => {
         {/* MAIN DASHBOARD CONTENT */}
         <ScrollView style={styles.mainScroll} showsVerticalScrollIndicator={false}>
           <View style={styles.contentCanvas}>
+            {/* READ-ONLY LOCKED NOTICE */}
+            {(lockNotice || (application && application.status !== 'DRAFT')) && (
+              <View style={styles.lockNoticeBanner}>
+                <Text style={styles.lockNoticeIcon}>🔒</Text>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.lockNoticeTitle}>Application Locked for Review</Text>
+                  <Text style={styles.lockNoticeText}>
+                    {lockNotice || 'Your application has already been submitted and locked for review.'}
+                  </Text>
+                </View>
+              </View>
+            )}
+
             {/* TOP NOTICE: SUBMITTED CONFIRMATION BANNER */}
             <View style={styles.statusBanner}>
               <View style={styles.statusLeft}>
@@ -125,7 +142,6 @@ export const StudentDashboardScreen: React.FC = () => {
               </View>
 
               <TouchableOpacity
-                nativeID="download-pdf-btn"
                 testID="download-pdf-btn"
                 style={styles.downloadPdfBtn}
                 onPress={handleDownloadPdf}
@@ -766,6 +782,30 @@ const styles = StyleSheet.create({
   deadlineDate: {
     fontSize: 11,
     color: colors.textSecondary,
+    marginTop: 2
+  },
+  lockNoticeBanner: {
+    backgroundColor: '#EFF6FF',
+    borderColor: '#3B82F6',
+    borderWidth: 1.5,
+    borderRadius: borderRadius.md,
+    padding: spacing.md,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginBottom: spacing.md
+  },
+  lockNoticeIcon: {
+    fontSize: 22
+  },
+  lockNoticeTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#1D4ED8'
+  },
+  lockNoticeText: {
+    fontSize: 13,
+    color: '#1E3A8A',
     marginTop: 2
   }
 });

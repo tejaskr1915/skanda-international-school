@@ -177,10 +177,11 @@ router.put('/step/:stepNumber', authMiddleware, async (req, res) => {
       return res.status(404).json({ success: false, message: 'Application not found.' });
     }
 
-    // Lock mutations if already submitted
-    if (application.status === 'SUBMITTED') {
+    // Lock mutations if already submitted or not in draft
+    if (application.status !== 'DRAFT') {
       return res.status(403).json({
         success: false,
+        code: 'APPLICATION_ALREADY_SUBMITTED',
         message: 'Your application has already been submitted and is locked from further edits.'
       });
     }
@@ -206,7 +207,7 @@ router.put('/step/:stepNumber', authMiddleware, async (req, res) => {
       updateData.classOrCourse = classOrCourse;
       updateData.academicYear = academicYear || '2026-2027';
       updateData.specializationOrStream = specializationOrStream || null;
-      updateData.mode = mode || 'Day Scholar';
+      updateData.mode = mode && mode !== 'Residential' ? mode : 'Day Scholar';
     }
 
     // -----------------------------------------
@@ -301,6 +302,11 @@ router.put('/step/:stepNumber', authMiddleware, async (req, res) => {
         return res.status(400).json({ success: false, message: 'Parent mobile number must be 10 digits.' });
       }
 
+      const cleanEmergency = (emergencyContact || '').toString().trim().replace(/\D/g, '');
+      if (cleanEmergency && cleanEmergency.length !== 10) {
+        return res.status(400).json({ success: false, message: 'Emergency contact must be exactly 10 digits.' });
+      }
+
       updateData.parentDetails = {
         fatherName: fatherName ? fatherName.trim() : '',
         motherName: motherName ? motherName.trim() : '',
@@ -309,7 +315,7 @@ router.put('/step/:stepNumber', authMiddleware, async (req, res) => {
         motherOccupation: motherOccupation || '',
         mobile: cleanMobile,
         email: email ? email.trim().toLowerCase() : '',
-        emergencyContact: emergencyContact || '',
+        emergencyContact: cleanEmergency,
         annualIncome: annualIncome || ''
       };
     }
@@ -318,15 +324,18 @@ router.put('/step/:stepNumber', authMiddleware, async (req, res) => {
     // STEP 7: Previous Education
     // -----------------------------------------
     if (stepNumber === 7) {
-      const { lastSchool, board, passingYear, percentageMarks, reasonForLeaving, tcNumber } = payload;
+      const { lastSchool, board, passingYear, percentageMarks, reasonForLeaving, tcNumber, skippedForNursery } = payload;
+      const currentClass = payload.classOrCourse || application.classOrCourse;
+      const isNursery = !!skippedForNursery || ['Nursery', 'Pre-KG', 'LKG', 'UKG', 'Kindergarten', 'Pre-Primary'].includes(currentClass);
 
       updateData.previousEducation = {
-        lastSchool: lastSchool ? lastSchool.trim() : '',
-        board: board || '',
-        passingYear: passingYear || '',
-        percentageMarks: percentageMarks || '',
-        reasonForLeaving: reasonForLeaving || '',
-        tcNumber: tcNumber || ''
+        skippedForNursery: isNursery,
+        lastSchool: isNursery ? (lastSchool || 'N/A (First-Time Nursery Admission)') : (lastSchool ? lastSchool.trim() : ''),
+        board: isNursery ? (board || 'N/A') : (board || ''),
+        passingYear: isNursery ? '' : (passingYear || ''),
+        percentageMarks: isNursery ? '' : (percentageMarks || ''),
+        reasonForLeaving: isNursery ? '' : (reasonForLeaving || ''),
+        tcNumber: isNursery ? '' : (tcNumber || '')
       };
     }
 

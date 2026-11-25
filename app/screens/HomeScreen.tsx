@@ -17,6 +17,7 @@ import { PublicHeader } from '../components/PublicHeader';
 import { PublicFooter } from '../components/PublicFooter';
 import { LoginModal } from '../components/LoginModal';
 import { StatusModal } from '../components/StatusModal';
+import { IMAGES } from '../assets/images';
 
 // 4-Slide Auto-Rotating Royal Blue Hero Carousel (Changes Every 4000ms)
 const HERO_SLIDES = [
@@ -26,6 +27,7 @@ const HERO_SLIDES = [
     title: 'Learning That Opens\nEvery Door',
     subtitle: 'Welcome to Skanda International School: quality holistic education across CBSE, ICSE, and College disciplines empowering students to grow in knowledge, character and confidence.',
     image: 'https://images.unsplash.com/photo-1541829070764-84a7d30dd3f3?auto=format&fit=crop&w=1920&q=80',
+    imageSource: IMAGES.hero[0],
     primaryBtn: 'Apply Online ➜',
     secondaryBtn: 'Track Application Status'
   },
@@ -35,6 +37,7 @@ const HERO_SLIDES = [
     title: 'Shaping Future\nLeaders Today',
     subtitle: 'Inspiring young minds through digital smart classrooms, collaborative technology hubs, and future-ready experiential curricula.',
     image: 'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&w=1920&q=80',
+    imageSource: IMAGES.hero[1],
     primaryBtn: 'Apply Online ➜',
     secondaryBtn: 'Explore Academic Streams'
   },
@@ -44,6 +47,7 @@ const HERO_SLIDES = [
     title: 'Hands-On STEM &\nAcademic Excellence',
     subtitle: 'State-of-the-art physics, chemistry, biotechnology, and AI robotics laboratories empowering inquisitive young minds to innovate.',
     image: 'https://images.unsplash.com/photo-1581093458791-9f3c3900df4b?auto=format&fit=crop&w=1920&q=80',
+    imageSource: IMAGES.hero[2],
     primaryBtn: 'Apply Online ➜',
     secondaryBtn: 'Explore Innovation Labs'
   },
@@ -53,6 +57,7 @@ const HERO_SLIDES = [
     title: 'Holistic Growth Across\nCBSE, ICSE & College',
     subtitle: 'Olympic-grade athletic facilities, vibrant creative arts studios, and an expansive digital research library for all-round student excellence.',
     image: 'https://images.unsplash.com/photo-1521587760476-6c12a4b040da?auto=format&fit=crop&w=1920&q=80',
+    imageSource: IMAGES.hero[3],
     primaryBtn: 'Apply Online ➜',
     secondaryBtn: 'Campus Virtual Tour'
   }
@@ -102,6 +107,7 @@ export const HomeScreen: React.FC = () => {
       board: 'CBSE, Grades 1–12',
       seats: 'Admissions Open (34 Seats)',
       image: 'https://images.unsplash.com/photo-1580582932707-520aed937b7b?auto=format&fit=crop&w=600&q=80',
+      imageSource: IMAGES.campuses.kanakapura,
       x: 68,
       y: 56
     },
@@ -115,6 +121,7 @@ export const HomeScreen: React.FC = () => {
       board: 'ICSE / ISC, Grades 1–12',
       seats: 'Limited Seats (8 Seats)',
       image: 'https://images.unsplash.com/photo-1541829070764-84a7d30dd3f3?auto=format&fit=crop&w=600&q=80',
+      imageSource: IMAGES.campuses.whitefield,
       x: 78,
       y: 46
     },
@@ -128,6 +135,7 @@ export const HomeScreen: React.FC = () => {
       board: 'B.Tech / M.Tech AICTE',
       seats: 'Merit Applications Open',
       image: 'https://images.unsplash.com/photo-1562774053-701939374585?auto=format&fit=crop&w=600&q=80',
+      imageSource: IMAGES.campuses.mysuru,
       x: 48,
       y: 74
     },
@@ -141,6 +149,7 @@ export const HomeScreen: React.FC = () => {
       board: 'B.Com / BBA / MBA',
       seats: 'Scholarship Available',
       image: 'https://images.unsplash.com/photo-1525921429624-479b6a26d84d?auto=format&fit=crop&w=600&q=80',
+      imageSource: IMAGES.campuses.mangaluru,
       x: 18,
       y: 62
     }
@@ -185,7 +194,8 @@ export const HomeScreen: React.FC = () => {
           } as any)}
         >
           <ImageBackground
-            source={{ uri: HERO_SLIDES[activeSlide].image }}
+            source={HERO_SLIDES[activeSlide].imageSource || { uri: HERO_SLIDES[activeSlide].image }}
+            defaultSource={IMAGES.fallback}
             style={styles.heroBackground}
             imageStyle={styles.heroBackgroundImage}
             resizeMode="cover"
@@ -780,7 +790,8 @@ export const HomeScreen: React.FC = () => {
 
                     <View style={styles.floatingCardHeader}>
                       <Image
-                        source={{ uri: activeCampus.image }}
+                        source={activeCampus.imageSource || { uri: activeCampus.image }}
+                        defaultSource={IMAGES.fallback}
                         style={styles.floatingCardPhoto}
                         resizeMode="cover"
                       />
@@ -836,7 +847,8 @@ export const HomeScreen: React.FC = () => {
                       activeOpacity={0.9}
                     >
                       <Image
-                        source={{ uri: campus.image }}
+                        source={campus.imageSource || { uri: campus.image }}
+                        defaultSource={IMAGES.fallback}
                         style={styles.campusThumbnail}
                         resizeMode="cover"
                       />
@@ -936,7 +948,8 @@ export const HomeScreen: React.FC = () => {
           <View style={styles.newsGrid}>
             <View style={styles.newsCard}>
               <Image
-                source={{ uri: 'https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&w=800&q=80' }}
+                source={IMAGES.news.achievement}
+                defaultSource={IMAGES.fallback}
                 style={styles.newsImage}
                 resizeMode="cover"
               />
@@ -951,7 +964,8 @@ export const HomeScreen: React.FC = () => {
 
             <View style={styles.newsCard}>
               <Image
-                source={{ uri: 'https://images.unsplash.com/photo-1581092921461-eab62e97a780?auto=format&fit=crop&w=800&q=80' }}
+                source={IMAGES.news.robotics}
+                defaultSource={IMAGES.fallback}
                 style={styles.newsImage}
                 resizeMode="cover"
               />
@@ -966,7 +980,8 @@ export const HomeScreen: React.FC = () => {
 
             <View style={styles.newsCard}>
               <Image
-                source={{ uri: 'https://images.unsplash.com/photo-1577896851231-70ef18881754?auto=format&fit=crop&w=800&q=80' }}
+                source={IMAGES.news.scholarship}
+                defaultSource={IMAGES.fallback}
                 style={styles.newsImage}
                 resizeMode="cover"
               />
@@ -986,7 +1001,8 @@ export const HomeScreen: React.FC = () => {
           <View style={styles.whyContentRow}>
             <View style={styles.whyImageBox}>
               <Image
-                source={{ uri: 'https://images.unsplash.com/photo-1509062522246-3755977927d7?auto=format&fit=crop&w=1000&q=80' }}
+                source={IMAGES.about}
+                defaultSource={IMAGES.fallback}
                 style={styles.whyPhoto}
                 resizeMode="cover"
               />
