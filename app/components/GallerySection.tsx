@@ -171,7 +171,11 @@ export const GallerySection: React.FC<GallerySectionProps> = ({ isStandalonePage
         </ScrollView>
 
         {/* Responsive Photo Grid */}
-        <View style={styles.grid}>
+        <View
+          key={selectedCategory}
+          style={styles.grid}
+          {...(Platform.OS === 'web' ? ({ className: 'skanda-fade-up' } as any) : {})}
+        >
           {filteredItems.map((item, index) => (
             <TouchableOpacity
               key={item.id}
@@ -181,6 +185,7 @@ export const GallerySection: React.FC<GallerySectionProps> = ({ isStandalonePage
               ]}
               onPress={() => openLightbox(index)}
               activeOpacity={0.9}
+              {...(Platform.OS === 'web' ? ({ className: 'skanda-gallery-card' } as any) : {})}
             >
               <View style={styles.imageWrapper}>
                 <Image
@@ -192,7 +197,10 @@ export const GallerySection: React.FC<GallerySectionProps> = ({ isStandalonePage
                 <View style={styles.categoryBadgeOverlay}>
                   <Text style={styles.categoryBadgeText}>{item.category}</Text>
                 </View>
-                <View style={styles.zoomHintPill}>
+                <View
+                  style={styles.zoomHintPill}
+                  {...(Platform.OS === 'web' ? ({ className: 'skanda-zoom-pill' } as any) : {})}
+                >
                   <Text style={styles.zoomHintText}>🔍 View</Text>
                 </View>
               </View>
@@ -217,7 +225,10 @@ export const GallerySection: React.FC<GallerySectionProps> = ({ isStandalonePage
         animationType="fade"
         onRequestClose={closeLightbox}
       >
-        <View style={styles.lightboxOverlay}>
+        <View
+          style={styles.lightboxOverlay}
+          {...(Platform.OS === 'web' ? ({ className: 'skanda-modal-backdrop' } as any) : {})}
+        >
           {/* Top Bar */}
           <View style={styles.lightboxTopBar}>
             <View style={styles.lightboxCounterBadge}>
@@ -249,7 +260,11 @@ export const GallerySection: React.FC<GallerySectionProps> = ({ isStandalonePage
                 </TouchableOpacity>
               )}
 
-              <View style={[styles.lightboxImageContainer, { maxHeight: height * 0.68 }]}>
+              <View
+                key={activeLightboxItem.id}
+                style={[styles.lightboxImageContainer, { maxHeight: height * 0.68 }]}
+                {...(Platform.OS === 'web' ? ({ className: 'skanda-modal-card' } as any) : {})}
+              >
                 <Image
                   source={activeLightboxItem.image}
                   defaultSource={IMAGES.fallback}
@@ -399,7 +414,8 @@ const styles = StyleSheet.create({
     width: '100%',
     aspectRatio: 16 / 10,
     backgroundColor: '#E2E8F0',
-    position: 'relative'
+    position: 'relative',
+    overflow: 'hidden'
   },
   cardImage: {
     width: '100%',

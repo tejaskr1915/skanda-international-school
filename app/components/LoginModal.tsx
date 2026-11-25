@@ -97,8 +97,14 @@ export const LoginModal: React.FC<LoginModalProps> = ({ visible, onClose, defaul
 
   return (
     <Modal visible={visible} transparent={true} animationType="fade" onRequestClose={onClose}>
-      <View style={styles.overlay}>
-        <View style={styles.modalCard}>
+      <View
+        style={styles.overlay}
+        {...(Platform.OS === 'web' ? ({ className: 'skanda-modal-backdrop' } as any) : {})}
+      >
+        <View
+          style={styles.modalCard}
+          {...(Platform.OS === 'web' ? ({ className: 'skanda-modal-card' } as any) : {})}
+        >
           {/* Header */}
           <View style={styles.headerRow}>
             <View>

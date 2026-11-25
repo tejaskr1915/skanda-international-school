@@ -217,6 +217,7 @@ export const HomeScreen: React.FC = () => {
                     style={styles.heroPrimaryBtn}
                     onPress={() => navigateTo('/apply')}
                     activeOpacity={0.88}
+                    {...(Platform.OS === 'web' ? ({ className: 'skanda-btn-primary' } as any) : {})}
                   >
                     <Text style={styles.heroPrimaryBtnText}>{HERO_SLIDES[activeSlide].primaryBtn}</Text>
                   </TouchableOpacity>
@@ -334,23 +335,23 @@ export const HomeScreen: React.FC = () => {
         {/* 5 INSTITUTIONAL STATISTICS CARDS */}
         <View style={styles.statsSection}>
           <View nativeID="stats-grid" testID="stats-grid" style={styles.statsGrid}>
-            <View style={styles.statCard}>
+            <View style={styles.statCard} {...(Platform.OS === 'web' ? ({ className: 'skanda-kpi-card' } as any) : {})}>
               <Text style={styles.statNumber}>25,000+</Text>
               <Text style={styles.statLabel}>Students Enrolled</Text>
             </View>
-            <View style={styles.statCard}>
+            <View style={styles.statCard} {...(Platform.OS === 'web' ? ({ className: 'skanda-kpi-card' } as any) : {})}>
               <Text style={styles.statNumber}>40</Text>
               <Text style={styles.statLabel}>Schools Nationwide</Text>
             </View>
-            <View style={styles.statCard}>
+            <View style={styles.statCard} {...(Platform.OS === 'web' ? ({ className: 'skanda-kpi-card' } as any) : {})}>
               <Text style={styles.statNumber}>18</Text>
               <Text style={styles.statLabel}>Colleges & Branches</Text>
             </View>
-            <View style={styles.statCard}>
+            <View style={styles.statCard} {...(Platform.OS === 'web' ? ({ className: 'skanda-kpi-card' } as any) : {})}>
               <Text style={styles.statNumber}>1,200+</Text>
               <Text style={styles.statLabel}>Expert Faculty</Text>
             </View>
-            <View style={styles.statCard}>
+            <View style={styles.statCard} {...(Platform.OS === 'web' ? ({ className: 'skanda-kpi-card' } as any) : {})}>
               <Text style={styles.statNumber}>15</Text>
               <Text style={styles.statLabel}>Cities Across India</Text>
             </View>
@@ -841,6 +842,7 @@ export const HomeScreen: React.FC = () => {
                         setShowMapInfoCard(true);
                       }}
                       activeOpacity={0.9}
+                      {...(Platform.OS === 'web' ? ({ className: 'skanda-campus-card' } as any) : {})}
                     >
                       <Image
                         source={campus.imageSource || { uri: campus.image }}
@@ -1162,11 +1164,11 @@ const styles = StyleSheet.create({
     paddingTop: 48,
     paddingBottom: 24,
     paddingHorizontal: spacing.lg,
-    backgroundColor: 'rgba(15, 23, 42, 0.70)',
+    backgroundColor: Platform.OS === 'web' ? 'transparent' : 'rgba(15, 23, 42, 0.55)',
     ...(Platform.OS === 'web'
       ? ({
           backgroundImage:
-            'linear-gradient(90deg, rgba(15, 23, 42, 0.82) 0%, rgba(30, 58, 138, 0.62) 55%, rgba(29, 78, 216, 0.25) 100%)'
+            'linear-gradient(90deg, rgba(15, 23, 42, 0.78) 0%, rgba(30, 58, 138, 0.45) 45%, rgba(29, 78, 216, 0.12) 100%)'
         } as any)
       : {})
   },

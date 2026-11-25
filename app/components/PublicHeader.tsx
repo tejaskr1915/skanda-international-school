@@ -11,18 +11,23 @@ interface PublicHeaderProps {
 }
 
 export const PublicHeader: React.FC<PublicHeaderProps> = ({ onOpenLogin, activeRoute }) => {
-  const { navigateTo, user, application, logout } = useAuth();
+  const { navigateTo, user, application, logout, currentRoute } = useAuth();
   const { width } = useWindowDimensions();
   const isMobile = width < 768;
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [hoveredNav, setHoveredNav] = useState<string | null>(null);
-  const [activeNav, setActiveNav] = useState<string>(activeRoute || 'Campuses');
+  const isApplyRoute = currentRoute.startsWith('/apply');
+  const [activeNav, setActiveNav] = useState<string | null>(
+    isApplyRoute ? null : (activeRoute || null)
+  );
 
   useEffect(() => {
-    if (activeRoute) {
+    if (currentRoute.startsWith('/apply')) {
+      setActiveNav(null);
+    } else if (activeRoute) {
       setActiveNav(activeRoute);
     }
-  }, [activeRoute]);
+  }, [currentRoute, activeRoute]);
 
   // Only keep functional links that scroll to existing sections or active Phase 1 routes
   const menuItems = [
@@ -35,32 +40,75 @@ export const PublicHeader: React.FC<PublicHeaderProps> = ({ onOpenLogin, activeR
 
   // Highlight active section when scrolled into view on Web Home Page
   useEffect(() => {
-    if (Platform.OS !== 'web' || typeof window === 'undefined' || typeof IntersectionObserver === 'undefined') {
+    if (
+      Platform.OS !== 'web' ||
+      typeof window === 'undefined' ||
+      currentRoute.startsWith('/apply')
+    ) {
       return;
     }
-    const observer = new IntersectionObserver(
-      (entries) => {
-        for (const entry of entries) {
-          if (entry.isIntersecting) {
-            const matched = menuItems.find((m) => m.target === entry.target.id);
-            if (matched) {
-              setActiveNav(matched.label);
+
+    let observer: IntersectionObserver | null = null;
+
+    const updateActiveFromScroll = () => {
+      if (currentRoute.startsWith('/apply')) return;
+      const triggerY = window.innerHeight * 0.4;
+      let currentActive: string | null = null;
+
+      for (const item of menuItems) {
+        if (!item.target) continue;
+        const el = document.getElementById(item.target);
+        if (!el) continue;
+        const rect = el.getBoundingClientRect();
+        if (rect.top <= triggerY && rect.bottom > 100) {
+          currentActive = item.label;
+        }
+      }
+
+      if (currentActive) {
+        setActiveNav(currentActive);
+      }
+    };
+
+    const attachObservers = () => {
+      if (typeof IntersectionObserver !== 'undefined') {
+        observer = new IntersectionObserver(
+          (entries) => {
+            if (currentRoute.startsWith('/apply')) return;
+            for (const entry of entries) {
+              if (entry.isIntersecting) {
+                const matched = menuItems.find((m) => m.target === entry.target.id);
+                if (matched) {
+                  setActiveNav(matched.label);
+                }
+              }
+            }
+          },
+          { rootMargin: '-25% 0px -55% 0px', threshold: 0 }
+        );
+
+        menuItems.forEach((item) => {
+          if (item.target) {
+            const el = document.getElementById(item.target);
+            if (el) {
+              el.style.scrollMarginTop = '96px';
+              observer!.observe(el);
             }
           }
-        }
-      },
-      { rootMargin: '-25% 0px -55% 0px', threshold: 0.1 }
-    );
-
-    menuItems.forEach((item) => {
-      if (item.target) {
-        const el = document.getElementById(item.target);
-        if (el) observer.observe(el);
+        });
       }
-    });
 
-    return () => observer.disconnect();
-  }, []);
+      window.addEventListener('scroll', updateActiveFromScroll, { passive: true, capture: true });
+    };
+
+    const timer = setTimeout(attachObservers, 100);
+
+    return () => {
+      clearTimeout(timer);
+      if (observer) observer.disconnect();
+      window.removeEventListener('scroll', updateActiveFromScroll, { capture: true } as any);
+    };
+  }, [currentRoute]);
 
   const handleNavClick = (item: { label: string; route?: string; target?: string }) => {
     setActiveNav(item.label);
@@ -73,11 +121,12 @@ export const PublicHeader: React.FC<PublicHeaderProps> = ({ onOpenLogin, activeR
         const scrollToSection = () => {
           const el = document.getElementById(item.target!);
           if (el) {
+            el.style.scrollMarginTop = '96px';
             el.scrollIntoView({ behavior: 'smooth', block: 'start' });
           }
         };
 
-        if (window.location.pathname !== '/') {
+        if ((currentRoute !== '/' && currentRoute !== '') || window.location.pathname !== '/') {
           navigateTo('/');
           setTimeout(scrollToSection, 250);
         } else {
@@ -191,7 +240,10 @@ export const PublicHeader: React.FC<PublicHeaderProps> = ({ onOpenLogin, activeR
 
       {/* Full-Width Mobile Slide-Down Menu Drawer (< 768px) */}
       {isMobile && mobileMenuOpen && (
-        <View style={styles.mobileDrawer}>
+        <View
+          style={styles.mobileDrawer}
+          {...(Platform.OS === 'web' ? ({ className: 'skanda-fade-up' } as any) : {})}
+        >
           <View style={styles.mobileNavList}>
             {menuItems.map((item, index) => {
               const isActive = activeNav === item.label;

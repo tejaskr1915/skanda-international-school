@@ -58,14 +58,18 @@ const MainNavigator: React.FC = () => {
   return (
     <SafeAreaView style={styles.safeArea}>
       <StatusBar barStyle="light-content" backgroundColor={colors.brandDark} />
-      <View style={styles.appContainer}>
+      <View
+        key={currentRoute}
+        style={styles.appContainer}
+        {...(Platform.OS === 'web' ? ({ className: 'skanda-fade-up' } as any) : {})}
+      >
         {renderCurrentScreen()}
       </View>
     </SafeAreaView>
   );
 };
 
-// Global responsive web styles to prevent horizontal overflow on mobile viewports
+// Global responsive web styles & lightweight animations
 if (Platform.OS === 'web' && typeof document !== 'undefined') {
   const styleId = 'skanda-global-responsive-styles';
   if (!document.getElementById(styleId)) {
@@ -81,6 +85,88 @@ if (Platform.OS === 'web' && typeof document !== 'undefined') {
       }
       *, *::before, *::after {
         box-sizing: border-box !important;
+      }
+
+      @keyframes skandaFadeUp {
+        from {
+          opacity: 0;
+          transform: translateY(12px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+      .skanda-fade-up {
+        animation: skandaFadeUp 250ms cubic-bezier(0.16, 1, 0.3, 1) both;
+      }
+
+      @keyframes skandaBackdropFade {
+        from { opacity: 0; }
+        to { opacity: 1; }
+      }
+      @keyframes skandaScaleIn {
+        from {
+          opacity: 0;
+          transform: scale(0.95);
+        }
+        to {
+          opacity: 1;
+          transform: scale(1);
+        }
+      }
+      .skanda-modal-backdrop {
+        animation: skandaBackdropFade 200ms ease-out both;
+        backdrop-filter: blur(4px);
+        -webkit-backdrop-filter: blur(4px);
+      }
+      .skanda-modal-card {
+        animation: skandaScaleIn 200ms ease-out both;
+      }
+
+      .skanda-gallery-card {
+        transition: transform 200ms ease, box-shadow 200ms ease, border-color 200ms ease !important;
+      }
+      .skanda-gallery-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 12px 24px -6px rgba(29, 78, 216, 0.16) !important;
+        border-color: #93C5FD !important;
+      }
+      .skanda-gallery-card img {
+        transition: transform 300ms cubic-bezier(0.16, 1, 0.3, 1) !important;
+      }
+      .skanda-gallery-card:hover img {
+        transform: scale(1.05);
+      }
+      .skanda-zoom-pill {
+        transition: transform 200ms ease, box-shadow 200ms ease !important;
+      }
+      .skanda-gallery-card:hover .skanda-zoom-pill {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(29, 78, 216, 0.35);
+      }
+
+      .skanda-kpi-card {
+        transition: transform 200ms ease, box-shadow 200ms ease !important;
+      }
+      .skanda-kpi-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 10px 20px -5px rgba(15, 23, 42, 0.12) !important;
+      }
+
+      .skanda-campus-card {
+        transition: transform 200ms ease, box-shadow 200ms ease, border-color 200ms ease !important;
+      }
+      .skanda-campus-card:hover {
+        border-color: #1D4ED8 !important;
+        box-shadow: 0 8px 16px -4px rgba(29, 78, 216, 0.12) !important;
+      }
+
+      .skanda-btn-primary {
+        transition: transform 150ms ease, background-color 150ms ease, box-shadow 150ms ease !important;
+      }
+      .skanda-btn-primary:active {
+        transform: scale(0.98) !important;
       }
     `;
     document.head.appendChild(styleEl);

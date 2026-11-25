@@ -804,6 +804,10 @@ export const AdmissionWizardScreen: React.FC<WizardProps> = ({ initialStep = 1 }
             </View>
           )}
 
+          <View
+            key={currentStep}
+            {...(Platform.OS === 'web' ? ({ className: 'skanda-fade-up' } as any) : {})}
+          >
           {/* ========================================================================= */}
           {/* STEP 1: VERIFY & REGISTER ACCOUNT */}
           {/* ========================================================================= */}
@@ -2468,6 +2472,7 @@ export const AdmissionWizardScreen: React.FC<WizardProps> = ({ initialStep = 1 }
               </View>
             </View>
           )}
+          </View>
         </View>
 
         {user ? <StudentFooter /> : <PublicFooter />}
@@ -2475,8 +2480,14 @@ export const AdmissionWizardScreen: React.FC<WizardProps> = ({ initialStep = 1 }
 
       {/* CONFIRMATION MODAL UPON SUCCESSFUL SUBMISSION */}
       {submissionSuccess && (
-        <View style={styles.overlay}>
-          <View style={styles.confirmModalCard}>
+        <View
+          style={styles.overlay}
+          {...(Platform.OS === 'web' ? ({ className: 'skanda-modal-backdrop' } as any) : {})}
+        >
+          <View
+            style={styles.confirmModalCard}
+            {...(Platform.OS === 'web' ? ({ className: 'skanda-modal-card' } as any) : {})}
+          >
             <View style={styles.confirmBadge}>
               <Text style={styles.confirmBadgeIcon}>🎉</Text>
             </View>

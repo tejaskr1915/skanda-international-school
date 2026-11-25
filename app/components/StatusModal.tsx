@@ -53,8 +53,14 @@ export const StatusModal: React.FC<StatusModalProps> = ({ visible, onClose, onOp
 
   return (
     <Modal visible={visible} transparent={true} animationType="fade" onRequestClose={onClose}>
-      <View style={styles.overlay}>
-        <View style={styles.modalCard}>
+      <View
+        style={styles.overlay}
+        {...(Platform.OS === 'web' ? ({ className: 'skanda-modal-backdrop' } as any) : {})}
+      >
+        <View
+          style={styles.modalCard}
+          {...(Platform.OS === 'web' ? ({ className: 'skanda-modal-card' } as any) : {})}
+        >
           <View style={styles.headerRow}>
             <View>
               <Text style={styles.title}>Track Application Status</Text>
