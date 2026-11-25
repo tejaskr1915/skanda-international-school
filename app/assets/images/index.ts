@@ -2,11 +2,20 @@ export const IMAGES = {
   logo: require('./school-logo.png'),
   fallback: require('./fallback-placeholder.png'),
   hero: [
-    require('./hero-slide-1.jpg'),
-    require('./hero-slide-2.jpg'),
-    require('./hero-slide-3.jpg'),
-    require('./hero-slide-4.jpg')
+    require('./gallery/smart-classroom.jpg'),
+    require('./gallery/school-library.jpg'),
+    require('./gallery/sports-meet-relay.jpg'),
+    require('./gallery/annual-gala-finale.jpg')
   ],
+  gallery: {
+    smartClassroom: require('./gallery/smart-classroom.jpg'),
+    schoolLibrary: require('./gallery/school-library.jpg'),
+    montessoriClay: require('./gallery/montessori-clay.jpg'),
+    outdoorPlay: require('./gallery/outdoor-play.jpg'),
+    sportsMeetRelay: require('./gallery/sports-meet-relay.jpg'),
+    annualGalaClassical: require('./gallery/annual-gala-classical.jpg'),
+    annualGalaFinale: require('./gallery/annual-gala-finale.jpg')
+  },
   campuses: {
     kanakapura: require('./campus-kanakapura.jpg'),
     whitefield: require('./campus-whitefield.jpg'),

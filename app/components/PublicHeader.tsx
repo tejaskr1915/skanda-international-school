@@ -1,29 +1,66 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Platform, useWindowDimensions, Image } from 'react-native';
 import { useAuth } from '../context/AuthContext';
 import { colors, shadows, borderRadius, spacing } from '../theme/theme';
 import { IMAGES } from '../assets/images';
+import { SchoolLogoBadge } from './SchoolLogoBadge';
 
 interface PublicHeaderProps {
   onOpenLogin: () => void;
+  activeRoute?: string;
 }
 
-export const PublicHeader: React.FC<PublicHeaderProps> = ({ onOpenLogin }) => {
+export const PublicHeader: React.FC<PublicHeaderProps> = ({ onOpenLogin, activeRoute }) => {
   const { navigateTo, user, application, logout } = useAuth();
   const { width } = useWindowDimensions();
   const isMobile = width < 768;
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [hoveredNav, setHoveredNav] = useState<string | null>(null);
-  const [activeNav, setActiveNav] = useState<string>('Admissions');
+  const [activeNav, setActiveNav] = useState<string>(activeRoute || 'Campuses');
+
+  useEffect(() => {
+    if (activeRoute) {
+      setActiveNav(activeRoute);
+    }
+  }, [activeRoute]);
 
   // Only keep functional links that scroll to existing sections or active Phase 1 routes
   const menuItems = [
-    { label: 'Admissions', route: '/apply' },
     { label: 'Campuses', target: 'campus-finder' },
     { label: 'News', target: 'news' },
+    { label: 'Gallery', target: 'gallery' },
     { label: 'About', target: 'about' },
     { label: 'Contact', target: 'contact' }
   ];
+
+  // Highlight active section when scrolled into view on Web Home Page
+  useEffect(() => {
+    if (Platform.OS !== 'web' || typeof window === 'undefined' || typeof IntersectionObserver === 'undefined') {
+      return;
+    }
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (entry.isIntersecting) {
+            const matched = menuItems.find((m) => m.target === entry.target.id);
+            if (matched) {
+              setActiveNav(matched.label);
+            }
+          }
+        }
+      },
+      { rootMargin: '-25% 0px -55% 0px', threshold: 0.1 }
+    );
+
+    menuItems.forEach((item) => {
+      if (item.target) {
+        const el = document.getElementById(item.target);
+        if (el) observer.observe(el);
+      }
+    });
+
+    return () => observer.disconnect();
+  }, []);
 
   const handleNavClick = (item: { label: string; route?: string; target?: string }) => {
     setActiveNav(item.label);
@@ -42,7 +79,7 @@ export const PublicHeader: React.FC<PublicHeaderProps> = ({ onOpenLogin }) => {
 
         if (window.location.pathname !== '/') {
           navigateTo('/');
-          setTimeout(scrollToSection, 200);
+          setTimeout(scrollToSection, 250);
         } else {
           scrollToSection();
         }
@@ -59,17 +96,10 @@ export const PublicHeader: React.FC<PublicHeaderProps> = ({ onOpenLogin }) => {
           onPress={() => navigateTo('/')}
           activeOpacity={0.8}
         >
-          <View style={styles.logoBadge}>
-            <Image
-              source={IMAGES.logo}
-              defaultSource={IMAGES.fallback}
-              style={styles.logoImage}
-              resizeMode="contain"
-            />
-          </View>
+          <SchoolLogoBadge size={42} />
           <View style={styles.brandTextContainer}>
             <Text style={styles.brandTitle}>Skanda</Text>
-            <Text style={styles.brandSubtitle}>International School</Text>
+            <Text style={styles.brandSubtitle}>INTERNATIONAL SCHOOL</Text>
           </View>
         </TouchableOpacity>
 
@@ -283,17 +313,19 @@ const styles = StyleSheet.create({
     justifyContent: 'center'
   },
   brandTitle: {
-    fontSize: 19,
-    fontWeight: '900',
-    color: colors.brandDark,
-    letterSpacing: -0.5
+    fontSize: 20,
+    fontWeight: '800',
+    color: '#0F172A',
+    letterSpacing: -0.5,
+    lineHeight: 22
   },
   brandSubtitle: {
     fontSize: 10,
     fontWeight: '700',
-    color: colors.brandPrimary,
+    color: '#1D4ED8',
     textTransform: 'uppercase',
-    letterSpacing: 0.8
+    letterSpacing: 1.5,
+    marginTop: 2
   },
   desktopNav: {
     flexDirection: 'row',

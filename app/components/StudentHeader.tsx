@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { colors, shadows, borderRadius, spacing } from '../theme/theme';
 import { generateApplicationPdf } from '../utils/pdfGenerator';
 import { IMAGES } from '../assets/images';
+import { SchoolLogoBadge } from './SchoolLogoBadge';
 
 interface SearchItem {
   id: string;
@@ -114,14 +115,7 @@ export const StudentHeader: React.FC = () => {
           }}
           activeOpacity={0.8}
         >
-          <View style={styles.logoBadge}>
-            <Image
-              source={IMAGES.logo}
-              defaultSource={IMAGES.fallback}
-              style={styles.logoImage}
-              resizeMode="contain"
-            />
-          </View>
+          <SchoolLogoBadge size={42} />
           <View>
             <Text style={styles.brandTitle}>Skanda</Text>
             <Text style={styles.brandSubtitle}>Student Portal</Text>
@@ -402,16 +396,19 @@ const styles = StyleSheet.create({
     fontWeight: '800'
   },
   brandTitle: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: '800',
-    color: colors.brandDark,
-    letterSpacing: -0.5
+    color: '#0F172A',
+    letterSpacing: -0.5,
+    lineHeight: 22
   },
   brandSubtitle: {
-    fontSize: 11,
-    fontWeight: '600',
-    color: colors.brandPrimary,
-    textTransform: 'uppercase'
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#1D4ED8',
+    textTransform: 'uppercase',
+    letterSpacing: 1.5,
+    marginTop: 2
   },
   searchWrapper: {
     flex: 1,

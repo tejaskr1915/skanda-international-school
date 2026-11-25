@@ -2,6 +2,7 @@ import React from 'react';
 import { StyleSheet, View, SafeAreaView, StatusBar, Platform } from 'react-native';
 import { AuthProvider, useAuth } from './app/context/AuthContext';
 import { HomeScreen } from './app/screens/HomeScreen';
+import { GalleryScreen } from './app/screens/GalleryScreen';
 import { ApplyLandingScreen } from './app/screens/ApplyLandingScreen';
 import { AdmissionWizardScreen } from './app/screens/AdmissionWizardScreen';
 import { StudentDashboardScreen } from './app/screens/StudentDashboardScreen';
@@ -14,6 +15,11 @@ const MainNavigator: React.FC = () => {
     // 1. Home Page
     if (currentRoute === '/' || currentRoute === '') {
       return <HomeScreen />;
+    }
+
+    // 1.5 Gallery Page
+    if (currentRoute === '/gallery') {
+      return <GalleryScreen />;
     }
 
     // 2. Apply Landing

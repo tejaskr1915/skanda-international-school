@@ -15,6 +15,7 @@ import { useAuth } from '../context/AuthContext';
 import { colors, borderRadius, spacing, shadows } from '../theme/theme';
 import { PublicHeader } from '../components/PublicHeader';
 import { PublicFooter } from '../components/PublicFooter';
+import { GallerySection } from '../components/GallerySection';
 import { LoginModal } from '../components/LoginModal';
 import { StatusModal } from '../components/StatusModal';
 import { IMAGES } from '../assets/images';
@@ -26,40 +27,36 @@ const HERO_SLIDES = [
     badge: '🎓 Admissions Open 2026–2027',
     title: 'Learning That Opens\nEvery Door',
     subtitle: 'Welcome to Skanda International School: quality holistic education across CBSE, ICSE, and College disciplines empowering students to grow in knowledge, character and confidence.',
-    image: 'https://images.unsplash.com/photo-1541829070764-84a7d30dd3f3?auto=format&fit=crop&w=1920&q=80',
-    imageSource: IMAGES.hero[0],
+    image: IMAGES.gallery.smartClassroom,
     primaryBtn: 'Apply Online ➜',
     secondaryBtn: 'Track Application Status'
   },
   {
     id: 1,
-    badge: '💻 Smart Interactive Classrooms',
+    badge: '📚 Central School Library',
     title: 'Shaping Future\nLeaders Today',
-    subtitle: 'Inspiring young minds through digital smart classrooms, collaborative technology hubs, and future-ready experiential curricula.',
-    image: 'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&w=1920&q=80',
-    imageSource: IMAGES.hero[1],
+    subtitle: 'Inspiring young minds through collaborative reading spaces, expansive research archives, and future-ready experiential curricula.',
+    image: IMAGES.gallery.schoolLibrary,
     primaryBtn: 'Apply Online ➜',
-    secondaryBtn: 'Explore Academic Streams'
+    secondaryBtn: 'Track Application Status'
   },
   {
     id: 2,
-    badge: '🔬 Advanced STEM & Robotics',
-    title: 'Hands-On STEM &\nAcademic Excellence',
-    subtitle: 'State-of-the-art physics, chemistry, biotechnology, and AI robotics laboratories empowering inquisitive young minds to innovate.',
-    image: 'https://images.unsplash.com/photo-1581093458791-9f3c3900df4b?auto=format&fit=crop&w=1920&q=80',
-    imageSource: IMAGES.hero[2],
+    badge: '🏆 Annual Sports Meet',
+    title: 'Teamwork, Grit &\nAthletic Excellence',
+    subtitle: 'Olympic-grade athletic tracks, inter-house championship relays, and dynamic physical education empowering all-round student development.',
+    image: IMAGES.gallery.sportsMeetRelay,
     primaryBtn: 'Apply Online ➜',
-    secondaryBtn: 'Explore Innovation Labs'
+    secondaryBtn: 'Track Application Status'
   },
   {
     id: 3,
-    badge: '🏆 Sports & 50,000+ Book Library',
-    title: 'Holistic Growth Across\nCBSE, ICSE & College',
-    subtitle: 'Olympic-grade athletic facilities, vibrant creative arts studios, and an expansive digital research library for all-round student excellence.',
-    image: 'https://images.unsplash.com/photo-1521587760476-6c12a4b040da?auto=format&fit=crop&w=1920&q=80',
-    imageSource: IMAGES.hero[3],
+    badge: '🎭 Skanda Annual Cultural Gala',
+    title: 'Holistic Growth Across\nArts & Academics',
+    subtitle: 'Vibrant performing arts stages, classical ensembles, and creative showcases celebrating culture, heritage, and student talent.',
+    image: IMAGES.gallery.annualGalaFinale,
     primaryBtn: 'Apply Online ➜',
-    secondaryBtn: 'Campus Virtual Tour'
+    secondaryBtn: 'Track Application Status'
   }
 ];
 
@@ -183,95 +180,94 @@ export const HomeScreen: React.FC = () => {
       <PublicHeader onOpenLogin={() => setLoginModalVisible(true)} />
 
       <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
-        {/* HERO BANNER SECTION (4-Slide Auto-Rotating Royal Blue Carousel) */}
+        {/* HERO BANNER SECTION (Fixed-Height 4-Slide Auto-Rotating Royal Blue Carousel) */}
         <View
           nativeID="hero-section"
           testID="hero-section"
-          style={styles.heroBanner}
+          style={[styles.heroBanner, { height: isMobile ? 460 : 560 }]}
           {...({
             onMouseEnter: () => setIsCarouselHovered(true),
             onMouseLeave: () => setIsCarouselHovered(false)
           } as any)}
         >
-          <ImageBackground
-            source={HERO_SLIDES[activeSlide].imageSource || { uri: HERO_SLIDES[activeSlide].image }}
+          <Image
+            key={activeSlide}
+            source={HERO_SLIDES[activeSlide].image}
             defaultSource={IMAGES.fallback}
-            style={styles.heroBackground}
-            imageStyle={styles.heroBackgroundImage}
+            style={styles.heroBackgroundImageAbsolute as any}
             resizeMode="cover"
-          >
-            <View style={styles.heroGradientOverlay}>
-              <View style={styles.heroContent}>
-                <View style={styles.heroTextCol}>
-                  <View style={styles.heroBadge}>
-                    <Text style={styles.heroBadgeText}>{HERO_SLIDES[activeSlide].badge}</Text>
-                  </View>
-                  <Text style={styles.heroTitle}>
-                    {HERO_SLIDES[activeSlide].title}
-                  </Text>
-                  <Text style={styles.heroSubtitle}>
-                    {HERO_SLIDES[activeSlide].subtitle}
-                  </Text>
-
-                  <View style={styles.heroBtnRow}>
-                    <TouchableOpacity
-                      nativeID="apply-now-btn"
-                      testID="apply-now-btn"
-                      style={styles.heroPrimaryBtn}
-                      onPress={() => navigateTo('/apply')}
-                      activeOpacity={0.88}
-                    >
-                      <Text style={styles.heroPrimaryBtnText}>{HERO_SLIDES[activeSlide].primaryBtn}</Text>
-                    </TouchableOpacity>
-
-                    <TouchableOpacity
-                      style={styles.heroSecondaryBtn}
-                      onPress={() => setStatusModalVisible(true)}
-                      activeOpacity={0.88}
-                    >
-                      <Text style={styles.heroSecondaryBtnText}>{HERO_SLIDES[activeSlide].secondaryBtn}</Text>
-                    </TouchableOpacity>
-                  </View>
+          />
+          <View style={[styles.heroGradientOverlay, isMobile && styles.heroGradientOverlayMobile]}>
+            <View style={styles.heroContent}>
+              <View style={styles.heroTextCol}>
+                <View style={styles.heroBadge}>
+                  <Text style={styles.heroBadgeText}>{HERO_SLIDES[activeSlide].badge}</Text>
                 </View>
+                <Text style={[styles.heroTitle, isMobile && styles.heroTitleMobile]} numberOfLines={2}>
+                  {HERO_SLIDES[activeSlide].title}
+                </Text>
+                <Text style={[styles.heroSubtitle, isMobile && styles.heroSubtitleMobile]} numberOfLines={3}>
+                  {HERO_SLIDES[activeSlide].subtitle}
+                </Text>
 
-                {/* Right Hero Spacer for photography clarity on desktop */}
-                <View style={styles.heroPhotoSpacer} />
+                <View style={styles.heroBtnRow}>
+                  <TouchableOpacity
+                    nativeID="apply-now-btn"
+                    testID="apply-now-btn"
+                    style={styles.heroPrimaryBtn}
+                    onPress={() => navigateTo('/apply')}
+                    activeOpacity={0.88}
+                  >
+                    <Text style={styles.heroPrimaryBtnText}>{HERO_SLIDES[activeSlide].primaryBtn}</Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={styles.heroSecondaryBtn}
+                    onPress={() => setStatusModalVisible(true)}
+                    activeOpacity={0.88}
+                  >
+                    <Text style={styles.heroSecondaryBtnText}>{HERO_SLIDES[activeSlide].secondaryBtn}</Text>
+                  </TouchableOpacity>
+                </View>
               </View>
 
-              {/* 4-SLIDE CAROUSEL INDICATOR DOTS & ARROWS */}
-              <View style={styles.carouselNavRow}>
-                <TouchableOpacity
-                  style={styles.carouselArrowBtn}
-                  onPress={() => setActiveSlide((prev) => (prev - 1 + HERO_SLIDES.length) % HERO_SLIDES.length)}
-                  accessibilityLabel="Previous Hero Slide"
-                >
-                  <Text style={styles.carouselArrowText}>‹</Text>
-                </TouchableOpacity>
-
-                <View style={styles.carouselDotsRow}>
-                  {HERO_SLIDES.map((slide, index) => (
-                    <TouchableOpacity
-                      key={slide.id}
-                      style={[
-                        styles.carouselDot,
-                        activeSlide === index && styles.carouselDotActive
-                      ]}
-                      onPress={() => setActiveSlide(index)}
-                      accessibilityLabel={`Slide ${index + 1}`}
-                    />
-                  ))}
-                </View>
-
-                <TouchableOpacity
-                  style={styles.carouselArrowBtn}
-                  onPress={() => setActiveSlide((prev) => (prev + 1) % HERO_SLIDES.length)}
-                  accessibilityLabel="Next Hero Slide"
-                >
-                  <Text style={styles.carouselArrowText}>›</Text>
-                </TouchableOpacity>
-              </View>
+              {/* Right Hero Spacer for photography clarity on desktop */}
+              {!isMobile && <View style={styles.heroPhotoSpacer} />}
             </View>
-          </ImageBackground>
+
+            {/* 4-SLIDE CAROUSEL INDICATOR DOTS & ARROWS */}
+            <View style={styles.carouselNavRow}>
+              <TouchableOpacity
+                style={styles.carouselArrowBtn}
+                onPress={() => setActiveSlide((prev) => (prev - 1 + HERO_SLIDES.length) % HERO_SLIDES.length)}
+                accessibilityLabel="Previous Hero Slide"
+              >
+                <Text style={styles.carouselArrowText}>‹</Text>
+              </TouchableOpacity>
+
+              <View style={styles.carouselDotsRow}>
+                {HERO_SLIDES.map((slide, index) => (
+                  <TouchableOpacity
+                    key={slide.id}
+                    style={[
+                      styles.carouselDot,
+                      activeSlide === index && styles.carouselDotActive
+                    ]}
+                    onPress={() => setActiveSlide(index)}
+                    accessibilityLabel={`Slide ${index + 1}`}
+                  />
+                ))}
+              </View>
+
+              <TouchableOpacity
+                style={styles.carouselArrowBtn}
+                onPress={() => setActiveSlide((prev) => (prev + 1) % HERO_SLIDES.length)}
+                accessibilityLabel="Next Hero Slide"
+              >
+                <Text style={styles.carouselArrowText}>›</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
         </View>
 
         {/* LATEST ANNOUNCEMENT TICKER */}
@@ -996,6 +992,9 @@ export const HomeScreen: React.FC = () => {
           </View>
         </View>
 
+        {/* CAMPUS LIFE & GALLERY SECTION */}
+        <GallerySection />
+
         {/* WHY FAMILIES CHOOSE SKANDA (Real School Photography) */}
         <View style={styles.whySection} nativeID="about" {...({ id: 'about' } as any)}>
           <View style={styles.whyContentRow}>
@@ -1134,20 +1133,18 @@ const styles = StyleSheet.create({
   },
   heroBanner: {
     width: '100%',
+    position: 'relative',
     backgroundColor: '#0F172A',
     overflow: 'hidden'
   },
-  heroBackground: {
+  heroBackgroundImageAbsolute: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
     width: '100%',
-    opacity: 1,
-    ...(Platform.OS === 'web'
-      ? ({
-          backgroundSize: 'cover',
-          backgroundPosition: 'center center'
-        } as any)
-      : {})
-  },
-  heroBackgroundImage: {
+    height: '100%',
     opacity: 1,
     ...(Platform.OS === 'web'
       ? ({
@@ -1157,32 +1154,41 @@ const styles = StyleSheet.create({
       : {})
   },
   heroGradientOverlay: {
+    position: 'relative',
     width: '100%',
-    paddingTop: 52,
+    height: '100%',
+    flexDirection: 'column',
+    justifyContent: 'space-between',
+    paddingTop: 48,
     paddingBottom: 24,
     paddingHorizontal: spacing.lg,
     backgroundColor: 'rgba(15, 23, 42, 0.70)',
     ...(Platform.OS === 'web'
       ? ({
           backgroundImage:
-            'linear-gradient(90deg, rgba(15, 23, 42, 0.90) 0%, rgba(30, 58, 138, 0.76) 45%, rgba(29, 78, 216, 0.35) 80%, rgba(30, 58, 138, 0.18) 100%)'
+            'linear-gradient(90deg, rgba(15, 23, 42, 0.82) 0%, rgba(30, 58, 138, 0.62) 55%, rgba(29, 78, 216, 0.25) 100%)'
         } as any)
       : {})
   },
+  heroGradientOverlayMobile: {
+    paddingTop: 28,
+    paddingBottom: 16,
+    paddingHorizontal: spacing.md
+  },
   heroContent: {
+    flex: 1,
     maxWidth: 1200,
     width: '100%',
     alignSelf: 'center',
     flexDirection: 'row',
-    flexWrap: 'wrap',
     alignItems: 'center',
     justifyContent: 'space-between',
     gap: 32
   },
   heroTextCol: {
     flex: 1.2,
-    minWidth: 320,
-    paddingVertical: spacing.md
+    minWidth: 280,
+    paddingVertical: spacing.sm
   },
   heroPhotoSpacer: {
     flex: 0.8,
@@ -1211,15 +1217,29 @@ const styles = StyleSheet.create({
     fontWeight: '900',
     color: '#FFFFFF',
     lineHeight: Platform.OS === 'web' ? 52 : 38,
+    minHeight: Platform.OS === 'web' ? 104 : 76,
     letterSpacing: -1,
     marginBottom: spacing.md
+  },
+  heroTitleMobile: {
+    fontSize: 30,
+    lineHeight: 36,
+    minHeight: 72,
+    marginBottom: spacing.sm
   },
   heroSubtitle: {
     fontSize: 16,
     color: '#E0E7FF',
     lineHeight: 24,
-    marginBottom: spacing.xl,
+    minHeight: 72,
+    marginBottom: spacing.lg,
     maxWidth: 540
+  },
+  heroSubtitleMobile: {
+    fontSize: 14,
+    lineHeight: 20,
+    minHeight: 60,
+    marginBottom: spacing.md
   },
   heroBtnRow: {
     flexDirection: 'row',
