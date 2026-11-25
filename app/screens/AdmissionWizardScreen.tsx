@@ -942,7 +942,7 @@ export const AdmissionWizardScreen: React.FC<WizardProps> = ({ initialStep = 1 }
                 Minimum 8 characters with a letter and a number, with a show/hide icon. This password is used to log in, resume a saved application and track status.
               </Text>
 
-              {s1OtpNotice && (
+              {!!s1OtpNotice && (
                 <View style={styles.otpDevBox}>
                   <Text style={styles.otpDevText}>
                     🔐 Registration OTP Generated: <Text style={{ fontWeight: '800' }}>{s1OtpNotice}</Text>

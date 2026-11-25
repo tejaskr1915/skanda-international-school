@@ -581,7 +581,7 @@ export const HomeScreen: React.FC = () => {
                 )}
               </View>
 
-              {(selectedState !== 'All States' || selectedCity !== 'All Cities' || selectedProgram !== 'All Programmes' || searchQuery) && (
+              {(selectedState !== 'All States' || selectedCity !== 'All Cities' || selectedProgram !== 'All Programmes' || searchQuery.length > 0) && (
                 <TouchableOpacity
                   style={[styles.resetFiltersBtn, isMobile && { width: '100%', alignItems: 'center' }]}
                   onPress={() => {

@@ -190,7 +190,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({ visible, onClose, defaul
                 </TouchableOpacity>
               ) : (
                 <View>
-                  {otpPreview && (
+                  {!!otpPreview && (
                     <View style={styles.otpNotice}>
                       <Text style={styles.otpNoticeText}>
                         🔐 Dev OTP Code: <Text style={styles.otpCodeHighlight}>{otpPreview}</Text>
