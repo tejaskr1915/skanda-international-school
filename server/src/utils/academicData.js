@@ -194,9 +194,145 @@ function validateAgeEligibility(dobString, classOrCourse) {
   return { valid: true, age };
 }
 
+const COLLEGE_DEPARTMENTS = {
+  CSE: {
+    id: 'CSE',
+    name: 'Department of Computer Science & Engineering',
+    degree: 'B.Tech',
+    duration: '4 Years (8 Semesters)',
+    annualFee: 165000,
+    seatsLeft: 18,
+    status: 'AVAILABLE',
+    overview: 'AICTE-aligned curriculum covering Data Structures, AI/ML, Cloud Architecture, Full-Stack Engineering, and Capstone Research.',
+    corePapers: [
+      'CS101: Programming & Problem Solving in C/Python',
+      'CS102: Data Structures & Algorithms',
+      'MA101: Discrete Mathematics & Linear Algebra',
+      'CS103: Digital Logic & Computer Architecture',
+      'CS104: Database Management Systems (SQL/NoSQL)'
+    ],
+    electives: [
+      'Artificial Intelligence & Machine Learning',
+      'Cloud Computing & DevOps',
+      'Cybersecurity & Ethical Hacking',
+      'Full-Stack Web & Mobile Engineering'
+    ]
+  },
+  ECE: {
+    id: 'ECE',
+    name: 'Department of Electronics & Communication',
+    degree: 'B.Tech',
+    duration: '4 Years (8 Semesters)',
+    annualFee: 150000,
+    seatsLeft: 14,
+    status: 'AVAILABLE',
+    overview: 'Hands-on VLSI, Embedded Systems, IoT, Digital Signal Processing, and 5G Wireless Communication laboratories.',
+    corePapers: [
+      'EC101: Analog & Digital Electronic Circuits',
+      'EC102: Signals, Systems & Transforms',
+      'EC103: Microprocessors & Embedded Systems',
+      'EC104: Electromagnetic Field Theory',
+      'MA102: Engineering Mathematics & Probability'
+    ],
+    electives: [
+      'VLSI Design & Semiconductor Fabrication',
+      'Internet of Things (IoT) & Robotics',
+      'Wireless & 5G Communication Systems',
+      'Digital Image & Signal Processing'
+    ]
+  },
+  COMMERCE: {
+    id: 'COMMERCE',
+    name: 'Department of Commerce & Management',
+    degree: 'B.Com / BBA',
+    duration: '3 Years (6 Semesters)',
+    annualFee: 115000,
+    seatsLeft: 24,
+    status: 'AVAILABLE',
+    overview: 'Industry-integrated Finance, FinTech, Corporate Law, Business Analytics, and Global Entrepreneurship curriculum.',
+    corePapers: [
+      'CM101: Financial Accounting & Corporate Reporting',
+      'CM102: Principles of Management & Organizational Behavior',
+      'CM103: Micro & Macroeconomic Analysis',
+      'CM104: Business Statistics & Quantitative Methods',
+      'CM105: Corporate Law & Taxation Fundamentals'
+    ],
+    electives: [
+      'FinTech & Algorithmic Trading',
+      'Business Analytics & PowerBI',
+      'International Trade & Supply Chain',
+      'Digital Marketing & Brand Strategy'
+    ]
+  },
+  SCIENCES: {
+    id: 'SCIENCES',
+    name: 'Department of Pure & Applied Sciences',
+    degree: 'B.Sc',
+    duration: '3 Years (6 Semesters)',
+    annualFee: 120000,
+    seatsLeft: 12,
+    status: 'LIMITED_SEATS',
+    overview: 'Research-focused undergraduate degrees in Biotechnology, Molecular Biology, Applied Physics, and Computational Chemistry.',
+    corePapers: [
+      'SC101: Cell Biology & Microbial Genetics',
+      'SC102: Organic & Analytical Chemistry',
+      'SC103: Biophysics & Instrumentation Lab',
+      'SC104: Biostatistics & Computational Biology',
+      'SC105: Environmental & Life Sciences Seminar'
+    ],
+    electives: [
+      'Genetic Engineering & CRISPR Techniques',
+      'Bioinformatics & Genomics',
+      'Nanotechnology & Material Science',
+      'Clinical Biochemistry & Diagnostics'
+    ]
+  },
+  ARTS: {
+    id: 'ARTS',
+    name: 'Department of Arts & Humanities',
+    degree: 'BA',
+    duration: '3 Years (6 Semesters)',
+    annualFee: 95000,
+    seatsLeft: 20,
+    status: 'AVAILABLE',
+    overview: 'Interdisciplinary liberal arts programme combining Psychology, Literature, Economics, Public Policy, and Media Studies.',
+    corePapers: [
+      'AH101: Foundations of Cognitive & Behavioral Psychology',
+      'AH102: World Literature & Critical Theory',
+      'AH103: Indian Constitution & Public Policy',
+      'AH104: Academic Writing & Qualitative Research',
+      'AH105: Contemporary Media & Cultural Studies'
+    ],
+    electives: [
+      'Clinical & Counseling Psychology',
+      'Journalism & Digital Media Production',
+      'International Relations & Diplomacy',
+      'Creative Writing & Publishing'
+    ]
+  }
+};
+
+function getCollegeSubjectsForDepartment(departmentNameOrId, classOrCourse) {
+  const dept =
+    COLLEGE_DEPARTMENTS[departmentNameOrId] ||
+    Object.values(COLLEGE_DEPARTMENTS).find((d) => d.name === departmentNameOrId) ||
+    COLLEGE_DEPARTMENTS.CSE;
+  return {
+    type: 'COLLEGE_DEPARTMENT',
+    department: dept.name,
+    degree: classOrCourse || dept.degree,
+    duration: dept.duration,
+    description: `${dept.name} (${classOrCourse || dept.degree}): Core semester papers and elective specialization tracks.`,
+    compulsory: dept.corePapers,
+    electives: dept.electives
+  };
+}
+
 module.exports = {
   BOARD_INFO,
+  COLLEGE_DEPARTMENTS,
   CLASS_OPTIONS,
   getSubjectsForClass,
+  getCollegeSubjectsForDepartment,
   validateAgeEligibility
 };

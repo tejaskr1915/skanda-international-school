@@ -108,15 +108,18 @@ export function generateApplicationPdf(app: ApplicationPdfData) {
 
   // Section 2: Student Details
   const student = app.studentDetails || {};
+  const combinedStudentName = (student.firstName && student.lastName)
+    ? `${student.firstName} ${student.lastName}`
+    : (student.fullName || app.applicantUser?.fullName || 'N/A');
   renderSectionHeader('2. STUDENT PERSONAL IDENTIFICATION');
-  renderField('Full Name:', student.fullName || app.applicantUser?.fullName || 'N/A', margin + 4, y);
+  renderField('Full Name:', combinedStudentName, margin + 4, y);
   renderField('Date of Birth:', `${student.dob || '2014-04-15'} (Age: ${student.calculatedAge || 11} yrs)`, margin + 95, y);
   y += 5;
   renderField('Gender:', student.gender || 'Male', margin + 4, y);
   renderField('Blood Group:', student.bloodGroup || 'O+', margin + 95, y);
   y += 5;
   renderField('Nationality:', student.nationality || 'Indian', margin + 4, y);
-  renderField('Category / ID:', `${student.category || 'General'} • ${student.idNumber || 'Aadhaar Verified'}`, margin + 95, y);
+  renderField('Category / Aadhaar:', `${student.category || 'General (GEN)'} • ${student.aadhaarNumber || student.idNumber || 'Verified'}`, margin + 95, y);
   y += 5;
   renderField('Address:', student.address?.street || 'Bengaluru, Karnataka', margin + 4, y);
   y += 8;

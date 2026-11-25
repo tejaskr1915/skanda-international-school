@@ -6,29 +6,37 @@ interface StepperProps {
   currentStep: number;
   onSelectStep?: (step: number) => void;
   maxUnlockedStep?: number;
+  institutionType?: 'SCHOOL' | 'COLLEGE';
 }
 
-const SUB_STEP_METADATA: Record<number, { step: number; label: string; short: string }> = {
+const getSubStepMetadata = (institutionType: 'SCHOOL' | 'COLLEGE' = 'SCHOOL'): Record<number, { step: number; label: string; short: string }> => ({
   1: { step: 1, label: 'Verify Account & Mobile', short: 'Step 1: Account Verification' },
   2: { step: 2, label: 'Programme & Class Selection', short: 'Step 2: Programme & Class' },
-  3: { step: 3, label: 'Affiliated Board Selection', short: 'Step 3: Board Selection' },
-  4: { step: 4, label: 'Curriculum & Subjects', short: 'Step 4: Curriculum & Subjects' },
+  3: institutionType === 'COLLEGE'
+    ? { step: 3, label: 'Department Selection', short: 'Step 3: College Department' }
+    : { step: 3, label: 'Affiliated Board Selection', short: 'Step 3: Board Selection' },
+  4: institutionType === 'COLLEGE'
+    ? { step: 4, label: 'Course & Electives', short: 'Step 4: Course & Electives' }
+    : { step: 4, label: 'Curriculum & Subjects', short: 'Step 4: Curriculum & Subjects' },
   5: { step: 5, label: 'Student Personal Details', short: 'Step 5: Student Personal Details' },
   6: { step: 6, label: 'Parent & Guardian Information', short: 'Step 6: Parent / Guardian Details' },
   7: { step: 7, label: 'Previous Education', short: 'Step 7: Previous Education' },
   8: { step: 8, label: 'Campus Facilities', short: 'Step 8: Facilities' },
   9: { step: 9, label: 'Documents & Final Submit', short: 'Step 9: Documents & Review' }
-};
+});
 
 export const AdmissionStepper: React.FC<StepperProps> = ({
   currentStep,
   onSelectStep,
-  maxUnlockedStep = 9
+  maxUnlockedStep = 9,
+  institutionType = 'SCHOOL'
 }) => {
+  const SUB_STEP_METADATA = getSubStepMetadata(institutionType);
+
   // 5 Global Stages matching UX spec
   const phases = [
     { id: 1, title: 'Verify', subSteps: [1] },
-    { id: 2, title: 'Programme & Board', subSteps: [2, 3, 4] },
+    { id: 2, title: institutionType === 'COLLEGE' ? 'Programme & Department' : 'Programme & Board', subSteps: [2, 3, 4] },
     { id: 3, title: 'Details', subSteps: [5, 6, 7] },
     { id: 4, title: 'Facilities & Documents', subSteps: [8, 9] },
     { id: 5, title: 'Review & Submit', subSteps: [9] }

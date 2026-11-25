@@ -6,8 +6,10 @@ const prisma = require('../db');
 const { authMiddleware } = require('../middleware/auth');
 const {
   BOARD_INFO,
+  COLLEGE_DEPARTMENTS,
   CLASS_OPTIONS,
   getSubjectsForClass,
+  getCollegeSubjectsForDepartment,
   validateAgeEligibility
 } = require('../utils/academicData');
 
@@ -45,18 +47,23 @@ router.get('/academic-metadata', (req, res) => {
   return res.json({
     success: true,
     boards: BOARD_INFO,
+    departments: COLLEGE_DEPARTMENTS,
     classes: CLASS_OPTIONS
   });
 });
 
 /**
  * GET /api/academic/subjects
- * Query params: classOrCourse, board
+ * Query params: classOrCourse, board, department, institutionType
  */
 router.get('/academic-subjects', (req, res) => {
-  const { classOrCourse, board } = req.query;
-  if (!classOrCourse) {
-    return res.status(400).json({ success: false, message: 'classOrCourse parameter is required.' });
+  const { classOrCourse, board, department, institutionType } = req.query;
+  if (!classOrCourse && !department) {
+    return res.status(400).json({ success: false, message: 'classOrCourse or department parameter is required.' });
+  }
+  if (institutionType === 'COLLEGE' || department) {
+    const data = getCollegeSubjectsForDepartment(department, classOrCourse);
+    return res.json({ success: true, subjectsData: data });
   }
   const data = getSubjectsForClass(classOrCourse, board);
   return res.json({ success: true, subjectsData: data });
@@ -211,26 +218,38 @@ router.put('/step/:stepNumber', authMiddleware, async (req, res) => {
     }
 
     // -----------------------------------------
-    // STEP 3: Board Selection
+    // STEP 3: Board Selection (School) OR Department Selection (College)
     // -----------------------------------------
     if (stepNumber === 3) {
-      const { board } = payload;
-      if (!board || !['CBSE', 'ICSE_ISC', 'STATE'].includes(board)) {
-        return res.status(400).json({ success: false, message: 'Please select a valid affiliated board (CBSE, ICSE/ISC, or State Board).' });
-      }
+      const effectiveInstitution = payload.institutionType || application.institutionType || 'SCHOOL';
 
-      // Check board compatibility with chosen class
-      const currentClass = payload.classOrCourse || application.classOrCourse;
-      const classMeta = CLASS_OPTIONS.find(c => c.value === currentClass);
-      if (classMeta && classMeta.boards.length > 0 && !classMeta.boards.includes(board)) {
-        return res.status(400).json({
-          success: false,
-          message: `${board} is not currently offered for ${currentClass}. Allowed boards: ${classMeta.boards.join(', ')}`
-        });
-      }
+      if (effectiveInstitution === 'COLLEGE') {
+        const department = payload.department || payload.specializationOrStream;
+        if (!department) {
+          return res.status(400).json({ success: false, message: 'Please select a valid College Department.' });
+        }
+        updateData.specializationOrStream = department;
+        updateData.board = null;
+        if (payload.classOrCourse) updateData.classOrCourse = payload.classOrCourse;
+      } else {
+        const { board } = payload;
+        if (!board || !['CBSE', 'ICSE_ISC', 'STATE'].includes(board)) {
+          return res.status(400).json({ success: false, message: 'Please select a valid affiliated board (CBSE, ICSE/ISC, or State Board).' });
+        }
 
-      updateData.board = board;
-      if (payload.classOrCourse) updateData.classOrCourse = payload.classOrCourse;
+        // Check board compatibility with chosen class
+        const currentClass = payload.classOrCourse || application.classOrCourse;
+        const classMeta = CLASS_OPTIONS.find(c => c.value === currentClass);
+        if (classMeta && classMeta.boards.length > 0 && !classMeta.boards.includes(board)) {
+          return res.status(400).json({
+            success: false,
+            message: `${board} is not currently offered for ${currentClass}. Allowed boards: ${classMeta.boards.join(', ')}`
+          });
+        }
+
+        updateData.board = board;
+        if (payload.classOrCourse) updateData.classOrCourse = payload.classOrCourse;
+      }
     }
 
     // -----------------------------------------
@@ -249,10 +268,14 @@ router.put('/step/:stepNumber', authMiddleware, async (req, res) => {
     // STEP 5: Student Details
     // -----------------------------------------
     if (stepNumber === 5) {
-      const { fullName, dob, gender, bloodGroup, nationality, address, photoUrl, category, idNumber } = payload;
+      const { firstName, lastName, fullName, dob, gender, bloodGroup, nationality, address, photoUrl, category, aadhaarNumber, idNumber } = payload;
 
-      if (!fullName || fullName.trim().length < 2) {
-        return res.status(400).json({ success: false, message: 'Student full name is required.' });
+      const computedFullName = (firstName && lastName)
+        ? `${firstName.trim()} ${lastName.trim()}`
+        : (fullName ? fullName.trim() : '');
+
+      if (!computedFullName || computedFullName.length < 2) {
+        return res.status(400).json({ success: false, message: 'Student First Name and Last Name are required.' });
       }
 
       if (!dob) {
@@ -273,14 +296,22 @@ router.put('/step/:stepNumber', authMiddleware, async (req, res) => {
         return res.status(400).json({ success: false, message: 'Gender selection is required.' });
       }
 
+      const cleanAadhaar = (aadhaarNumber || idNumber || '').toString().replace(/\D/g, '');
+      if (aadhaarNumber !== undefined && cleanAadhaar.length !== 12) {
+        return res.status(400).json({ success: false, message: 'Aadhaar Number must be exactly 12 digits.' });
+      }
+
       updateData.studentDetails = {
-        fullName: fullName.trim(),
+        firstName: firstName ? firstName.trim() : computedFullName.split(' ')[0] || '',
+        lastName: lastName ? lastName.trim() : computedFullName.split(' ').slice(1).join(' ') || '',
+        fullName: computedFullName,
         dob,
         gender,
         bloodGroup: bloodGroup || 'O+',
         nationality: nationality || 'Indian',
-        category: category || 'General',
-        idNumber: idNumber || '',
+        category: category || 'General (GEN)',
+        aadhaarNumber: cleanAadhaar,
+        idNumber: cleanAadhaar,
         address: address || {},
         photoUrl: photoUrl || null,
         calculatedAge: ageCheck.age
@@ -541,11 +572,15 @@ router.get('/:id/pdf', async (req, res) => {
     doc.fillColor('#16A34A').fontSize(12).text(`Status: ${application.status}`, 40, 140);
 
     const student = application.studentDetails || {};
+    const combinedName = (student.firstName && student.lastName)
+      ? `${student.firstName} ${student.lastName}`
+      : (student.fullName || application.applicantUser?.fullName || 'N/A');
     doc.fillColor('#1E3A8A').fontSize(12).text('1. Student Information', 40, 170);
     doc.fillColor('#475569').fontSize(10)
-      .text(`Full Name: ${student.fullName || application.applicantUser?.fullName || 'N/A'}`)
-      .text(`DOB: ${student.dob || 'N/A'} | Gender: ${student.gender || 'N/A'}`)
-      .text(`Class/Course: ${application.classOrCourse} | Board: ${application.board || 'CBSE'}`);
+      .text(`Full Name: ${combinedName}`)
+      .text(`DOB: ${student.dob || 'N/A'} | Gender: ${student.gender || 'N/A'} | Category: ${student.category || 'N/A'}`)
+      .text(`Aadhaar: ${student.aadhaarNumber || student.idNumber || 'N/A'}`)
+      .text(`Programme: ${application.institutionType === 'COLLEGE' ? (application.specializationOrStream || 'College') : (application.board || 'CBSE')} | Class/Course: ${application.classOrCourse}`);
 
     const parent = application.parentDetails || {};
     doc.moveDown();

@@ -80,41 +80,81 @@ export const AdmissionWizardScreen: React.FC<WizardProps> = ({ initialStep = 1 }
   const [s2Class, setS2Class] = useState(application?.classOrCourse || '');
   const [s2AcademicYear, setS2AcademicYear] = useState(application?.academicYear || '2026-2027');
   const [s2Mode, setS2Mode] = useState(application?.mode === 'Residential' ? 'Day Scholar' : (application?.mode || ''));
-  const [s2Specialization, setS2Specialization] = useState(application?.specializationOrStream || '');
 
-  // Board / Specialization options based on Institution Type
-  const schoolSpecializationOptions = [
-    'CBSE',
-    'ICSE / ISC',
-    'State Board (Karnataka)'
-  ];
-
-  const collegeSpecializationOptions = [
-    'Computer Science & Engineering (CSE)',
-    'Electronics & Communication (ECE)',
-    'Commerce & Management (B.Com / BBA)',
-    'Pure Sciences (B.Sc)',
-    'Arts & Humanities (BA)'
-  ];
-
-  const specializationOptions = s2Type === 'SCHOOL' ? schoolSpecializationOptions : collegeSpecializationOptions;
-
-  // Step 3: Board Selection
+  // Step 3: Board Selection (School) OR Department Selection (College)
   const [s3Board, setS3Board] = useState<'CBSE' | 'ICSE_ISC' | 'STATE' | ''>(application?.board || '');
+  const [s3Department, setS3Department] = useState<string>(application?.specializationOrStream || '');
+
+  const collegeDepartments = [
+    {
+      id: 'CSE',
+      name: 'Department of Computer Science & Engineering',
+      degree: 'B.Tech',
+      seatsLeft: 18,
+      annualFee: '₹1,65,000',
+      badge: '18 Seats Left',
+      badgeTone: 'green',
+      highlights: ['AI/ML, Cloud & Full-Stack Labs', '4 Years (8 Semesters)']
+    },
+    {
+      id: 'ECE',
+      name: 'Department of Electronics & Communication',
+      degree: 'B.Tech',
+      seatsLeft: 14,
+      annualFee: '₹1,50,000',
+      badge: '14 Seats Left',
+      badgeTone: 'green',
+      highlights: ['VLSI, IoT & Robotics Labs', '4 Years (8 Semesters)']
+    },
+    {
+      id: 'COMMERCE',
+      name: 'Department of Commerce & Management',
+      degree: 'B.Com / BBA',
+      seatsLeft: 24,
+      annualFee: '₹1,15,000',
+      badge: '24 Seats Left',
+      badgeTone: 'green',
+      highlights: ['FinTech, Analytics & Corporate Law', '3 Years (6 Semesters)']
+    },
+    {
+      id: 'SCIENCES',
+      name: 'Department of Pure & Applied Sciences',
+      degree: 'B.Sc',
+      seatsLeft: 12,
+      annualFee: '₹1,20,000',
+      badge: '12 Seats Left',
+      badgeTone: 'amber',
+      highlights: ['Biotech, Physics & Molecular Labs', '3 Years (6 Semesters)']
+    },
+    {
+      id: 'ARTS',
+      name: 'Department of Arts & Humanities',
+      degree: 'BA',
+      seatsLeft: 20,
+      annualFee: '₹95,000',
+      badge: '20 Seats Left',
+      badgeTone: 'green',
+      highlights: ['Psychology, Literature & Policy', '3 Years (6 Semesters)']
+    }
+  ];
 
   // Step 4: Curriculum & Subjects
   const [s4SubjectsData, setS4SubjectsData] = useState<any>(null);
   const [s4SelectedLanguage, setS4SelectedLanguage] = useState<string>(application?.selectedSubjects?.secondLanguage || '');
   const [s4SelectedStream, setS4SelectedStream] = useState<string>(application?.selectedSubjects?.stream || '');
+  const [s4SelectedElective, setS4SelectedElective] = useState<string>(application?.selectedSubjects?.elective || '');
 
   // Step 5: Student Details
-  const [s5FullName, setS5FullName] = useState(application?.studentDetails?.fullName || user?.fullName || '');
+  const initialFirstName = application?.studentDetails?.firstName || '';
+  const initialLastName = application?.studentDetails?.lastName || '';
+  const [s5FirstName, setS5FirstName] = useState(initialFirstName);
+  const [s5LastName, setS5LastName] = useState(initialLastName);
   const [s5Dob, setS5Dob] = useState(application?.studentDetails?.dob || '');
   const [s5Gender, setS5Gender] = useState(application?.studentDetails?.gender || '');
   const [s5BloodGroup, setS5BloodGroup] = useState(application?.studentDetails?.bloodGroup || '');
   const [s5Nationality, setS5Nationality] = useState(application?.studentDetails?.nationality || '');
   const [s5Category, setS5Category] = useState(application?.studentDetails?.category || '');
-  const [s5IdNumber, setS5IdNumber] = useState(application?.studentDetails?.idNumber || '');
+  const [s5IdNumber, setS5IdNumber] = useState(application?.studentDetails?.aadhaarNumber || application?.studentDetails?.idNumber || '');
   const [s5Address, setS5Address] = useState(application?.studentDetails?.address?.street || '');
   const [s5AgeValidation, setS5AgeValidation] = useState<{ valid: boolean; age?: number; message?: string }>({ valid: true });
 
@@ -199,20 +239,32 @@ export const AdmissionWizardScreen: React.FC<WizardProps> = ({ initialStep = 1 }
       if (application.classOrCourse) setS2Class(application.classOrCourse);
       if (application.academicYear) setS2AcademicYear(application.academicYear);
       if (application.mode) setS2Mode(application.mode === 'Residential' ? 'Day Scholar' : application.mode);
-      if (application.specializationOrStream) setS2Specialization(application.specializationOrStream);
+      if (application.specializationOrStream) setS3Department(application.specializationOrStream);
       if (application.board) setS3Board(application.board);
       if (application.selectedSubjects) {
         if (application.selectedSubjects.secondLanguage) setS4SelectedLanguage(application.selectedSubjects.secondLanguage);
         if (application.selectedSubjects.stream) setS4SelectedStream(application.selectedSubjects.stream);
+        if (application.selectedSubjects.elective) setS4SelectedElective(application.selectedSubjects.elective);
       }
       if (application.studentDetails) {
-        if (application.studentDetails.fullName) setS5FullName(application.studentDetails.fullName);
+        if (application.studentDetails.firstName) {
+          setS5FirstName(application.studentDetails.firstName);
+        } else if (application.studentDetails.fullName) {
+          setS5FirstName(application.studentDetails.fullName.split(' ')[0] || '');
+        }
+        if (application.studentDetails.lastName) {
+          setS5LastName(application.studentDetails.lastName);
+        } else if (application.studentDetails.fullName) {
+          setS5LastName(application.studentDetails.fullName.split(' ').slice(1).join(' ') || '');
+        }
         if (application.studentDetails.dob) setS5Dob(application.studentDetails.dob);
         if (application.studentDetails.gender) setS5Gender(application.studentDetails.gender);
         if (application.studentDetails.bloodGroup) setS5BloodGroup(application.studentDetails.bloodGroup);
         if (application.studentDetails.nationality) setS5Nationality(application.studentDetails.nationality);
         if (application.studentDetails.category) setS5Category(application.studentDetails.category);
-        if (application.studentDetails.idNumber) setS5IdNumber(application.studentDetails.idNumber);
+        if (application.studentDetails.aadhaarNumber || application.studentDetails.idNumber) {
+          setS5IdNumber(application.studentDetails.aadhaarNumber || application.studentDetails.idNumber);
+        }
         if (application.studentDetails.address?.street) setS5Address(application.studentDetails.address.street);
       }
       if (application.parentDetails) {
@@ -254,12 +306,12 @@ export const AdmissionWizardScreen: React.FC<WizardProps> = ({ initialStep = 1 }
     }
   }, [application]);
 
-  // Load subjects dynamically when class or board changes
+  // Load subjects dynamically when class, board, or college department changes
   useEffect(() => {
     async function loadSubjects() {
-      if (!s2Class) return;
+      if (!s2Class && !s3Department) return;
       try {
-        const res = await api.getAcademicSubjects(s2Class, s3Board);
+        const res = await api.getAcademicSubjects(s2Class, s3Board, s3Department, s2Type);
         if (res.success) {
           setS4SubjectsData(res.subjectsData);
         }
@@ -268,7 +320,7 @@ export const AdmissionWizardScreen: React.FC<WizardProps> = ({ initialStep = 1 }
       }
     }
     loadSubjects();
-  }, [s2Class, s3Board]);
+  }, [s2Class, s3Board, s3Department, s2Type]);
 
   // Live age eligibility validation
   useEffect(() => {
@@ -349,24 +401,36 @@ export const AdmissionWizardScreen: React.FC<WizardProps> = ({ initialStep = 1 }
 
   const validateStep3 = () => {
     const errs: Record<string, string> = {};
-    if (!s3Board) {
-      errs.s3Board = 'Please select an Affiliated Board (CBSE, ICSE, or State).';
-    } else if (s3Board === 'STATE' && !s3WaitlistConfirmed) {
-      errs.s3Waitlist = 'State Board is currently on Waitlist. Please confirm waitlist opt-in to proceed.';
+    if (s2Type === 'COLLEGE') {
+      if (!s3Department) {
+        errs.s3Department = 'Please select a College Department to proceed.';
+      }
+    } else {
+      if (!s3Board) {
+        errs.s3Board = 'Please select an Affiliated Board (CBSE, ICSE, or State).';
+      } else if (s3Board === 'STATE' && !s3WaitlistConfirmed) {
+        errs.s3Waitlist = 'State Board is currently on Waitlist. Please confirm waitlist opt-in to proceed.';
+      }
     }
     return errs;
   };
 
   const validateStep4 = () => {
     const errs: Record<string, string> = {};
-    if (s4SubjectsData?.languageChoices && s4SubjectsData.languageChoices.length > 0) {
-      if (!s4SelectedLanguage) {
-        errs.s4SelectedLanguage = 'Please select your mandatory Second Language choice.';
+    if (s2Type === 'COLLEGE') {
+      if (s4SubjectsData?.electives && s4SubjectsData.electives.length > 0 && !s4SelectedElective) {
+        errs.s4SelectedElective = 'Please select an Elective Specialization track.';
       }
-    }
-    if (s4SubjectsData?.streams && s4SubjectsData.streams.length > 0) {
-      if (!s4SelectedStream) {
-        errs.s4SelectedStream = 'Please select a Senior Secondary Stream & Electives combination.';
+    } else {
+      if (s4SubjectsData?.languageChoices && s4SubjectsData.languageChoices.length > 0) {
+        if (!s4SelectedLanguage) {
+          errs.s4SelectedLanguage = 'Please select your mandatory Second Language choice.';
+        }
+      }
+      if (s4SubjectsData?.streams && s4SubjectsData.streams.length > 0) {
+        if (!s4SelectedStream) {
+          errs.s4SelectedStream = 'Please select a Senior Secondary Stream & Electives combination.';
+        }
       }
     }
     return errs;
@@ -374,10 +438,15 @@ export const AdmissionWizardScreen: React.FC<WizardProps> = ({ initialStep = 1 }
 
   const validateStep5 = () => {
     const errs: Record<string, string> = {};
-    if (!s5FullName.trim()) {
-      errs.s5FullName = 'Student full name is required.';
-    } else if (!/^[A-Za-z\s.]{2,}$/.test(s5FullName.trim())) {
-      errs.s5FullName = 'Name must contain at least 2 alphabetic characters.';
+    if (!s5FirstName.trim()) {
+      errs.s5FirstName = 'First name is required.';
+    } else if (!/^[A-Za-z\s]{2,}$/.test(s5FirstName.trim())) {
+      errs.s5FirstName = 'First name must be at least 2 alphabetic characters.';
+    }
+    if (!s5LastName.trim()) {
+      errs.s5LastName = 'Last name is required.';
+    } else if (!/^[A-Za-z\s]{2,}$/.test(s5LastName.trim())) {
+      errs.s5LastName = 'Last name must be at least 2 alphabetic characters.';
     }
     if (!s5Gender) {
       errs.s5Gender = 'Please select student gender.';
@@ -394,6 +463,13 @@ export const AdmissionWizardScreen: React.FC<WizardProps> = ({ initialStep = 1 }
     }
     if (!s5Nationality.trim()) {
       errs.s5Nationality = 'Nationality is required.';
+    }
+    if (!s5Category) {
+      errs.s5Category = 'Please select a Category (General, OBC, SC, or ST).';
+    }
+    const cleanAadhaar = s5IdNumber.replace(/\D/g, '');
+    if (!/^\d{12}$/.test(cleanAadhaar)) {
+      errs.s5IdNumber = 'Aadhaar Number must be exactly 12 digits.';
     }
     if (!s5Address.trim()) {
       errs.s5Address = 'Residential address is required.';
@@ -598,32 +674,51 @@ export const AdmissionWizardScreen: React.FC<WizardProps> = ({ initialStep = 1 }
       institutionType: s2Type,
       classOrCourse: s2Class,
       academicYear: s2AcademicYear,
-      mode: s2Mode || 'Day Scholar',
-      specializationOrStream: s2Specialization
+      mode: s2Mode || 'Day Scholar'
     });
   };
 
-  // STEP 3: Board
+  // STEP 3: Board (School) OR Department (College)
   const handleStep3Submit = () => {
     const errs = validateStep3();
     if (Object.keys(errs).length > 0) {
       setErrors(errs);
-      setStatusMessage({ text: 'Please select an affiliated board and confirm waitlist if applicable.', type: 'error' });
+      setStatusMessage({
+        text: s2Type === 'COLLEGE'
+          ? 'Please select a College Department to proceed.'
+          : 'Please select an affiliated board and confirm waitlist if applicable.',
+        type: 'error'
+      });
       return;
     }
     setErrors({});
-    handleSaveStep(3, {
-      board: s3Board,
-      classOrCourse: s2Class
-    });
+    if (s2Type === 'COLLEGE') {
+      handleSaveStep(3, {
+        institutionType: 'COLLEGE',
+        department: s3Department,
+        specializationOrStream: s3Department,
+        classOrCourse: s2Class
+      });
+    } else {
+      handleSaveStep(3, {
+        institutionType: 'SCHOOL',
+        board: s3Board,
+        classOrCourse: s2Class
+      });
+    }
   };
 
-  // STEP 4: Curriculum
+  // STEP 4: Curriculum & Subjects (School) OR Course & Semester Subjects (College)
   const handleStep4Submit = () => {
     const errs = validateStep4();
     if (Object.keys(errs).length > 0) {
       setErrors(errs);
-      setStatusMessage({ text: 'Please select your language or stream choices.', type: 'error' });
+      setStatusMessage({
+        text: s2Type === 'COLLEGE'
+          ? 'Please select your Elective Specialization track.'
+          : 'Please select your language or stream choices.',
+        type: 'error'
+      });
       return;
     }
     setErrors({});
@@ -631,7 +726,8 @@ export const AdmissionWizardScreen: React.FC<WizardProps> = ({ initialStep = 1 }
       selectedSubjects: {
         compulsory: s4SubjectsData?.compulsory || [],
         secondLanguage: s4SelectedLanguage,
-        stream: s4SelectedStream
+        stream: s4SelectedStream,
+        elective: s4SelectedElective
       }
     });
   };
@@ -645,14 +741,19 @@ export const AdmissionWizardScreen: React.FC<WizardProps> = ({ initialStep = 1 }
       return;
     }
     setErrors({});
+    const cleanAadhaar = s5IdNumber.replace(/\D/g, '').slice(0, 12);
+    const fullName = `${s5FirstName.trim()} ${s5LastName.trim()}`;
     handleSaveStep(5, {
-      fullName: s5FullName.trim(),
+      firstName: s5FirstName.trim(),
+      lastName: s5LastName.trim(),
+      fullName,
       dob: s5Dob.trim(),
       gender: s5Gender,
       bloodGroup: s5BloodGroup.trim(),
       nationality: s5Nationality.trim(),
-      category: s5Category.trim(),
-      idNumber: s5IdNumber.trim(),
+      category: s5Category,
+      aadhaarNumber: cleanAadhaar,
+      idNumber: cleanAadhaar,
       address: { street: s5Address.trim() }
     });
   };
@@ -773,6 +874,7 @@ export const AdmissionWizardScreen: React.FC<WizardProps> = ({ initialStep = 1 }
           {/* Top Horizontal Stepper */}
           <AdmissionStepper
             currentStep={currentStep}
+            institutionType={s2Type}
             onSelectStep={(targetStep) => {
               if (user || targetStep === 1) {
                 setCurrentStep(targetStep);
@@ -1033,9 +1135,7 @@ export const AdmissionWizardScreen: React.FC<WizardProps> = ({ initialStep = 1 }
                   style={[styles.typeCard, s2Type === 'SCHOOL' && styles.typeCardActive, errors.s2Type && styles.inputError]}
                   onPress={() => {
                     setS2Type('SCHOOL');
-                    if (!schoolSpecializationOptions.includes(s2Specialization)) {
-                      setS2Specialization('');
-                    }
+                    setS2Class('');
                     clearError('s2Type');
                   }}
                 >
@@ -1051,9 +1151,7 @@ export const AdmissionWizardScreen: React.FC<WizardProps> = ({ initialStep = 1 }
                   style={[styles.typeCard, s2Type === 'COLLEGE' && styles.typeCardActive, errors.s2Type && styles.inputError]}
                   onPress={() => {
                     setS2Type('COLLEGE');
-                    if (!collegeSpecializationOptions.includes(s2Specialization)) {
-                      setS2Specialization('');
-                    }
+                    setS2Class('');
                     clearError('s2Type');
                   }}
                 >
@@ -1131,63 +1229,6 @@ export const AdmissionWizardScreen: React.FC<WizardProps> = ({ initialStep = 1 }
                     <Text style={styles.inlineErrorText}>⚠️ {errors.s2Mode}</Text>
                   )}
                 </View>
-
-                <View style={styles.colHalf}>
-                  <Text style={styles.label}>Board / Specialization Focus *</Text>
-                  {Platform.OS === 'web' ? (
-                    <View style={[styles.selectWrapper, errors.s2Specialization && styles.inputError]}>
-                      <select
-                        id="s2Specialization-select"
-                        value={s2Specialization}
-                        onChange={(e: any) => {
-                          setS2Specialization(e.target.value);
-                          clearError('s2Specialization');
-                        }}
-                        style={{
-                          width: '100%',
-                          padding: '12px 14px',
-                          fontSize: '14px',
-                          color: s2Specialization ? colors.textPrimary : colors.textMuted,
-                          backgroundColor: colors.bgSurface,
-                          border: 'none',
-                          outline: 'none',
-                          fontFamily: 'inherit',
-                          cursor: 'pointer',
-                          borderRadius: borderRadius.md
-                        }}
-                      >
-                        <option value="">Select Board / Specialization...</option>
-                        {specializationOptions.map((opt) => (
-                          <option key={opt} value={opt} style={{ color: colors.textPrimary }}>
-                            {opt}
-                          </option>
-                        ))}
-                      </select>
-                    </View>
-                  ) : (
-                    <View style={[styles.pickerBox, errors.s2Specialization && styles.inputError]}>
-                      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipScroll}>
-                        {specializationOptions.map((opt) => (
-                          <TouchableOpacity
-                            key={opt}
-                            style={[styles.chip, s2Specialization === opt && styles.chipActive]}
-                            onPress={() => {
-                              setS2Specialization(opt);
-                              clearError('s2Specialization');
-                            }}
-                          >
-                            <Text style={[styles.chipText, s2Specialization === opt && styles.chipTextActive]}>
-                              {opt}
-                            </Text>
-                          </TouchableOpacity>
-                        ))}
-                      </ScrollView>
-                    </View>
-                  )}
-                  {errors.s2Specialization && (
-                    <Text style={styles.inlineErrorText}>⚠️ {errors.s2Specialization}</Text>
-                  )}
-                </View>
               </View>
 
               {/* Seats, eligibility and fee info banner */}
@@ -1195,7 +1236,7 @@ export const AdmissionWizardScreen: React.FC<WizardProps> = ({ initialStep = 1 }
                 <Text style={styles.bannerInfoTitle}>📊 Live Seats, Eligibility & Fee Indicator</Text>
                 <Text style={styles.bannerInfoText}>
                   {s2Class ? (
-                    <>Selected: <Text style={{ fontWeight: '700' }}>{s2Class}</Text> ({s2Type}) • Status: <Text style={{ color: colors.statusSuccess, fontWeight: '700' }}>34 Seats Available</Text> • Tuition Base: ₹85,000 / year • Age Cutoff: Min. 6 yrs by June 2026.</>
+                    <>Selected: <Text style={{ fontWeight: '700' }}>{s2Class}</Text> ({s2Type === 'COLLEGE' ? 'College / University' : 'School'}) • Status: <Text style={{ color: colors.statusSuccess, fontWeight: '700' }}>34 Seats Available</Text> • Tuition Base: {s2Type === 'COLLEGE' ? '₹1,15,000' : '₹85,000'} / year.</>
                   ) : (
                     'Please select a Class / Course above to view available seats, fees, and age criteria.'
                   )}
@@ -1211,7 +1252,9 @@ export const AdmissionWizardScreen: React.FC<WizardProps> = ({ initialStep = 1 }
                   {loading ? (
                     <ActivityIndicator color={colors.textInverse} />
                   ) : (
-                    <Text style={styles.primaryBtnText}>Next ➜ Board Selection</Text>
+                    <Text style={styles.primaryBtnText}>
+                      {s2Type === 'COLLEGE' ? 'Next ➜ Department Selection' : 'Next ➜ Board Selection'}
+                    </Text>
                   )}
                 </TouchableOpacity>
 
@@ -1223,174 +1266,253 @@ export const AdmissionWizardScreen: React.FC<WizardProps> = ({ initialStep = 1 }
           )}
 
           {/* ========================================================================= */}
-          {/* STEP 3: BOARD SELECTION */}
+          {/* STEP 3: BOARD SELECTION (SCHOOL) OR DEPARTMENT SELECTION (COLLEGE) */}
           {/* ========================================================================= */}
           {currentStep === 3 && (
             <View style={styles.stepCard}>
-              <View style={styles.stepHeader}>
-                <Text style={styles.stepTitle}>Apply Step 3: Board Selection</Text>
-                <Text style={styles.stepSubtitle}>
-                  Choose your affiliated board. Cards show only boards enabled for your chosen class ({s2Class}).
-                </Text>
-              </View>
-
-              {/* 3 Board Cards */}
-              <View style={styles.boardCardsGrid}>
-                {/* CBSE */}
-                <TouchableOpacity
-                  style={[styles.boardCard, s3Board === 'CBSE' && styles.boardCardActive, errors.s3Board && styles.inputError]}
-                  onPress={() => {
-                    setS3Board('CBSE');
-                    clearError('s3Board');
-                    clearError('s3Waitlist');
-                  }}
-                  activeOpacity={0.9}
-                >
-                  <View style={styles.boardTopRow}>
-                    <Text style={styles.boardPill}>CBSE</Text>
-                    <View style={styles.seatBadgeGreen}>
-                      <Text style={styles.seatBadgeTextGreen}>34 Seats Left</Text>
-                    </View>
-                  </View>
-                  <Text style={styles.boardName}>Central Board of Secondary Education</Text>
-                  <Text style={styles.boardSpecs}>• Classes: Nursery to Grade 12</Text>
-                  <Text style={styles.boardSpecs}>• Medium: English</Text>
-                  <Text style={styles.boardSpecs}>• Annual Fee: ₹85,000</Text>
-                  <TouchableOpacity
-                    style={styles.viewCurriculumBtn}
-                    onPress={() => {
-                      setPreviewBoardKey('CBSE');
-                      setCurriculumModalOpen(true);
-                    }}
-                  >
-                    <Text style={styles.viewCurriculumText}>📖 View CBSE Curriculum & Books ➜</Text>
-                  </TouchableOpacity>
-                </TouchableOpacity>
-
-                {/* ICSE / ISC */}
-                <TouchableOpacity
-                  style={[styles.boardCard, s3Board === 'ICSE_ISC' && styles.boardCardActive, errors.s3Board && styles.inputError]}
-                  onPress={() => {
-                    setS3Board('ICSE_ISC');
-                    clearError('s3Board');
-                    clearError('s3Waitlist');
-                  }}
-                  activeOpacity={0.9}
-                >
-                  <View style={styles.boardTopRow}>
-                    <Text style={styles.boardPill}>ICSE / ISC</Text>
-                    <View style={styles.seatBadgeAmber}>
-                      <Text style={styles.seatBadgeTextAmber}>8 Seats Left</Text>
-                    </View>
-                  </View>
-                  <Text style={styles.boardName}>Council for Indian School Certificate</Text>
-                  <Text style={styles.boardSpecs}>• Classes: Grade 1 to 12</Text>
-                  <Text style={styles.boardSpecs}>• Medium: English</Text>
-                  <Text style={styles.boardSpecs}>• Annual Fee: ₹1,10,000</Text>
-                  <TouchableOpacity
-                    style={styles.viewCurriculumBtn}
-                    onPress={() => {
-                      setPreviewBoardKey('ICSE_ISC');
-                      setCurriculumModalOpen(true);
-                    }}
-                  >
-                    <Text style={styles.viewCurriculumText}>📖 View ICSE Curriculum & Books ➜</Text>
-                  </TouchableOpacity>
-                </TouchableOpacity>
-
-                {/* State Board */}
-                <TouchableOpacity
-                  style={[styles.boardCard, s3Board === 'STATE' && styles.boardCardActive, errors.s3Board && styles.inputError]}
-                  onPress={() => {
-                    setS3Board('STATE');
-                    clearError('s3Board');
-                  }}
-                  activeOpacity={0.9}
-                >
-                  <View style={styles.boardTopRow}>
-                    <Text style={styles.boardPill}>State Board</Text>
-                    <View style={styles.seatBadgeRed}>
-                      <Text style={styles.seatBadgeTextRed}>Waitlist Only</Text>
-                    </View>
-                  </View>
-                  <Text style={styles.boardName}>Karnataka State Education Board</Text>
-                  <Text style={styles.boardSpecs}>• Classes: Grade 1 to 10</Text>
-                  <Text style={styles.boardSpecs}>• Medium: English / Kannada</Text>
-                  <Text style={styles.boardSpecs}>• Annual Fee: ₹48,000</Text>
-                  <TouchableOpacity
-                    style={styles.viewCurriculumBtn}
-                    onPress={() => {
-                      setPreviewBoardKey('STATE');
-                      setCurriculumModalOpen(true);
-                    }}
-                  >
-                    <Text style={styles.viewCurriculumText}>📖 View State Curriculum & Books ➜</Text>
-                  </TouchableOpacity>
-                </TouchableOpacity>
-              </View>
-
-              {errors.s3Board && (
-                <Text style={[styles.inlineErrorText, { marginBottom: 10 }]}>⚠️ {errors.s3Board}</Text>
-              )}
-
-              {/* State Board Waitlist Confirmation Checkbox */}
-              {s3Board === 'STATE' && (
-                <View style={styles.waitlistBox}>
-                  <TouchableOpacity
-                    style={styles.waitlistRow}
-                    onPress={() => {
-                      setS3WaitlistConfirmed(!s3WaitlistConfirmed);
-                      clearError('s3Waitlist');
-                    }}
-                  >
-                    <View style={[styles.checkboxBox, s3WaitlistConfirmed && styles.checkboxBoxChecked]}>
-                      {s3WaitlistConfirmed && <Text style={styles.checkboxCheck}>✓</Text>}
-                    </View>
-                    <Text style={styles.waitlistLabel}>
-                      I understand that State Board admission for 2026–2027 is subject to waitlist clearance, and I confirm waitlist opt-in to proceed.
+              {s2Type === 'COLLEGE' ? (
+                <>
+                  <View style={styles.stepHeader}>
+                    <Text style={styles.stepTitle}>Apply Step 3: College Department Selection</Text>
+                    <Text style={styles.stepSubtitle}>
+                      Choose your academic department for {s2Class || 'your undergraduate degree'} (seats & annual tuition shown below).
                     </Text>
-                  </TouchableOpacity>
-                  {errors.s3Waitlist && (
-                    <Text style={[styles.inlineErrorText, { marginTop: 8 }]}>⚠️ {errors.s3Waitlist}</Text>
+                  </View>
+
+                  <View style={styles.boardCardsGrid}>
+                    {collegeDepartments.map((dept) => {
+                      const isSelected = s3Department === dept.name;
+                      return (
+                        <TouchableOpacity
+                          key={dept.id}
+                          style={[
+                            styles.boardCard,
+                            isSelected && styles.boardCardActive,
+                            errors.s3Department && styles.inputError
+                          ]}
+                          onPress={() => {
+                            setS3Department(dept.name);
+                            setS4SelectedElective('');
+                            clearError('s3Department');
+                          }}
+                          activeOpacity={0.9}
+                        >
+                          <View style={styles.boardTopRow}>
+                            <Text style={styles.boardPill}>{dept.degree}</Text>
+                            <View style={dept.badgeTone === 'amber' ? styles.seatBadgeAmber : styles.seatBadgeGreen}>
+                              <Text style={dept.badgeTone === 'amber' ? styles.seatBadgeTextAmber : styles.seatBadgeTextGreen}>
+                                {dept.badge}
+                              </Text>
+                            </View>
+                          </View>
+                          <Text style={styles.boardName}>{dept.name}</Text>
+                          {dept.highlights.map((hl, idx) => (
+                            <Text key={idx} style={styles.boardSpecs}>• {hl}</Text>
+                          ))}
+                          <Text style={styles.boardSpecs}>• Annual Fee: {dept.annualFee}</Text>
+                        </TouchableOpacity>
+                      );
+                    })}
+                  </View>
+
+                  {errors.s3Department && (
+                    <Text style={[styles.inlineErrorText, { marginBottom: 10 }]}>⚠️ {errors.s3Department}</Text>
                   )}
-                </View>
+
+                  <View style={styles.btnRow}>
+                    <TouchableOpacity
+                      style={[styles.primaryBtn, loading && styles.disabledBtn]}
+                      onPress={handleStep3Submit}
+                      disabled={loading}
+                    >
+                      {loading ? (
+                        <ActivityIndicator color={colors.textInverse} />
+                      ) : (
+                        <Text style={styles.primaryBtnText}>Next ➜ Course & Electives</Text>
+                      )}
+                    </TouchableOpacity>
+
+                    <TouchableOpacity style={styles.secondaryBtn} onPress={() => setCurrentStep(2)}>
+                      <Text style={styles.secondaryBtnText}>Back ➜ Programme</Text>
+                    </TouchableOpacity>
+                  </View>
+                </>
+              ) : (
+                <>
+                  <View style={styles.stepHeader}>
+                    <Text style={styles.stepTitle}>Apply Step 3: Board Selection</Text>
+                    <Text style={styles.stepSubtitle}>
+                      Choose your affiliated board. Cards show only boards enabled for your chosen class ({s2Class}).
+                    </Text>
+                  </View>
+
+                  {/* 3 Board Cards */}
+                  <View style={styles.boardCardsGrid}>
+                    {/* CBSE */}
+                    <TouchableOpacity
+                      style={[styles.boardCard, s3Board === 'CBSE' && styles.boardCardActive, errors.s3Board && styles.inputError]}
+                      onPress={() => {
+                        setS3Board('CBSE');
+                        clearError('s3Board');
+                        clearError('s3Waitlist');
+                      }}
+                      activeOpacity={0.9}
+                    >
+                      <View style={styles.boardTopRow}>
+                        <Text style={styles.boardPill}>CBSE</Text>
+                        <View style={styles.seatBadgeGreen}>
+                          <Text style={styles.seatBadgeTextGreen}>34 Seats Left</Text>
+                        </View>
+                      </View>
+                      <Text style={styles.boardName}>Central Board of Secondary Education</Text>
+                      <Text style={styles.boardSpecs}>• Classes: Nursery to Grade 12</Text>
+                      <Text style={styles.boardSpecs}>• Medium: English</Text>
+                      <Text style={styles.boardSpecs}>• Annual Fee: ₹85,000</Text>
+                      <TouchableOpacity
+                        style={styles.viewCurriculumBtn}
+                        onPress={() => {
+                          setPreviewBoardKey('CBSE');
+                          setCurriculumModalOpen(true);
+                        }}
+                      >
+                        <Text style={styles.viewCurriculumText}>📖 View CBSE Curriculum & Books ➜</Text>
+                      </TouchableOpacity>
+                    </TouchableOpacity>
+
+                    {/* ICSE / ISC */}
+                    <TouchableOpacity
+                      style={[styles.boardCard, s3Board === 'ICSE_ISC' && styles.boardCardActive, errors.s3Board && styles.inputError]}
+                      onPress={() => {
+                        setS3Board('ICSE_ISC');
+                        clearError('s3Board');
+                        clearError('s3Waitlist');
+                      }}
+                      activeOpacity={0.9}
+                    >
+                      <View style={styles.boardTopRow}>
+                        <Text style={styles.boardPill}>ICSE / ISC</Text>
+                        <View style={styles.seatBadgeAmber}>
+                          <Text style={styles.seatBadgeTextAmber}>8 Seats Left</Text>
+                        </View>
+                      </View>
+                      <Text style={styles.boardName}>Council for Indian School Certificate</Text>
+                      <Text style={styles.boardSpecs}>• Classes: Grade 1 to 12</Text>
+                      <Text style={styles.boardSpecs}>• Medium: English</Text>
+                      <Text style={styles.boardSpecs}>• Annual Fee: ₹1,10,000</Text>
+                      <TouchableOpacity
+                        style={styles.viewCurriculumBtn}
+                        onPress={() => {
+                          setPreviewBoardKey('ICSE_ISC');
+                          setCurriculumModalOpen(true);
+                        }}
+                      >
+                        <Text style={styles.viewCurriculumText}>📖 View ICSE Curriculum & Books ➜</Text>
+                      </TouchableOpacity>
+                    </TouchableOpacity>
+
+                    {/* State Board */}
+                    <TouchableOpacity
+                      style={[styles.boardCard, s3Board === 'STATE' && styles.boardCardActive, errors.s3Board && styles.inputError]}
+                      onPress={() => {
+                        setS3Board('STATE');
+                        clearError('s3Board');
+                      }}
+                      activeOpacity={0.9}
+                    >
+                      <View style={styles.boardTopRow}>
+                        <Text style={styles.boardPill}>State Board</Text>
+                        <View style={styles.seatBadgeRed}>
+                          <Text style={styles.seatBadgeTextRed}>Waitlist Only</Text>
+                        </View>
+                      </View>
+                      <Text style={styles.boardName}>Karnataka State Education Board</Text>
+                      <Text style={styles.boardSpecs}>• Classes: Grade 1 to 10</Text>
+                      <Text style={styles.boardSpecs}>• Medium: English / Kannada</Text>
+                      <Text style={styles.boardSpecs}>• Annual Fee: ₹48,000</Text>
+                      <TouchableOpacity
+                        style={styles.viewCurriculumBtn}
+                        onPress={() => {
+                          setPreviewBoardKey('STATE');
+                          setCurriculumModalOpen(true);
+                        }}
+                      >
+                        <Text style={styles.viewCurriculumText}>📖 View State Curriculum & Books ➜</Text>
+                      </TouchableOpacity>
+                    </TouchableOpacity>
+                  </View>
+
+                  {errors.s3Board && (
+                    <Text style={[styles.inlineErrorText, { marginBottom: 10 }]}>⚠️ {errors.s3Board}</Text>
+                  )}
+
+                  {/* State Board Waitlist Confirmation Checkbox */}
+                  {s3Board === 'STATE' && (
+                    <View style={styles.waitlistBox}>
+                      <TouchableOpacity
+                        style={styles.waitlistRow}
+                        onPress={() => {
+                          setS3WaitlistConfirmed(!s3WaitlistConfirmed);
+                          clearError('s3Waitlist');
+                        }}
+                      >
+                        <View style={[styles.checkboxBox, s3WaitlistConfirmed && styles.checkboxBoxChecked]}>
+                          {s3WaitlistConfirmed && <Text style={styles.checkboxCheck}>✓</Text>}
+                        </View>
+                        <Text style={styles.waitlistLabel}>
+                          I understand that State Board admission for 2026–2027 is subject to waitlist clearance, and I confirm waitlist opt-in to proceed.
+                        </Text>
+                      </TouchableOpacity>
+                      {errors.s3Waitlist && (
+                        <Text style={[styles.inlineErrorText, { marginTop: 8 }]}>⚠️ {errors.s3Waitlist}</Text>
+                      )}
+                    </View>
+                  )}
+
+                  <View style={styles.btnRow}>
+                    <TouchableOpacity
+                      style={[styles.primaryBtn, loading && styles.disabledBtn]}
+                      onPress={handleStep3Submit}
+                      disabled={loading}
+                    >
+                      {loading ? (
+                        <ActivityIndicator color={colors.textInverse} />
+                      ) : (
+                        <Text style={styles.primaryBtnText}>Next ➜ Curriculum & Subjects</Text>
+                      )}
+                    </TouchableOpacity>
+
+                    <TouchableOpacity style={styles.secondaryBtn} onPress={() => setCurrentStep(2)}>
+                      <Text style={styles.secondaryBtnText}>Back ➜ Programme</Text>
+                    </TouchableOpacity>
+                  </View>
+                </>
               )}
-
-              <View style={styles.btnRow}>
-                <TouchableOpacity
-                  style={[styles.primaryBtn, loading && styles.disabledBtn]}
-                  onPress={handleStep3Submit}
-                  disabled={loading}
-                >
-                  {loading ? (
-                    <ActivityIndicator color={colors.textInverse} />
-                  ) : (
-                    <Text style={styles.primaryBtnText}>Next ➜ Curriculum & Subjects</Text>
-                  )}
-                </TouchableOpacity>
-
-                <TouchableOpacity style={styles.secondaryBtn} onPress={() => setCurrentStep(2)}>
-                  <Text style={styles.secondaryBtnText}>Back ➜ Programme</Text>
-                </TouchableOpacity>
-              </View>
             </View>
           )}
 
           {/* ========================================================================= */}
-          {/* STEP 4: CURRICULUM & SUBJECTS */}
+          {/* STEP 4: CURRICULUM & SUBJECTS (SCHOOL) OR COURSE & SEMESTER SUBJECTS (COLLEGE) */}
           {/* ========================================================================= */}
           {currentStep === 4 && (
             <View style={styles.stepCard}>
               <View style={styles.stepHeader}>
-                <Text style={styles.stepTitle}>Apply Step 4: Curriculum & Subjects</Text>
+                <Text style={styles.stepTitle}>
+                  {s2Type === 'COLLEGE'
+                    ? 'Apply Step 4: Course & Semester Subjects'
+                    : 'Apply Step 4: Curriculum & Subjects'}
+                </Text>
                 <Text style={styles.stepSubtitle}>
-                  Subjects dynamically loaded for {s2Class} under {s3Board.replace('_', ' / ')}.
+                  {s2Type === 'COLLEGE'
+                    ? `Degree Programme: ${s4SubjectsData?.degree || s2Class} • ${s3Department || 'Selected Department'}`
+                    : `Subjects dynamically loaded for ${s2Class} under ${s3Board.replace('_', ' / ')}.`}
                 </Text>
               </View>
 
-              {/* Compulsory subjects */}
+              {/* Compulsory / Core Semester Subjects */}
               <View style={styles.subjectBox}>
-                <Text style={styles.subjectBoxTitle}>📚 Core Compulsory Subjects</Text>
+                <Text style={styles.subjectBoxTitle}>
+                  {s2Type === 'COLLEGE' ? '🎓 Core Semester Papers (Mandatory)' : '📚 Core Compulsory Subjects'}
+                </Text>
                 <View style={styles.subjectChipsRow}>
                   {(s4SubjectsData?.compulsory || [
                     'English Language & Literature',
@@ -1406,8 +1528,38 @@ export const AdmissionWizardScreen: React.FC<WizardProps> = ({ initialStep = 1 }
                 </View>
               </View>
 
+              {/* College Elective Specializations */}
+              {s2Type === 'COLLEGE' && s4SubjectsData?.electives && (
+                <View style={styles.subjectBox}>
+                  <Text style={styles.subjectBoxTitle}>⚡ Select Elective Specialization Track *</Text>
+                  <View style={styles.radioGroup}>
+                    {s4SubjectsData.electives.map((elec: string) => (
+                      <TouchableOpacity
+                        key={elec}
+                        style={[
+                          styles.radioPill,
+                          s4SelectedElective === elec && styles.radioPillActive,
+                          errors.s4SelectedElective && styles.inputError
+                        ]}
+                        onPress={() => {
+                          setS4SelectedElective(elec);
+                          clearError('s4SelectedElective');
+                        }}
+                      >
+                        <Text style={[styles.radioText, s4SelectedElective === elec && styles.radioTextActive]}>
+                          {elec}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                  {errors.s4SelectedElective && (
+                    <Text style={styles.inlineErrorText}>⚠️ {errors.s4SelectedElective}</Text>
+                  )}
+                </View>
+              )}
+
               {/* Language Choice (Classes 6 to 10) */}
-              {s4SubjectsData?.languageChoices && (
+              {s2Type !== 'COLLEGE' && s4SubjectsData?.languageChoices && (
                 <View style={styles.subjectBox}>
                   <Text style={styles.subjectBoxTitle}>🌐 Select Second Language Choice *</Text>
                   <View style={styles.radioGroup}>
@@ -1433,7 +1585,7 @@ export const AdmissionWizardScreen: React.FC<WizardProps> = ({ initialStep = 1 }
               )}
 
               {/* Stream combinations (Classes 11 & 12) */}
-              {s4SubjectsData?.streams && (
+              {s2Type !== 'COLLEGE' && s4SubjectsData?.streams && (
                 <View style={styles.subjectBox}>
                   <Text style={styles.subjectBoxTitle}>🔬 Select Senior Secondary Stream & Electives *</Text>
                   {s4SubjectsData.streams.map((stream: any) => (
@@ -1466,7 +1618,7 @@ export const AdmissionWizardScreen: React.FC<WizardProps> = ({ initialStep = 1 }
 
                 <TouchableOpacity
                   style={styles.downloadSyllabusBtn}
-                  onPress={() => Alert.alert('Prescribed Textbooks', 'NCERT & Council authorized booklist saved to device.')}
+                  onPress={() => Alert.alert('Prescribed Textbooks', 'Authorized booklist & semester reading guide saved to device.')}
                 >
                   <Text style={styles.downloadSyllabusText}>📚 Prescribed Textbook List</Text>
                 </TouchableOpacity>
@@ -1486,7 +1638,9 @@ export const AdmissionWizardScreen: React.FC<WizardProps> = ({ initialStep = 1 }
                 </TouchableOpacity>
 
                 <TouchableOpacity style={styles.secondaryBtn} onPress={() => setCurrentStep(3)}>
-                  <Text style={styles.secondaryBtnText}>Back ➜ Board Selection</Text>
+                  <Text style={styles.secondaryBtnText}>
+                    {s2Type === 'COLLEGE' ? 'Back ➜ Department Selection' : 'Back ➜ Board Selection'}
+                  </Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -1506,22 +1660,41 @@ export const AdmissionWizardScreen: React.FC<WizardProps> = ({ initialStep = 1 }
 
               <View style={styles.formGrid}>
                 <View style={styles.colHalf}>
-                  <Text style={styles.label}>Student Full Name *</Text>
+                  <Text style={styles.label}>First Name *</Text>
                   <TextInput
-                    style={[styles.textInput, errors.s5FullName && styles.inputError]}
-                    placeholder="Enter student's official name"
+                    style={[styles.textInput, errors.s5FirstName && styles.inputError]}
+                    placeholder="Enter student's first name"
                     placeholderTextColor={colors.textMuted}
-                    value={s5FullName}
+                    value={s5FirstName}
                     onChangeText={(val) => {
-                      setS5FullName(val);
-                      clearError('s5FullName');
+                      setS5FirstName(val);
+                      clearError('s5FirstName');
                     }}
                   />
-                  {errors.s5FullName && (
-                    <Text style={styles.inlineErrorText}>⚠️ {errors.s5FullName}</Text>
+                  {errors.s5FirstName && (
+                    <Text style={styles.inlineErrorText}>⚠️ {errors.s5FirstName}</Text>
                   )}
                 </View>
 
+                <View style={styles.colHalf}>
+                  <Text style={styles.label}>Last Name *</Text>
+                  <TextInput
+                    style={[styles.textInput, errors.s5LastName && styles.inputError]}
+                    placeholder="Enter student's last name"
+                    placeholderTextColor={colors.textMuted}
+                    value={s5LastName}
+                    onChangeText={(val) => {
+                      setS5LastName(val);
+                      clearError('s5LastName');
+                    }}
+                  />
+                  {errors.s5LastName && (
+                    <Text style={styles.inlineErrorText}>⚠️ {errors.s5LastName}</Text>
+                  )}
+                </View>
+              </View>
+
+              <View style={styles.formGrid}>
                 <View style={styles.colHalf}>
                   <Text style={styles.label}>Date of Birth *</Text>
                   {Platform.OS === 'web' ? (
@@ -1648,25 +1821,76 @@ export const AdmissionWizardScreen: React.FC<WizardProps> = ({ initialStep = 1 }
 
               <View style={styles.formGrid}>
                 <View style={styles.colHalf}>
-                  <Text style={styles.label}>Category</Text>
-                  <TextInput
-                    style={styles.textInput}
-                    placeholder="General / OBC / SC / ST"
-                    placeholderTextColor={colors.textMuted}
-                    value={s5Category}
-                    onChangeText={setS5Category}
-                  />
+                  <Text style={styles.label}>Category *</Text>
+                  {Platform.OS === 'web' ? (
+                    <View style={[styles.selectWrapper, errors.s5Category && styles.inputError]}>
+                      <select
+                        id="s5Category-select"
+                        value={s5Category}
+                        onChange={(e: any) => {
+                          setS5Category(e.target.value);
+                          clearError('s5Category');
+                        }}
+                        style={{
+                          width: '100%',
+                          padding: '12px 14px',
+                          fontSize: '14px',
+                          color: s5Category ? colors.textPrimary : colors.textMuted,
+                          backgroundColor: colors.bgSurface,
+                          border: 'none',
+                          outline: 'none',
+                          fontFamily: 'inherit',
+                          cursor: 'pointer',
+                          borderRadius: borderRadius.md
+                        }}
+                      >
+                        <option value="">Select Category...</option>
+                        <option value="General (GEN)">General (GEN)</option>
+                        <option value="OBC">OBC</option>
+                        <option value="SC">SC</option>
+                        <option value="ST">ST</option>
+                      </select>
+                    </View>
+                  ) : (
+                    <View style={[styles.radioGroup, errors.s5Category && styles.inputError]}>
+                      {['General (GEN)', 'OBC', 'SC', 'ST'].map((cat) => (
+                        <TouchableOpacity
+                          key={cat}
+                          style={[styles.radioPill, s5Category === cat && styles.radioPillActive]}
+                          onPress={() => {
+                            setS5Category(cat);
+                            clearError('s5Category');
+                          }}
+                        >
+                          <Text style={[styles.radioText, s5Category === cat && styles.radioTextActive]}>{cat}</Text>
+                        </TouchableOpacity>
+                      ))}
+                    </View>
+                  )}
+                  {errors.s5Category && (
+                    <Text style={styles.inlineErrorText}>⚠️ {errors.s5Category}</Text>
+                  )}
                 </View>
 
                 <View style={styles.colHalf}>
-                  <Text style={styles.label}>Aadhaar / National ID Number</Text>
+                  <Text style={styles.label}>Aadhaar Number (12 Digits) *</Text>
                   <TextInput
-                    style={styles.textInput}
-                    placeholder="xxxx xxxx xxxx"
+                    style={[styles.textInput, errors.s5IdNumber && styles.inputError]}
+                    placeholder="12-digit Aadhaar number"
                     placeholderTextColor={colors.textMuted}
+                    keyboardType="number-pad"
+                    inputMode="numeric"
+                    maxLength={12}
                     value={s5IdNumber}
-                    onChangeText={setS5IdNumber}
+                    onChangeText={(val) => {
+                      const cleaned = val.replace(/\D/g, '').slice(0, 12);
+                      setS5IdNumber(cleaned);
+                      clearError('s5IdNumber');
+                    }}
                   />
+                  {errors.s5IdNumber && (
+                    <Text style={styles.inlineErrorText}>⚠️ {errors.s5IdNumber}</Text>
+                  )}
                 </View>
               </View>
 
@@ -1703,7 +1927,7 @@ export const AdmissionWizardScreen: React.FC<WizardProps> = ({ initialStep = 1 }
 
                 <TouchableOpacity
                   style={styles.secondaryBtn}
-                  onPress={() => handleSaveStep(5, { fullName: s5FullName, dob: s5Dob }, false)}
+                  onPress={() => handleSaveStep(5, { firstName: s5FirstName, lastName: s5LastName, fullName: `${s5FirstName.trim()} ${s5LastName.trim()}`, dob: s5Dob }, false)}
                 >
                   <Text style={styles.secondaryBtnText}>
                     {savingDraft ? 'Saving Draft...' : 'Save Draft'}
@@ -2368,22 +2592,30 @@ export const AdmissionWizardScreen: React.FC<WizardProps> = ({ initialStep = 1 }
                       <Text style={styles.editLink}>Edit Step 2 ✎</Text>
                     </TouchableOpacity>
                   </View>
-                  <Text style={styles.reviewItem}>• Institution Type: {s2Type}</Text>
-                  <Text style={styles.reviewItem}>• Target Class: {s2Class} ({s2Mode})</Text>
-                  <Text style={styles.reviewItem}>• Affiliated Board: {s3Board.replace('_', ' / ')}</Text>
+                  <Text style={styles.reviewItem}>• Institution Type: {s2Type === 'COLLEGE' ? 'College / University' : 'School'}</Text>
+                  <Text style={styles.reviewItem}>• Target Class / Course: {s2Class} ({s2Mode})</Text>
+                  <Text style={styles.reviewItem}>
+                    {s2Type === 'COLLEGE'
+                      ? `• Department: ${s3Department || 'N/A'}`
+                      : `• Affiliated Board: ${s3Board.replace('_', ' / ')}`}
+                  </Text>
                   <Text style={styles.reviewItem}>• Academic Year: {s2AcademicYear}</Text>
                 </View>
 
                 {/* Section B: Curriculum & Subjects */}
                 <View style={styles.reviewBlock}>
                   <View style={styles.reviewBlockHeader}>
-                    <Text style={styles.reviewBlockTitle}>2. Selected Subjects & Languages</Text>
+                    <Text style={styles.reviewBlockTitle}>2. Selected Subjects & Electives</Text>
                     <TouchableOpacity onPress={() => setCurrentStep(4)}>
                       <Text style={styles.editLink}>Edit Step 4 ✎</Text>
                     </TouchableOpacity>
                   </View>
-                  <Text style={styles.reviewItem}>• Core Subjects: English, Mathematics, Science, Social Studies, ICT</Text>
-                  <Text style={styles.reviewItem}>• Second Language Choice: {s4SelectedLanguage}</Text>
+                  <Text style={styles.reviewItem}>• Core Subjects: {(s4SubjectsData?.compulsory || ['English, Mathematics, Science, Social Studies, ICT']).join(', ')}</Text>
+                  {s2Type === 'COLLEGE' ? (
+                    <Text style={styles.reviewItem}>• Elective Specialization: {s4SelectedElective || 'N/A'}</Text>
+                  ) : (
+                    <Text style={styles.reviewItem}>• Second Language Choice: {s4SelectedLanguage || 'N/A'}</Text>
+                  )}
                 </View>
 
                 {/* Section C: Student Details */}
@@ -2394,9 +2626,10 @@ export const AdmissionWizardScreen: React.FC<WizardProps> = ({ initialStep = 1 }
                       <Text style={styles.editLink}>Edit Step 5 ✎</Text>
                     </TouchableOpacity>
                   </View>
-                  <Text style={styles.reviewItem}>• Full Name: {s5FullName}</Text>
+                  <Text style={styles.reviewItem}>• Full Name: {`${s5FirstName} ${s5LastName}`.trim()}</Text>
                   <Text style={styles.reviewItem}>• Date of Birth: {s5Dob} (Calculated Age: {s5AgeValidation.age || 11} yrs)</Text>
-                  <Text style={styles.reviewItem}>• Gender: {s5Gender} • Blood Group: {s5BloodGroup} • Nationality: {s5Nationality}</Text>
+                  <Text style={styles.reviewItem}>• Gender: {s5Gender} • Category: {s5Category || 'N/A'} • Blood Group: {s5BloodGroup}</Text>
+                  <Text style={styles.reviewItem}>• Aadhaar Number: {s5IdNumber || 'N/A'} • Nationality: {s5Nationality}</Text>
                   <Text style={styles.reviewItem}>• Residential Address: {s5Address}</Text>
                 </View>
 

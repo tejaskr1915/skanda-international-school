@@ -16,7 +16,10 @@ export const StudentDashboardScreen: React.FC<StudentDashboardProps> = ({ lockNo
   const [activeTab, setActiveTab] = useState('Dashboard');
   const [pdfDownloading, setPdfDownloading] = useState(false);
 
-  const studentName = application?.studentDetails?.fullName || user?.fullName || 'Student Applicant';
+  const studentDetails = application?.studentDetails || {};
+  const studentName = (studentDetails.firstName && studentDetails.lastName)
+    ? `${studentDetails.firstName} ${studentDetails.lastName}`
+    : (studentDetails.fullName || user?.fullName || 'Student Applicant');
   const appNo = application?.applicationNo || 'SIS-2026-0001';
   const status = application?.status || 'SUBMITTED';
 
@@ -281,8 +284,12 @@ export const StudentDashboardScreen: React.FC<StudentDashboardProps> = ({ lockNo
                       {application?.studentDetails?.gender || 'Male'} • Blood Group: {application?.studentDetails?.bloodGroup || 'O+'}
                     </Text>
                     <Text style={styles.summaryRow}>
-                      <Text style={styles.summaryLabel}>Nationality: </Text>
-                      {application?.studentDetails?.nationality || 'Indian'}
+                      <Text style={styles.summaryLabel}>Nationality & Category: </Text>
+                      {application?.studentDetails?.nationality || 'Indian'} • {application?.studentDetails?.category || 'General (GEN)'}
+                    </Text>
+                    <Text style={styles.summaryRow}>
+                      <Text style={styles.summaryLabel}>Aadhaar Number: </Text>
+                      {application?.studentDetails?.aadhaarNumber || application?.studentDetails?.idNumber || 'Verified'}
                     </Text>
                     <Text style={styles.summaryRow}>
                       <Text style={styles.summaryLabel}>Residential Address: </Text>

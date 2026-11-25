@@ -332,17 +332,37 @@ test.describe('Skanda International School - Phase 1 E2E Verification Suite', ()
     await expect(page.locator('text=Day Scholar').first()).toBeVisible();
     await expect(page.locator('text=Regular Full-Time').first()).toBeVisible();
 
-    // Rule 1: Board / Specialization is a dropdown (<select>)
-    const specSelect = page.locator('select#s2Specialization-select');
-    await expect(specSelect).toBeVisible();
-    const schoolOptions = await specSelect.locator('option').allInnerTexts();
-    expect(schoolOptions).toContain('CBSE');
-    expect(schoolOptions).toContain('ICSE / ISC');
-    expect(schoolOptions).toContain('State Board (Karnataka)');
+    // Rule 1: Board / Specialization removed from Step 2; College switches Step 3 to Department Selection
+    await expect(page.locator('select#s2Specialization-select')).toHaveCount(0);
+    await page.locator('text=College & University').first().click();
+    await page.locator('text=Day Scholar').first().click();
+    // Pick a College course from dropdown or chip
+    const classSelect = page.locator('select').first();
+    if (await classSelect.isVisible()) {
+      await classSelect.selectOption({ index: 1 });
+    } else {
+      const courseChip = page.locator('text=B.Tech').first();
+      if (await courseChip.isVisible()) await courseChip.click();
+    }
+    await page.locator('text=Next ➜ Department Selection').first().click();
+    await expect(page.locator('text=Department of Computer Science & Engineering').first()).toBeVisible({ timeout: 10000 });
 
-    // Rule 2: Step 5 Date of Birth is an interactive Calendar Date Picker
+    // Rule 2: Step 5 First Name, Last Name, Category dropdown, 12-digit Aadhaar & DOB Date Picker
     await page.goto('/apply/step/5');
     await page.waitForLoadState('networkidle');
+    await expect(page.locator('input[placeholder*="first name" i]')).toBeVisible();
+    await expect(page.locator('input[placeholder*="last name" i]')).toBeVisible();
+    const categorySelect = page.locator('select#s5Category-select');
+    await expect(categorySelect).toBeVisible();
+    const catOptions = await categorySelect.locator('option').allInnerTexts();
+    expect(catOptions).toContain('General (GEN)');
+    expect(catOptions).toContain('OBC');
+    expect(catOptions).toContain('SC');
+    expect(catOptions).toContain('ST');
+    const aadhaarInput = page.locator('input[placeholder*="Aadhaar" i]');
+    await expect(aadhaarInput).toBeVisible();
+    await aadhaarInput.fill('1234567890129999');
+    expect(await aadhaarInput.inputValue()).toBe('123456789012');
     const dobInput = page.locator('input#s5Dob-picker[type="date"]');
     await expect(dobInput).toBeVisible();
     const maxDate = await dobInput.getAttribute('max');

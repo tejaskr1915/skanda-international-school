@@ -151,8 +151,13 @@ class ApiService {
     return this.request('/academic/academic-metadata');
   }
 
-  async getAcademicSubjects(classOrCourse: string, board?: string) {
-    const query = new URLSearchParams({ classOrCourse, ...(board ? { board } : {}) }).toString();
+  async getAcademicSubjects(classOrCourse: string, board?: string, department?: string, institutionType?: string) {
+    const params: Record<string, string> = {};
+    if (classOrCourse) params.classOrCourse = classOrCourse;
+    if (board) params.board = board;
+    if (department) params.department = department;
+    if (institutionType) params.institutionType = institutionType;
+    const query = new URLSearchParams(params).toString();
     return this.request(`/academic/academic-subjects?${query}`);
   }
 }

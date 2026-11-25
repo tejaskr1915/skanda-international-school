@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Platform, useWindowDimensions, Image } from 'react-native';
+import { View, Text, TouchableOpacity, Pressable, StyleSheet, Platform, useWindowDimensions, Image } from 'react-native';
 import { useAuth } from '../context/AuthContext';
 import { colors, shadows, borderRadius, spacing } from '../theme/theme';
 import { IMAGES } from '../assets/images';
@@ -159,21 +159,19 @@ export const PublicHeader: React.FC<PublicHeaderProps> = ({ onOpenLogin, activeR
               const isActive = activeNav === item.label;
               const isHovered = hoveredNav === item.label;
               return (
-                <TouchableOpacity
+                <Pressable
                   key={index}
-                  style={[
+                  style={({ hovered }: any) => [
                     styles.navLink,
-                    (isActive || isHovered) && styles.navLinkHovered,
-                    isActive && styles.navLinkActive
+                    (isActive || isHovered || hovered) && styles.navLinkHovered,
+                    isActive && styles.navLinkActive,
+                    Platform.OS === 'web'
+                      ? ({ transition: 'all 180ms ease', cursor: 'pointer' } as any)
+                      : undefined
                   ]}
                   onPress={() => handleNavClick(item)}
-                  {...(Platform.OS === 'web'
-                    ? ({
-                        onMouseEnter: () => setHoveredNav(item.label),
-                        onMouseLeave: () => setHoveredNav(null)
-                      } as any)
-                    : {})}
-                  activeOpacity={0.75}
+                  onHoverIn={() => setHoveredNav(item.label)}
+                  onHoverOut={() => setHoveredNav(null)}
                 >
                   <Text
                     style={[
@@ -184,7 +182,7 @@ export const PublicHeader: React.FC<PublicHeaderProps> = ({ onOpenLogin, activeR
                     {item.label}
                   </Text>
                   {isActive && <View style={styles.activeAccentBar} />}
-                </TouchableOpacity>
+                </Pressable>
               );
             })}
           </View>

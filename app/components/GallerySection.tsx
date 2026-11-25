@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { IMAGES } from '../assets/images';
 import { colors, borderRadius, spacing, shadows } from '../theme/theme';
+import { AnimatedHoverCard } from './AnimatedUI';
 
 export type GalleryCategory =
   | 'All'
@@ -177,43 +178,58 @@ export const GallerySection: React.FC<GallerySectionProps> = ({ isStandalonePage
           {...(Platform.OS === 'web' ? ({ className: 'skanda-fade-up' } as any) : {})}
         >
           {filteredItems.map((item, index) => (
-            <TouchableOpacity
+            <AnimatedHoverCard
               key={item.id}
               style={[
                 styles.card,
                 isMobile ? styles.cardMobile : isTablet ? styles.cardTablet : styles.cardDesktop
               ]}
               onPress={() => openLightbox(index)}
-              activeOpacity={0.9}
-              {...(Platform.OS === 'web' ? ({ className: 'skanda-gallery-card' } as any) : {})}
+              className="skanda-gallery-card"
             >
-              <View style={styles.imageWrapper}>
-                <Image
-                  source={item.image}
-                  defaultSource={IMAGES.fallback}
-                  style={styles.cardImage}
-                  resizeMode="cover"
-                />
-                <View style={styles.categoryBadgeOverlay}>
-                  <Text style={styles.categoryBadgeText}>{item.category}</Text>
-                </View>
-                <View
-                  style={styles.zoomHintPill}
-                  {...(Platform.OS === 'web' ? ({ className: 'skanda-zoom-pill' } as any) : {})}
-                >
-                  <Text style={styles.zoomHintText}>🔍 View</Text>
-                </View>
-              </View>
+              {({ hovered }) => (
+                <>
+                  <View style={styles.imageWrapper}>
+                    <Image
+                      source={item.image}
+                      defaultSource={IMAGES.fallback}
+                      style={[
+                        styles.cardImage,
+                        Platform.OS === 'web' && hovered
+                          ? ({ transform: 'scale(1.05)', transition: 'transform 300ms cubic-bezier(0.16, 1, 0.3, 1)' } as any)
+                          : Platform.OS === 'web'
+                          ? ({ transition: 'transform 300ms cubic-bezier(0.16, 1, 0.3, 1)' } as any)
+                          : undefined
+                      ]}
+                      resizeMode="cover"
+                    />
+                    <View style={styles.categoryBadgeOverlay}>
+                      <Text style={styles.categoryBadgeText}>{item.category}</Text>
+                    </View>
+                    <View
+                      style={[
+                        styles.zoomHintPill,
+                        Platform.OS === 'web' && hovered
+                          ? ({ transform: 'translateY(-2px)', boxShadow: '0 4px 12px rgba(29, 78, 216, 0.35)' } as any)
+                          : undefined
+                      ]}
+                      {...(Platform.OS === 'web' ? ({ className: 'skanda-zoom-pill' } as any) : {})}
+                    >
+                      <Text style={styles.zoomHintText}>🔍 View</Text>
+                    </View>
+                  </View>
 
-              <View style={styles.cardBody}>
-                <Text style={styles.cardTitle} numberOfLines={1}>
-                  {item.title}
-                </Text>
-                <Text style={styles.cardSubtitle} numberOfLines={2}>
-                  {item.subtitle}
-                </Text>
-              </View>
-            </TouchableOpacity>
+                  <View style={styles.cardBody}>
+                    <Text style={styles.cardTitle} numberOfLines={1}>
+                      {item.title}
+                    </Text>
+                    <Text style={styles.cardSubtitle} numberOfLines={2}>
+                      {item.subtitle}
+                    </Text>
+                  </View>
+                </>
+              )}
+            </AnimatedHoverCard>
           ))}
         </View>
       </View>

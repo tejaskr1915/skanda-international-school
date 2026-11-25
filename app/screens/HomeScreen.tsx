@@ -9,6 +9,7 @@ import {
   Platform,
   Image,
   ImageBackground,
+  Modal,
   useWindowDimensions
 } from 'react-native';
 import { useAuth } from '../context/AuthContext';
@@ -18,6 +19,7 @@ import { PublicFooter } from '../components/PublicFooter';
 import { GallerySection } from '../components/GallerySection';
 import { LoginModal } from '../components/LoginModal';
 import { StatusModal } from '../components/StatusModal';
+import { AnimatedHoverCard, AnimatedButton } from '../components/AnimatedUI';
 import { IMAGES } from '../assets/images';
 
 // 4-Slide Auto-Rotating Royal Blue Hero Carousel (Changes Every 4000ms)
@@ -67,6 +69,8 @@ export const HomeScreen: React.FC = () => {
   const isTablet = width < 960;
   const [loginModalVisible, setLoginModalVisible] = useState(false);
   const [statusModalVisible, setStatusModalVisible] = useState(false);
+  const [infoModalType, setInfoModalType] = useState<'studentLife' | 'achievements' | 'careers' | null>(null);
+  const [careerAppliedRole, setCareerAppliedRole] = useState<string | null>(null);
 
   // Hero Carousel State
   const [activeSlide, setActiveSlide] = useState(0);
@@ -211,16 +215,14 @@ export const HomeScreen: React.FC = () => {
                 </Text>
 
                 <View style={styles.heroBtnRow}>
-                  <TouchableOpacity
+                  <AnimatedButton
                     nativeID="apply-now-btn"
                     testID="apply-now-btn"
                     style={styles.heroPrimaryBtn}
                     onPress={() => navigateTo('/apply')}
-                    activeOpacity={0.88}
-                    {...(Platform.OS === 'web' ? ({ className: 'skanda-btn-primary' } as any) : {})}
                   >
                     <Text style={styles.heroPrimaryBtnText}>{HERO_SLIDES[activeSlide].primaryBtn}</Text>
-                  </TouchableOpacity>
+                  </AnimatedButton>
 
                   <TouchableOpacity
                     style={styles.heroSecondaryBtn}
@@ -335,26 +337,26 @@ export const HomeScreen: React.FC = () => {
         {/* 5 INSTITUTIONAL STATISTICS CARDS */}
         <View style={styles.statsSection}>
           <View nativeID="stats-grid" testID="stats-grid" style={styles.statsGrid}>
-            <View style={styles.statCard} {...(Platform.OS === 'web' ? ({ className: 'skanda-kpi-card' } as any) : {})}>
+            <AnimatedHoverCard style={styles.statCard}>
               <Text style={styles.statNumber}>25,000+</Text>
               <Text style={styles.statLabel}>Students Enrolled</Text>
-            </View>
-            <View style={styles.statCard} {...(Platform.OS === 'web' ? ({ className: 'skanda-kpi-card' } as any) : {})}>
+            </AnimatedHoverCard>
+            <AnimatedHoverCard style={styles.statCard}>
               <Text style={styles.statNumber}>40</Text>
               <Text style={styles.statLabel}>Schools Nationwide</Text>
-            </View>
-            <View style={styles.statCard} {...(Platform.OS === 'web' ? ({ className: 'skanda-kpi-card' } as any) : {})}>
+            </AnimatedHoverCard>
+            <AnimatedHoverCard style={styles.statCard}>
               <Text style={styles.statNumber}>18</Text>
               <Text style={styles.statLabel}>Colleges & Branches</Text>
-            </View>
-            <View style={styles.statCard} {...(Platform.OS === 'web' ? ({ className: 'skanda-kpi-card' } as any) : {})}>
+            </AnimatedHoverCard>
+            <AnimatedHoverCard style={styles.statCard}>
               <Text style={styles.statNumber}>1,200+</Text>
               <Text style={styles.statLabel}>Expert Faculty</Text>
-            </View>
-            <View style={styles.statCard} {...(Platform.OS === 'web' ? ({ className: 'skanda-kpi-card' } as any) : {})}>
+            </AnimatedHoverCard>
+            <AnimatedHoverCard style={styles.statCard}>
               <Text style={styles.statNumber}>15</Text>
               <Text style={styles.statLabel}>Cities Across India</Text>
-            </View>
+            </AnimatedHoverCard>
           </View>
         </View>
 
@@ -751,7 +753,12 @@ export const HomeScreen: React.FC = () => {
                         ]}
                         onPress={() => {
                           setActivePin(campus.id);
-                          setShowMapInfoCard(true);
+                          if (Platform.OS === 'web' && typeof document !== 'undefined') {
+                            const cardEl = document.getElementById(`campus-card-${campus.id}`);
+                            if (cardEl) {
+                              cardEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                            }
+                          }
                         }}
                         activeOpacity={0.88}
                       >
@@ -774,56 +781,8 @@ export const HomeScreen: React.FC = () => {
                   })}
                 </View>
 
-                {/* Floating Campus Info Card over Map */}
-                {showMapInfoCard && activeCampus && (
-                  <View style={styles.floatingInfoCard}>
-                    <TouchableOpacity
-                      style={styles.floatingCardClose}
-                      onPress={() => setShowMapInfoCard(false)}
-                      accessibilityLabel="Close Card"
-                    >
-                      <Text style={styles.floatingCardCloseText}>✕</Text>
-                    </TouchableOpacity>
-
-                    <View style={styles.floatingCardHeader}>
-                      <Image
-                        source={activeCampus.imageSource || { uri: activeCampus.image }}
-                        defaultSource={IMAGES.fallback}
-                        style={styles.floatingCardPhoto}
-                        resizeMode="cover"
-                      />
-                      <View style={{ flex: 1 }}>
-                        <View style={styles.floatingBoardPill}>
-                          <Text style={styles.floatingBoardText}>{activeCampus.board.split(',')[0]}</Text>
-                        </View>
-                        <Text style={styles.floatingCardTitle} numberOfLines={2}>
-                          {activeCampus.name}
-                        </Text>
-                      </View>
-                    </View>
-
-                    <Text style={styles.floatingCardAddress}>
-                      📍 {activeCampus.address}
-                    </Text>
-
-                    <View style={styles.floatingCardFooter}>
-                      <View style={styles.floatingSeatsTag}>
-                        <Text style={styles.floatingSeatsText}>● {activeCampus.seats}</Text>
-                      </View>
-
-                      <TouchableOpacity
-                        style={styles.floatingApplyBtn}
-                        onPress={() => navigateTo('/apply')}
-                        activeOpacity={0.88}
-                      >
-                        <Text style={styles.floatingApplyText}>Apply Now ➜</Text>
-                      </TouchableOpacity>
-                    </View>
-                  </View>
-                )}
-
                 <Text style={styles.mapHint}>
-                  💡 Click any pin to open live campus summary • Zoom controls available in top-right
+                  💡 Click any pin to highlight & jump to campus card • Zoom controls available in top-right
                 </Text>
               </View>
             </View>
@@ -834,15 +793,12 @@ export const HomeScreen: React.FC = () => {
                 filteredCampuses.map((campus) => {
                   const isSelected = activePin === campus.id;
                   return (
-                    <TouchableOpacity
+                    <AnimatedHoverCard
                       key={campus.id}
+                      nativeID={`campus-card-${campus.id}`}
                       style={[styles.campusCard, isSelected && styles.campusCardSelected]}
-                      onPress={() => {
-                        setActivePin(campus.id);
-                        setShowMapInfoCard(true);
-                      }}
-                      activeOpacity={0.9}
-                      {...(Platform.OS === 'web' ? ({ className: 'skanda-campus-card' } as any) : {})}
+                      onPress={() => setActivePin(campus.id)}
+                      {...({ id: `campus-card-${campus.id}` } as any)}
                     >
                       <Image
                         source={campus.imageSource || { uri: campus.image }}
@@ -867,7 +823,7 @@ export const HomeScreen: React.FC = () => {
                           Apply ➜
                         </Text>
                       </TouchableOpacity>
-                    </TouchableOpacity>
+                    </AnimatedHoverCard>
                   );
                 })
               ) : (
@@ -886,10 +842,9 @@ export const HomeScreen: React.FC = () => {
         {/* 4 QUICK-LINK CARDS */}
         <View style={styles.quickLinksSection}>
           <View style={styles.quickGrid}>
-            <TouchableOpacity
+            <AnimatedHoverCard
               style={styles.quickCard}
               onPress={() => navigateTo('/apply')}
-              activeOpacity={0.88}
             >
               <View style={[styles.quickIconCircle, { backgroundColor: '#EFF6FF' }]}>
                 <Text style={styles.quickIcon}>📝</Text>
@@ -899,9 +854,12 @@ export const HomeScreen: React.FC = () => {
               <View style={styles.quickActionPill}>
                 <Text style={styles.quickActionText}>Apply Now ➜</Text>
               </View>
-            </TouchableOpacity>
+            </AnimatedHoverCard>
 
-            <TouchableOpacity style={styles.quickCard} onPress={() => navigateTo('/')} activeOpacity={0.88}>
+            <AnimatedHoverCard
+              style={styles.quickCard}
+              onPress={() => setInfoModalType('studentLife')}
+            >
               <View style={[styles.quickIconCircle, { backgroundColor: '#F0FDF4' }]}>
                 <Text style={styles.quickIcon}>⚽</Text>
               </View>
@@ -910,9 +868,12 @@ export const HomeScreen: React.FC = () => {
               <View style={styles.quickActionPill}>
                 <Text style={styles.quickActionText}>Explore Life ➜</Text>
               </View>
-            </TouchableOpacity>
+            </AnimatedHoverCard>
 
-            <TouchableOpacity style={styles.quickCard} onPress={() => navigateTo('/')} activeOpacity={0.88}>
+            <AnimatedHoverCard
+              style={styles.quickCard}
+              onPress={() => setInfoModalType('achievements')}
+            >
               <View style={[styles.quickIconCircle, { backgroundColor: '#FEF3C7' }]}>
                 <Text style={styles.quickIcon}>🏆</Text>
               </View>
@@ -921,9 +882,15 @@ export const HomeScreen: React.FC = () => {
               <View style={styles.quickActionPill}>
                 <Text style={styles.quickActionText}>View Honors ➜</Text>
               </View>
-            </TouchableOpacity>
+            </AnimatedHoverCard>
 
-            <TouchableOpacity style={styles.quickCard} onPress={() => navigateTo('/')} activeOpacity={0.88}>
+            <AnimatedHoverCard
+              style={styles.quickCard}
+              onPress={() => {
+                setCareerAppliedRole(null);
+                setInfoModalType('careers');
+              }}
+            >
               <View style={[styles.quickIconCircle, { backgroundColor: '#FEE2E2' }]}>
                 <Text style={styles.quickIcon}>💼</Text>
               </View>
@@ -932,7 +899,7 @@ export const HomeScreen: React.FC = () => {
               <View style={styles.quickActionPill}>
                 <Text style={styles.quickActionText}>Openings ➜</Text>
               </View>
-            </TouchableOpacity>
+            </AnimatedHoverCard>
           </View>
         </View>
 
@@ -1099,6 +1066,148 @@ export const HomeScreen: React.FC = () => {
           setLoginModalVisible(true);
         }}
       />
+
+      {/* STUDENT LIFE / ACHIEVEMENTS / CAREERS DETAIL MODAL */}
+      <Modal
+        visible={infoModalType !== null}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setInfoModalType(null)}
+      >
+        <View
+          style={styles.infoModalOverlay}
+          {...(Platform.OS === 'web' ? ({ className: 'skanda-modal-backdrop' } as any) : {})}
+        >
+          <View
+            style={styles.infoModalCard}
+            {...(Platform.OS === 'web' ? ({ className: 'skanda-modal-card' } as any) : {})}
+          >
+            {/* Modal Header */}
+            <View style={styles.infoModalHeader}>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.infoModalEyebrow}>
+                  {infoModalType === 'studentLife'
+                    ? '⚽ CAMPUS EXPERIENCE & CLUBS'
+                    : infoModalType === 'achievements'
+                    ? '🏆 ACADEMIC & ATHLETIC HONORS'
+                    : '💼 JOIN SKANDA EDUCATORS'}
+                </Text>
+                <Text style={styles.infoModalTitle}>
+                  {infoModalType === 'studentLife'
+                    ? 'Vibrant Student Life at Skanda'
+                    : infoModalType === 'achievements'
+                    ? 'National Awards & Board Toppers'
+                    : 'Current Faculty & Staff Openings'}
+                </Text>
+              </View>
+              <TouchableOpacity
+                onPress={() => setInfoModalType(null)}
+                style={styles.infoModalCloseBtn}
+                accessibilityLabel="Close Modal"
+              >
+                <Text style={styles.infoModalCloseText}>✕</Text>
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView style={styles.infoModalBody} showsVerticalScrollIndicator={false}>
+              {infoModalType === 'studentLife' && (
+                <View style={styles.infoModalList}>
+                  <View style={styles.infoItemCard}>
+                    <Text style={styles.infoItemTitle}>🤖 AI & Robotics Innovation Lab</Text>
+                    <Text style={styles.infoItemDesc}>
+                      Equipped with Arduino, Raspberry Pi, 3D printers, and autonomous drone kits for hands-on STEM competitions.
+                    </Text>
+                  </View>
+                  <View style={styles.infoItemCard}>
+                    <Text style={styles.infoItemTitle}>🏟️ Olympic-Grade Sports Complex</Text>
+                    <Text style={styles.infoItemDesc}>
+                      400m synthetic athletic track, indoor swimming pool, floodlit basketball courts, and professional athletics coaching.
+                    </Text>
+                  </View>
+                  <View style={styles.infoItemCard}>
+                    <Text style={styles.infoItemTitle}>🎭 Performing Arts & Debate Clubs</Text>
+                    <Text style={styles.infoItemDesc}>
+                      Classical & contemporary dance ensembles, Model UN, theatre workshops, and annual inter-campus cultural galas.
+                    </Text>
+                  </View>
+
+                  <AnimatedButton
+                    style={styles.infoModalPrimaryBtn}
+                    onPress={() => {
+                      setInfoModalType(null);
+                      if (Platform.OS === 'web' && typeof document !== 'undefined') {
+                        setTimeout(() => {
+                          const el = document.getElementById('gallery');
+                          if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        }, 150);
+                      }
+                    }}
+                  >
+                    <Text style={styles.infoModalPrimaryBtnText}>📸 Jump to Campus Gallery ➜</Text>
+                  </AnimatedButton>
+                </View>
+              )}
+
+              {infoModalType === 'achievements' && (
+                <View style={styles.infoModalList}>
+                  <View style={styles.infoItemCard}>
+                    <Text style={styles.infoItemTitle}>🎓 100% CBSE & ICSE Board Pass Rate</Text>
+                    <Text style={styles.infoItemDesc}>
+                      42% of our Grade 10 & Grade 12 graduates scored above 95% aggregate in the 2025–2026 national board examinations.
+                    </Text>
+                  </View>
+                  <View style={styles.infoItemCard}>
+                    <Text style={styles.infoItemTitle}>🥇 National Science Olympiad Gold Medalists</Text>
+                    <Text style={styles.infoItemDesc}>
+                      14 students won Gold Medals at the National Science & Mathematics Olympiads (SOF & HBCSE), qualifying for international camps.
+                    </Text>
+                  </View>
+                  <View style={styles.infoItemCard}>
+                    <Text style={styles.infoItemTitle}>🏆 State Inter-School Championship Trophies</Text>
+                    <Text style={styles.infoItemDesc}>
+                      Overall Champions in Karnataka State Inter-School Athletics (4x100m Relay) and Robotics Design Challenge 2026.
+                    </Text>
+                  </View>
+                </View>
+              )}
+
+              {infoModalType === 'careers' && (
+                <View style={styles.infoModalList}>
+                  {!!careerAppliedRole && (
+                    <View style={styles.careerSuccessBanner}>
+                      <Text style={styles.careerSuccessText}>
+                        ✅ Resume submission initiated for {careerAppliedRole}! Our HR desk will reach out within 48 hours.
+                      </Text>
+                    </View>
+                  )}
+
+                  {[
+                    { role: 'PGT Mathematics / Physics', loc: 'Kanakapura Main Campus, Bengaluru • Full-Time' },
+                    { role: 'Primary Montessori Educator', loc: 'Whitefield Tech Campus, Bengaluru • Full-Time' },
+                    { role: 'Sports Coach (Athletics & Swimming)', loc: 'Mysuru Heritage Campus • Full-Time' },
+                    { role: 'Admissions Counselor', loc: 'Bengaluru & Mangaluru Campuses • Full-Time' }
+                  ].map((job) => (
+                    <View key={job.role} style={styles.careerRowCard}>
+                      <View style={{ flex: 1 }}>
+                        <Text style={styles.infoItemTitle}>{job.role}</Text>
+                        <Text style={styles.infoItemDesc}>{job.loc}</Text>
+                      </View>
+                      <AnimatedButton
+                        style={styles.quickApplyCareerBtn}
+                        onPress={() => setCareerAppliedRole(job.role)}
+                      >
+                        <Text style={styles.quickApplyCareerText}>
+                          {careerAppliedRole === job.role ? 'Applied ✓' : 'Quick Apply / Submit Resume'}
+                        </Text>
+                      </AnimatedButton>
+                    </View>
+                  ))}
+                </View>
+              )}
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 };
@@ -2368,5 +2477,131 @@ const styles = StyleSheet.create({
     color: colors.textInverse,
     fontWeight: '600',
     fontSize: 14
+  },
+  infoModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(15, 23, 42, 0.60)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: spacing.md
+  },
+  infoModalCard: {
+    width: '100%',
+    maxWidth: 640,
+    maxHeight: '85%',
+    backgroundColor: '#FFFFFF',
+    borderRadius: borderRadius.xl,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    overflow: 'hidden',
+    ...shadows.modal
+  },
+  infoModalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: spacing.lg,
+    backgroundColor: '#EFF6FF',
+    borderBottomWidth: 1,
+    borderBottomColor: '#DBEAFE'
+  },
+  infoModalEyebrow: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: colors.brandPrimary,
+    letterSpacing: 1,
+    marginBottom: 4
+  },
+  infoModalTitle: {
+    fontSize: 20,
+    fontWeight: '800',
+    color: '#0F172A'
+  },
+  infoModalCloseBtn: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    backgroundColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#CBD5E1'
+  },
+  infoModalCloseText: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#334155'
+  },
+  infoModalBody: {
+    padding: spacing.lg
+  },
+  infoModalList: {
+    gap: 14
+  },
+  infoItemCard: {
+    backgroundColor: '#F8FAFC',
+    padding: 16,
+    borderRadius: borderRadius.lg,
+    borderWidth: 1,
+    borderColor: '#E2E8F0'
+  },
+  infoItemTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#0F172A',
+    marginBottom: 4
+  },
+  infoItemDesc: {
+    fontSize: 13,
+    color: '#475569',
+    lineHeight: 20
+  },
+  infoModalPrimaryBtn: {
+    backgroundColor: colors.brandPrimary,
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    borderRadius: borderRadius.md,
+    alignItems: 'center',
+    marginTop: 6
+  },
+  infoModalPrimaryBtnText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '700'
+  },
+  careerSuccessBanner: {
+    backgroundColor: '#DCFCE7',
+    borderWidth: 1,
+    borderColor: '#86EFAC',
+    borderRadius: borderRadius.md,
+    padding: 12
+  },
+  careerSuccessText: {
+    color: '#166534',
+    fontSize: 13,
+    fontWeight: '600'
+  },
+  careerRowCard: {
+    backgroundColor: '#F8FAFC',
+    padding: 16,
+    borderRadius: borderRadius.lg,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12
+  },
+  quickApplyCareerBtn: {
+    backgroundColor: colors.brandPrimary,
+    paddingVertical: 9,
+    paddingHorizontal: 14,
+    borderRadius: borderRadius.md
+  },
+  quickApplyCareerText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '700'
   }
 });
