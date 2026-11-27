@@ -38,15 +38,37 @@ export interface ApplicationData {
   applicantUser?: ApplicantUser;
 }
 
+export interface PortalUser {
+  id: string;
+  fullName: string;
+  email: string;
+  mobile?: string;
+  role: string;
+  branchId?: string | null;
+  branch?: { id: string; code: string; name: string; city: string; institutionMode: string } | null;
+  permissions?: Record<string, string[]>;
+  department?: string | null;
+  children?: any[];
+  studentProfile?: any;
+}
+
 interface AuthContextType {
   user: ApplicantUser | null;
   application: ApplicationData | null;
   token: string | null;
+  portalUser: PortalUser | null;
+  portalToken: string | null;
+  activeBranchId: string | null;
+  activeChildId: string | null;
   isLoading: boolean;
   currentRoute: string;
   navigateTo: (route: string, options?: { replace?: boolean }) => void;
   setAuthSession: (token: string, user: ApplicantUser, application: ApplicationData) => void;
   logout: () => void;
+  portalLogin: (email: string, password: string) => Promise<PortalUser>;
+  portalLogout: () => void;
+  switchBranch: (branchId: string) => void;
+  switchChild: (studentId: string) => void;
   refreshApplication: () => Promise<ApplicationData | null>;
   updateApplicationLocally: (application: ApplicationData) => void;
   language: string;
@@ -59,6 +81,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<ApplicantUser | null>(null);
   const [application, setApplication] = useState<ApplicationData | null>(null);
   const [token, setToken] = useState<string | null>(null);
+  const [portalUser, setPortalUser] = useState<PortalUser | null>(null);
+  const [portalToken, setPortalToken] = useState<string | null>(api.getPortalToken());
+  const [activeBranchId, setActiveBranchId] = useState<string | null>(null);
+  const [activeChildId, setActiveChildId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [language, setLanguage] = useState<string>('English');
   const [currentRoute, setCurrentRoute] = useState<string>('/');
@@ -151,6 +177,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setUser(null);
         setApplication(null);
       } finally {
+        // Hydrate Phase 2 Portal session if present
+        const savedPortalToken = api.getPortalToken();
+        if (savedPortalToken) {
+          try {
+            const pRes = await api.getPortalMe();
+            if (pRes.success && pRes.user) {
+              setPortalUser(pRes.user);
+              if (pRes.user.branchId) {
+                setActiveBranchId(pRes.user.branchId);
+                api.setActiveBranchId(pRes.user.branchId);
+              }
+              if (pRes.user.children && pRes.user.children.length > 0) {
+                setActiveChildId(pRes.user.children[0].studentId);
+              }
+            }
+          } catch (_) {
+            api.setPortalToken(null);
+            setPortalToken(null);
+          }
+        }
         setIsLoading(false);
       }
     }
@@ -182,6 +228,82 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     navigateTo('/');
   };
 
+  const portalLogin = async (email: string, password: string): Promise<PortalUser> => {
+    const res = await api.portalLogin(email, password);
+    api.setPortalToken(res.token);
+    setPortalToken(res.token);
+    setPortalUser(res.user);
+    if (res.user.branchId) {
+      setActiveBranchId(res.user.branchId);
+      api.setActiveBranchId(res.user.branchId);
+    }
+    if (res.user.children && res.user.children.length > 0) {
+      setActiveChildId(res.user.children[0].studentId);
+    }
+    if (res.user.role === 'SUPER_ADMIN') {
+      navigateTo('/super-admin');
+    } else if (res.user.role === 'SECURITY_GUARD') {
+      navigateTo('/kiosk/gate');
+    } else if (
+      [
+        'ADMIN',
+        'ACCOUNTANT',
+        'ADMISSION_OFFICER',
+        'EXAM_CONTROLLER',
+        'LIBRARIAN',
+        'TRANSPORT_MANAGER',
+        'DRIVER',
+        'HOSTEL_WARDEN',
+        'LAB_ASSISTANT',
+        'ACTIVITY_COORDINATOR',
+        'PLACEMENT_OFFICER'
+      ].includes(res.user.role)
+    ) {
+      navigateTo('/branch-admin');
+    } else {
+      navigateTo('/portal');
+    }
+    return res.user;
+  };
+
+  // 30-minute inactivity timeout for authenticated portal sessions
+  useEffect(() => {
+    if (Platform.OS !== 'web' || typeof window === 'undefined' || !portalUser) return;
+    let timer: any = null;
+    const resetTimer = () => {
+      if (timer) clearTimeout(timer);
+      timer = setTimeout(() => {
+        portalLogout();
+      }, 30 * 60 * 1000);
+    };
+    resetTimer();
+    const events = ['mousemove', 'keydown', 'click', 'touchstart'];
+    events.forEach((ev) => window.addEventListener(ev, resetTimer, { passive: true }));
+    return () => {
+      if (timer) clearTimeout(timer);
+      events.forEach((ev) => window.removeEventListener(ev, resetTimer));
+    };
+  }, [portalUser?.id]);
+
+  const portalLogout = () => {
+    api.setPortalToken(null);
+    api.setActiveBranchId(null);
+    setPortalToken(null);
+    setPortalUser(null);
+    setActiveBranchId(null);
+    setActiveChildId(null);
+    navigateTo('/');
+  };
+
+  const switchBranch = (branchId: string) => {
+    setActiveBranchId(branchId);
+    api.setActiveBranchId(branchId);
+  };
+
+  const switchChild = (studentId: string) => {
+    setActiveChildId(studentId);
+  };
+
   const refreshApplication = async (): Promise<ApplicationData | null> => {
     try {
       const res = await api.getMe();
@@ -208,11 +330,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         user,
         application,
         token,
+        portalUser,
+        portalToken,
+        activeBranchId,
+        activeChildId,
         isLoading,
         currentRoute,
         navigateTo,
         setAuthSession,
         logout,
+        portalLogin,
+        portalLogout,
+        switchBranch,
+        switchChild,
         refreshApplication,
         updateApplicationLocally,
         language,

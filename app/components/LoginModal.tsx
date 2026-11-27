@@ -11,8 +11,10 @@ interface LoginModalProps {
 }
 
 export const LoginModal: React.FC<LoginModalProps> = ({ visible, onClose, defaultMobile = '' }) => {
-  const { setAuthSession, navigateTo } = useAuth();
-  const [activeTab, setActiveTab] = useState<'otp' | 'password'>('otp');
+  const { setAuthSession, navigateTo, portalLogin } = useAuth();
+  const [activeTab, setActiveTab] = useState<'otp' | 'password' | 'portal'>('otp');
+  const [portalEmail, setPortalEmail] = useState('');
+  const [portalPassword, setPortalPassword] = useState('');
   const [mobile, setMobile] = useState(defaultMobile);
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -95,6 +97,23 @@ export const LoginModal: React.FC<LoginModalProps> = ({ visible, onClose, defaul
     }
   };
 
+  const handlePortalLogin = async () => {
+    setErrorMessage('');
+    if (!portalEmail.trim() || !portalPassword) {
+      setErrorMessage('Please enter your Portal Email and Password.');
+      return;
+    }
+    setLoading(true);
+    try {
+      await portalLogin(portalEmail.trim(), portalPassword);
+      onClose();
+    } catch (err: any) {
+      setErrorMessage(err.message || 'Portal login failed.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <Modal visible={visible} transparent={true} animationType="fade" onRequestClose={onClose}>
       <View
@@ -137,7 +156,18 @@ export const LoginModal: React.FC<LoginModalProps> = ({ visible, onClose, defaul
               }}
             >
               <Text style={[styles.tabText, activeTab === 'password' && styles.tabTextActive]}>
-                🔑 Password Login
+                🔑 Password
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.tab, activeTab === 'portal' && styles.tabActive]}
+              onPress={() => {
+                setActiveTab('portal');
+                setErrorMessage('');
+              }}
+            >
+              <Text style={[styles.tabText, activeTab === 'portal' && styles.tabTextActive]}>
+                🏛️ Staff / Portal
               </Text>
             </TouchableOpacity>
           </View>
@@ -149,7 +179,77 @@ export const LoginModal: React.FC<LoginModalProps> = ({ visible, onClose, defaul
             </View>
           )}
 
-          {/* Mobile Field (Common) */}
+          {activeTab === 'portal' ? (
+            <View>
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 12 }}>
+                {[
+                  { label: 'Super Admin', email: 'superadmin@skanda.edu.in' },
+                  { label: 'Principal', email: 'principal.blr@skanda.edu.in' },
+                  { label: 'Teacher', email: 'teacher.blr@skanda.edu.in' },
+                  { label: 'Parent (2 Kids)', email: 'parent.blr@skanda.edu.in' },
+                  { label: 'Student', email: 'student1.blr@skanda.edu.in' }
+                ].map((preset) => (
+                  <TouchableOpacity
+                    key={preset.email}
+                    style={{
+                      backgroundColor: '#EFF6FF',
+                      borderWidth: 1,
+                      borderColor: '#BFDBFE',
+                      paddingHorizontal: 8,
+                      paddingVertical: 4,
+                      borderRadius: 6
+                    }}
+                    onPress={() => {
+                      setPortalEmail(preset.email);
+                      setPortalPassword('Password@123');
+                      setErrorMessage('');
+                    }}
+                  >
+                    <Text style={{ fontSize: 11, fontWeight: '700', color: '#1D4ED8' }}>{preset.label}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+
+              <View style={styles.inputGroup}>
+                <Text style={styles.label}>Portal Email Address</Text>
+                <TextInput
+                  style={styles.textInput}
+                  placeholder="e.g. superadmin@skanda.edu.in"
+                  placeholderTextColor={colors.textMuted}
+                  autoCapitalize="none"
+                  keyboardType="email-address"
+                  value={portalEmail}
+                  onChangeText={setPortalEmail}
+                />
+              </View>
+
+              <View style={styles.inputGroup}>
+                <Text style={styles.label}>Password</Text>
+                <TextInput
+                  style={styles.textInput}
+                  placeholder="Enter portal password"
+                  placeholderTextColor={colors.textMuted}
+                  secureTextEntry={!showPassword}
+                  value={portalPassword}
+                  onChangeText={setPortalPassword}
+                />
+              </View>
+
+              <TouchableOpacity
+                style={[styles.primaryBtn, loading && styles.disabledBtn]}
+                onPress={handlePortalLogin}
+                disabled={loading}
+              >
+                {loading ? (
+                  <ActivityIndicator color={colors.textInverse} />
+                ) : (
+                  <Text style={styles.primaryBtnText}>Sign In to Role Portal ➜</Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          ) : (
+            <>
+              {/* Mobile Field (Common for Applicant Tabs) */}
           <View style={styles.inputGroup}>
             <Text style={styles.label}>Registered Mobile Number</Text>
             <View style={styles.phoneInputRow}>
@@ -269,6 +369,8 @@ export const LoginModal: React.FC<LoginModalProps> = ({ visible, onClose, defaul
                 )}
               </TouchableOpacity>
             </View>
+          )}
+            </>
           )}
 
           {/* Bottom link to new registration */}

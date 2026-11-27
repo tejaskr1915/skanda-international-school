@@ -6,10 +6,14 @@ import { GalleryScreen } from './app/screens/GalleryScreen';
 import { ApplyLandingScreen } from './app/screens/ApplyLandingScreen';
 import { AdmissionWizardScreen } from './app/screens/AdmissionWizardScreen';
 import { StudentDashboardScreen } from './app/screens/StudentDashboardScreen';
+import { SuperAdminScreen } from './app/screens/SuperAdminScreen';
+import { BranchAdminScreen } from './app/screens/BranchAdminScreen';
+import { RolePortalScreen } from './app/screens/RolePortalScreen';
+import { GateKioskScreen } from './app/screens/GateKioskScreen';
 import { colors } from './app/theme/theme';
 
 const MainNavigator: React.FC = () => {
-  const { currentRoute, application, user } = useAuth();
+  const { currentRoute, application, user, portalUser } = useAuth();
 
   const renderCurrentScreen = () => {
     // 1. Home Page
@@ -49,6 +53,40 @@ const MainNavigator: React.FC = () => {
       // If draft or unauthenticated, redirect to wizard step
       const step = application?.currentStep || 1;
       return <AdmissionWizardScreen initialStep={step} />;
+    }
+
+    // 5. Phase 2 Super Admin Portal (/super-admin)
+    if (currentRoute === '/super-admin') {
+      if (portalUser?.role === 'SUPER_ADMIN') {
+        return <SuperAdminScreen />;
+      }
+      return <HomeScreen />;
+    }
+
+    // 6. Phase 2 Branch Admin / Principal / Sub-Admin Portal (/branch-admin)
+    if (currentRoute === '/branch-admin') {
+      if (
+        portalUser &&
+        ['SUPER_ADMIN', 'ADMIN', 'ACCOUNTANT', 'ADMISSION_OFFICER', 'EXAM_CONTROLLER', 'LIBRARIAN', 'TRANSPORT_MANAGER', 'DRIVER', 'HOSTEL_WARDEN', 'LAB_ASSISTANT', 'ACTIVITY_COORDINATOR', 'PLACEMENT_OFFICER'].includes(
+          portalUser.role
+        )
+      ) {
+        return <BranchAdminScreen />;
+      }
+      return <HomeScreen />;
+    }
+
+    // 7. Phase 2 Student / Parent / Teacher Portal (/portal)
+    if (currentRoute === '/portal') {
+      if (portalUser && ['STUDENT', 'PARENT', 'TEACHER'].includes(portalUser.role)) {
+        return <RolePortalScreen />;
+      }
+      return <HomeScreen />;
+    }
+
+    // 8. Phase 2 Smart Gate & Visitor Kiosk (/kiosk/gate)
+    if (currentRoute === '/kiosk/gate') {
+      return <GateKioskScreen />;
     }
 
     // Default fallback to Home

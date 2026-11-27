@@ -11,8 +11,10 @@ enum ApplicationStatus {
   DRAFT
   SUBMITTED
   UNDER_REVIEW
+  SHORTLISTED
   ACCEPTED
   REJECTED
+  ENROLLED
 }
 
 enum InstitutionType {
@@ -24,6 +26,25 @@ enum BoardType {
   CBSE
   ICSE_ISC
   STATE
+}
+
+enum UserRole {
+  SUPER_ADMIN
+  ADMIN
+  ACCOUNTANT
+  ADMISSION_OFFICER
+  EXAM_CONTROLLER
+  LIBRARIAN
+  TRANSPORT_MANAGER
+  DRIVER
+  HOSTEL_WARDEN
+  LAB_ASSISTANT
+  ACTIVITY_COORDINATOR
+  SECURITY_GUARD
+  PLACEMENT_OFFICER
+  TEACHER
+  PARENT
+  STUDENT
 }
 
 model ApplicantUser {
@@ -47,6 +68,8 @@ model Application {
   id                     String            @id @default(uuid()) @db.Char(36)
   applicationNo          String            @unique @db.VarChar(64)
   applicantUserId        String            @db.Char(36)
+  branchId               String?           @db.Char(36)
+  academicYearId         String?           @db.Char(36)
   academicYear           String            @default("2026-2027") @db.VarChar(32)
   status                 ApplicationStatus @default(DRAFT)
   currentStep            Int               @default(1)
@@ -61,12 +84,1080 @@ model Application {
   previousEducation      Json?
   facilities             Json?
   documents              Json?
+  convertedStudentId     String?           @db.Char(36)
   submittedAt            DateTime?
   updatedAt              DateTime          @updatedAt
   createdAt              DateTime          @default(now())
 
   applicantUser          ApplicantUser     @relation(fields: [applicantUserId], references: [id], onDelete: Cascade)
+  branch                 Branch?           @relation(fields: [branchId], references: [id], onDelete: SetNull)
 
   @@index([applicantUserId])
+  @@index([branchId])
   @@map("applications")
+}
+
+// ============================================================================
+// PHASE 2 SPRINT 1: MULTI-BRANCH, MULTI-SESSION & RBAC CORE
+// ============================================================================
+
+model Branch {
+  id              String   @id @default(uuid()) @db.Char(36)
+  code            String   @unique @db.VarChar(32)
+  name            String   @db.VarChar(255)
+  city            String   @db.VarChar(100)
+  institutionMode String   @default("BOTH") @db.VarChar(32) // SCHOOL, COLLEGE, BOTH
+  address         String?  @db.VarChar(500)
+  phone           String?  @db.VarChar(32)
+  email           String?  @db.VarChar(255)
+  maxStudentBookLimit Int  @default(3)
+  maxFacultyBookLimit Int  @default(5)
+  libraryFinePerDay   Int  @default(10)
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  academicYears   AcademicYear[]
+  syllabi         BranchSyllabus[]
+  gradesOrCourses BranchGradeOrCourse[]
+  subjects        BranchSubject[]
+  feeStructures   BranchFeeStructure[]
+  users           User[]
+  students        StudentProfile[]
+  applications    Application[]
+  cmsContents       CmsContent[]
+  libraryBooks      LibraryBook[]
+  transportVehicles TransportVehicle[]
+  transportRoutes   TransportRoute[]
+  hostelBlocks      HostelBlock[]
+
+  @@map("branches")
+}
+
+model AcademicYear {
+  id        String   @id @default(uuid()) @db.Char(36)
+  branchId  String?  @db.Char(36)
+  name      String   @db.VarChar(32) // e.g., "2026-2027"
+  isCurrent Boolean  @default(false)
+  isLocked  Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  branch    Branch?  @relation(fields: [branchId], references: [id], onDelete: Cascade)
+
+  @@index([branchId])
+  @@map("academic_years")
+}
+
+model BranchSyllabus {
+  id              String   @id @default(uuid()) @db.Char(36)
+  branchId        String   @db.Char(36)
+  name            String   @db.VarChar(150) // e.g. CBSE, ICSE_ISC, STATE, or CSE Department
+  institutionType String   @default("SCHOOL") @db.VarChar(32) // SCHOOL | COLLEGE
+  isEnabled       Boolean  @default(true)
+
+  branch          Branch   @relation(fields: [branchId], references: [id], onDelete: Cascade)
+
+  @@index([branchId])
+  @@map("branch_syllabi")
+}
+
+model BranchGradeOrCourse {
+  id              String   @id @default(uuid()) @db.Char(36)
+  branchId        String   @db.Char(36)
+  name            String   @db.VarChar(100) // e.g. Grade 6, B.Tech CSE
+  institutionType String   @default("SCHOOL") @db.VarChar(32)
+  seatCapacity    Int      @default(40)
+  sections        Json?    // e.g. ["A", "B"]
+
+  branch          Branch   @relation(fields: [branchId], references: [id], onDelete: Cascade)
+
+  @@index([branchId])
+  @@map("branch_grades_courses")
+}
+
+model BranchSubject {
+  id              String   @id @default(uuid()) @db.Char(36)
+  branchId        String   @db.Char(36)
+  gradeOrCourse   String   @db.VarChar(100)
+  name            String   @db.VarChar(150)
+  isCompulsory    Boolean  @default(true)
+
+  branch          Branch   @relation(fields: [branchId], references: [id], onDelete: Cascade)
+
+  @@index([branchId])
+  @@map("branch_subjects")
+}
+
+model BranchFeeStructure {
+  id            String   @id @default(uuid()) @db.Char(36)
+  branchId      String   @db.Char(36)
+  gradeOrCourse String   @db.VarChar(100)
+  tuitionFee    Int      @default(85000)
+  transportFee  Int      @default(18000)
+  hostelFee     Int      @default(65000)
+  examFee       Int      @default(3500)
+  lateFineDaily Int      @default(50)
+
+  branch        Branch   @relation(fields: [branchId], references: [id], onDelete: Cascade)
+
+  @@index([branchId])
+  @@map("branch_fee_structures")
+}
+
+model User {
+  id           String    @id @default(uuid()) @db.Char(36)
+  branchId     String?   @db.Char(36)
+  fullName     String    @db.VarChar(255)
+  email        String    @unique @db.VarChar(255)
+  mobile       String?   @db.VarChar(20)
+  passwordHash String    @db.VarChar(255)
+  role         UserRole
+  permissions  Json?     // Granular module-level CRUD permissions for Scoped Sub-Admins
+  department          String?   @db.VarChar(100)
+  isActive            Boolean   @default(true)
+  failedLoginAttempts Int       @default(0)
+  lockedUntil         DateTime?
+  createdAt           DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  branch         Branch?         @relation(fields: [branchId], references: [id], onDelete: SetNull)
+  studentProfile StudentProfile?
+  parentProfile  ParentProfile?
+  bookIssues     BookIssue[]
+  bookReservations BookReservation[]
+
+  @@index([branchId])
+  @@index([role])
+  @@map("users")
+}
+
+model StudentProfile {
+  id             String   @id @default(uuid()) @db.Char(36)
+  userId         String   @unique @db.Char(36)
+  branchId       String   @db.Char(36)
+  academicYearId String   @db.Char(36)
+  admissionNo    String   @unique @db.VarChar(64)
+  rollNumber     String   @db.VarChar(32)
+  classOrCourse  String   @db.VarChar(100)
+  section        String   @default("A") @db.VarChar(16)
+  institutionType String  @default("SCHOOL") @db.VarChar(32)
+  boardOrDept    String?  @db.VarChar(100)
+  hostelOpted    Boolean  @default(false)
+  transportOpted Boolean  @default(false)
+  libraryOpted   Boolean  @default(true)
+  labDuesCleared  Boolean  @default(true)
+  promotionStatus String?  @db.VarChar(32)
+  createdAt       DateTime @default(now())
+
+  user           User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  branch         Branch              @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  parentLinks         ParentStudentLink[]
+  transportAllocation StudentTransportAllocation?
+  hostelAllocations   HostelBedAllocation[]
+  gatePasses          GatePass[]
+
+  @@index([branchId, academicYearId])
+  @@map("student_profiles")
+}
+
+model ParentProfile {
+  id        String   @id @default(uuid()) @db.Char(36)
+  userId    String   @unique @db.Char(36)
+  branchId  String   @db.Char(36)
+  phone     String   @db.VarChar(20)
+  createdAt DateTime @default(now())
+
+  user      User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  children  ParentStudentLink[]
+
+  @@index([branchId])
+  @@map("parent_profiles")
+}
+
+model ParentStudentLink {
+  id        String @id @default(uuid()) @db.Char(36)
+  parentId  String @db.Char(36)
+  studentId String @db.Char(36)
+  relation  String @default("Guardian") @db.VarChar(32)
+
+  parent    ParentProfile  @relation(fields: [parentId], references: [id], onDelete: Cascade)
+  student   StudentProfile @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@unique([parentId, studentId])
+  @@map("parent_student_links")
+}
+
+model AttendanceRecord {
+  id                String   @id @default(uuid()) @db.Char(36)
+  branchId          String   @db.Char(36)
+  academicYearId    String   @db.Char(36)
+  studentId         String   @db.Char(36)
+  date              String   @db.VarChar(16) // YYYY-MM-DD
+  status            String   @db.VarChar(16) // PRESENT, ABSENT, LATE
+  markedByUserId    String?  @db.Char(36)
+  offlineCapturedAt DateTime?
+  syncedAt          DateTime @default(now())
+
+  @@index([branchId, academicYearId, studentId])
+  @@map("attendance_records")
+}
+
+model TimetableSlot {
+  id             String @id @default(uuid()) @db.Char(36)
+  branchId       String @db.Char(36)
+  academicYearId String @db.Char(36)
+  classOrCourse  String @db.VarChar(100)
+  section        String @default("A") @db.VarChar(16)
+  dayOfWeek      String @db.VarChar(16) // Monday..Saturday
+  periodNo       Int
+  timeRange      String @db.VarChar(32) // e.g. "09:00 - 09:45"
+  subject        String @db.VarChar(100)
+  teacherUserId  String @db.Char(36)
+
+  @@index([branchId, academicYearId])
+  @@map("timetable_slots")
+}
+
+model TeacherSubstitution {
+  id                 String   @id @default(uuid()) @db.Char(36)
+  branchId           String   @db.Char(36)
+  academicYearId     String   @db.Char(36)
+  leaveRequestId     String   @db.Char(36)
+  timetableSlotId    String   @db.Char(36)
+  originalTeacherId  String   @db.Char(36)
+  substituteTeacherId String  @db.Char(36)
+  date               String   @db.VarChar(16)
+  createdAt          DateTime @default(now())
+
+  @@index([branchId, academicYearId])
+  @@map("teacher_substitutions")
+}
+
+model Assignment {
+  id             String   @id @default(uuid()) @db.Char(36)
+  branchId       String   @db.Char(36)
+  academicYearId String   @db.Char(36)
+  classOrCourse  String   @db.VarChar(100)
+  subject        String   @db.VarChar(100)
+  title          String   @db.VarChar(255)
+  description    String   @db.Text
+  dueDate        String   @db.VarChar(32)
+  teacherUserId  String   @db.Char(36)
+  createdAt      DateTime @default(now())
+
+  submissions    AssignmentSubmission[]
+
+  @@index([branchId, academicYearId])
+  @@map("assignments")
+}
+
+model AssignmentSubmission {
+  id           String   @id @default(uuid()) @db.Char(36)
+  assignmentId String   @db.Char(36)
+  studentId    String   @db.Char(36)
+  branchId     String   @db.Char(36)
+  content      String   @db.Text
+  marks        Int?
+  feedback     String?  @db.VarChar(500)
+  submittedAt  DateTime @default(now())
+
+  assignment   Assignment @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+
+  @@index([branchId, studentId])
+  @@map("assignment_submissions")
+}
+
+model Exam {
+  id             String   @id @default(uuid()) @db.Char(36)
+  branchId       String   @db.Char(36)
+  academicYearId String   @db.Char(36)
+  name           String   @db.VarChar(150) // e.g. Mid-Term Examination 2026
+  classOrCourse  String   @db.VarChar(100)
+  examDate       String   @db.VarChar(32)
+  isLocked       Boolean  @default(false)
+  isPublished    Boolean  @default(false)
+  createdAt      DateTime @default(now())
+
+  marks          ExamMark[]
+  hallTickets    HallTicket[]
+
+  @@index([branchId, academicYearId])
+  @@map("exams")
+}
+
+model ExamMark {
+  id         String @id @default(uuid()) @db.Char(36)
+  examId     String @db.Char(36)
+  branchId   String @db.Char(36)
+  studentId  String @db.Char(36)
+  subject    String @db.VarChar(100)
+  marksObtained Int
+  maxMarks   Int    @default(100)
+  grade      String @db.VarChar(8)
+
+  exam       Exam   @relation(fields: [examId], references: [id], onDelete: Cascade)
+
+  @@index([branchId, studentId])
+  @@map("exam_marks")
+}
+
+model HallTicket {
+  id         String   @id @default(uuid()) @db.Char(36)
+  examId     String   @db.Char(36)
+  branchId   String   @db.Char(36)
+  studentId  String   @db.Char(36)
+  qrToken    String   @unique @db.VarChar(255)
+  seatNumber String   @db.VarChar(32)
+  issuedAt   DateTime @default(now())
+
+  exam       Exam     @relation(fields: [examId], references: [id], onDelete: Cascade)
+
+  @@index([branchId, studentId])
+  @@map("hall_tickets")
+}
+
+model LeaveRequest {
+  id             String   @id @default(uuid()) @db.Char(36)
+  branchId       String   @db.Char(36)
+  academicYearId String   @db.Char(36)
+  requesterUserId String  @db.Char(36)
+  requesterType  String   @db.VarChar(16) // STUDENT | TEACHER
+  fromDate       String   @db.VarChar(16)
+  toDate         String   @db.VarChar(16)
+  reason         String   @db.VarChar(500)
+  status         String   @default("PENDING") @db.VarChar(16) // PENDING, APPROVED, REJECTED
+  createdAt      DateTime @default(now())
+
+  @@index([branchId, academicYearId])
+  @@map("leave_requests")
+}
+
+model FeeInvoice {
+  id             String   @id @default(uuid()) @db.Char(36)
+  branchId       String   @db.Char(36)
+  academicYearId String   @db.Char(36)
+  studentId      String   @db.Char(36)
+  invoiceNo      String   @unique @db.VarChar(64)
+  finesDue       Int      @default(0)
+  tuitionDue     Int      @default(85000)
+  transportDue   Int      @default(0)
+  scholarshipDiscount Int @default(0)
+  totalPaid      Int      @default(0)
+  status         String   @default("PENDING") @db.VarChar(16) // PENDING, PARTIAL, PAID
+  createdAt      DateTime @default(now())
+
+  transactions   FeeTransaction[]
+
+  @@index([branchId, academicYearId, studentId])
+  @@map("fee_invoices")
+}
+
+model FeeTransaction {
+  id                String   @id @default(uuid()) @db.Char(36)
+  invoiceId         String   @db.Char(36)
+  branchId          String   @db.Char(36)
+  amount            Int
+  allocatedToFines  Int      @default(0)
+  allocatedToTuition Int     @default(0)
+  allocatedToTransport Int   @default(0)
+  paymentMethod     String   @default("ONLINE_UPI") @db.VarChar(32)
+  receiptNo         String   @unique @db.VarChar(64)
+  paidAt            DateTime @default(now())
+
+  invoice           FeeInvoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  @@index([branchId])
+  @@map("fee_transactions")
+}
+
+model CmsContent {
+  id        String   @id @default(uuid()) @db.Char(36)
+  branchId  String   @db.Char(36)
+  title     String   @db.VarChar(255)
+  body      String   @db.Text
+  category  String   @default("ANNOUNCEMENT") @db.VarChar(32) // ANNOUNCEMENT | BANNER
+  isActive  Boolean  @default(true)
+  updatedAt DateTime @updatedAt
+
+  branch    Branch   @relation(fields: [branchId], references: [id], onDelete: Cascade)
+
+  @@index([branchId])
+  @@map("cms_contents")
+}
+
+// ============================================================================
+// PHASE 2 SPRINT 2: LIBRARY MANAGEMENT & AUTOMATED FEE LEDGER SYNC
+// ============================================================================
+
+model LibraryBook {
+  id              String   @id @default(uuid()) @db.Char(36)
+  branchId        String   @db.Char(36)
+  isbn            String   @db.VarChar(32)
+  title           String   @db.VarChar(255)
+  author          String   @db.VarChar(255)
+  category        String   @db.VarChar(100)
+  totalCopies     Int      @default(1)
+  availableCopies Int      @default(1)
+  accessionCode   String   @unique @db.VarChar(64)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  branch          Branch            @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  issues          BookIssue[]
+  reservations    BookReservation[]
+
+  @@index([branchId])
+  @@index([isbn])
+  @@map("library_books")
+}
+
+model BookIssue {
+  id                  String    @id @default(uuid()) @db.Char(36)
+  branchId            String    @db.Char(36)
+  bookId              String    @db.Char(36)
+  userId              String    @db.Char(36)
+  issuedAt            DateTime  @default(now())
+  dueDate             DateTime
+  returnedAt          DateTime?
+  status              String    @default("ISSUED") @db.VarChar(24) // ISSUED, OVERDUE, RETURNED
+  fineAmount          Int       @default(0)
+  fineSyncedToInvoice Boolean   @default(false)
+
+  book                LibraryBook @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  user                User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([branchId, userId, status])
+  @@index([bookId])
+  @@map("book_issues")
+}
+
+model BookReservation {
+  id         String   @id @default(uuid()) @db.Char(36)
+  branchId   String   @db.Char(36)
+  bookId     String   @db.Char(36)
+  userId     String   @db.Char(36)
+  status     String   @default("PENDING") @db.VarChar(24) // PENDING, FULFILLED, CANCELLED
+  reservedAt DateTime @default(now())
+
+  book       LibraryBook @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  user       User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([branchId, userId, status])
+  @@index([bookId])
+  @@map("book_reservations")
+}
+
+// ============================================================================
+// PHASE 2 SPRINT 3: TRANSPORT MANAGEMENT & LIVE SMARTPHONE BUS ETA
+// ============================================================================
+
+model TransportVehicle {
+  id                  String   @id @default(uuid()) @db.Char(36)
+  branchId            String   @db.Char(36)
+  busNumber           String   @db.VarChar(32)
+  registrationNo      String   @db.VarChar(64)
+  capacity            Int      @default(40)
+  insuranceExpiry     DateTime
+  fitnessExpiry       DateTime
+  driverName          String   @db.VarChar(150)
+  driverPhone         String   @db.VarChar(20)
+  driverLicenseExpiry DateTime
+  isActive            Boolean  @default(true)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  branch              Branch           @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  routes              TransportRoute[]
+  trips               ActiveBusTrip[]
+
+  @@unique([branchId, busNumber])
+  @@index([branchId])
+  @@map("transport_vehicles")
+}
+
+model TransportRoute {
+  id        String   @id @default(uuid()) @db.Char(36)
+  branchId  String   @db.Char(36)
+  vehicleId String   @db.Char(36)
+  routeCode String   @db.VarChar(32)
+  routeName String   @db.VarChar(150)
+  createdAt DateTime @default(now())
+
+  branch      Branch                       @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  vehicle     TransportVehicle             @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  stops       RouteStop[]
+  allocations StudentTransportAllocation[]
+  trips       ActiveBusTrip[]
+
+  @@unique([branchId, routeCode])
+  @@index([branchId])
+  @@map("transport_routes")
+}
+
+model RouteStop {
+  id            String   @id @default(uuid()) @db.Char(36)
+  routeId       String   @db.Char(36)
+  sequenceOrder Int
+  stopName      String   @db.VarChar(150)
+  lat           Float
+  lng           Float
+  scheduledTime String   @db.VarChar(16)
+
+  route         TransportRoute               @relation(fields: [routeId], references: [id], onDelete: Cascade)
+  allocations   StudentTransportAllocation[]
+
+  @@index([routeId, sequenceOrder])
+  @@map("route_stops")
+}
+
+model StudentTransportAllocation {
+  id        String   @id @default(uuid()) @db.Char(36)
+  branchId  String   @db.Char(36)
+  studentId String   @unique @db.Char(36)
+  routeId   String   @db.Char(36)
+  stopId    String   @db.Char(36)
+  createdAt DateTime @default(now())
+
+  student   StudentProfile @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  route     TransportRoute @relation(fields: [routeId], references: [id], onDelete: Cascade)
+  stop      RouteStop      @relation(fields: [stopId], references: [id], onDelete: Cascade)
+
+  @@index([branchId, routeId])
+  @@map("student_transport_allocations")
+}
+
+model ActiveBusTrip {
+  id               String    @id @default(uuid()) @db.Char(36)
+  branchId         String    @db.Char(36)
+  routeId          String    @db.Char(36)
+  vehicleId        String    @db.Char(36)
+  driverUserId     String?   @db.Char(36)
+  liveLat          Float
+  liveLng          Float
+  speed            Float     @default(0)
+  status           String    @default("IN_PROGRESS") @db.VarChar(24) // IN_PROGRESS, DELAYED, COMPLETED
+  currentStopOrder Int       @default(1)
+  delayMinutes     Int       @default(0)
+  delayMessage     String?   @db.VarChar(300)
+  startedAt        DateTime  @default(now())
+  endedAt          DateTime?
+  updatedAt        DateTime  @updatedAt
+
+  route            TransportRoute   @relation(fields: [routeId], references: [id], onDelete: Cascade)
+  vehicle          TransportVehicle @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+
+  @@index([branchId, status])
+  @@index([routeId, status])
+  @@map("active_bus_trips")
+}
+
+// ============================================================================
+// PHASE 2 SPRINT 4: HOSTEL, QR OUT-PASSES, GATE KIOSK & NO-DUES CLEARANCE
+// ============================================================================
+
+model HostelBlock {
+  id         String   @id @default(uuid()) @db.Char(36)
+  branchId   String   @db.Char(36)
+  blockName  String   @db.VarChar(100)
+  genderType String   @default("BOYS") @db.VarChar(16) // BOYS, GIRLS, CO_ED
+  createdAt  DateTime @default(now())
+
+  branch     Branch       @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  rooms      HostelRoom[]
+
+  @@unique([branchId, blockName])
+  @@index([branchId])
+  @@map("hostel_blocks")
+}
+
+model HostelRoom {
+  id         String   @id @default(uuid()) @db.Char(36)
+  branchId   String   @db.Char(36)
+  blockId    String   @db.Char(36)
+  roomNumber String   @db.VarChar(32)
+  floor      Int      @default(1)
+  capacity   Int      @default(3)
+
+  block      HostelBlock               @relation(fields: [blockId], references: [id], onDelete: Cascade)
+  beds       HostelBedAllocation[]
+  tickets    HostelMaintenanceTicket[]
+
+  @@unique([blockId, roomNumber])
+  @@index([branchId])
+  @@map("hostel_rooms")
+}
+
+model HostelBedAllocation {
+  id             String    @id @default(uuid()) @db.Char(36)
+  branchId       String    @db.Char(36)
+  roomId         String    @db.Char(36)
+  bedNumber      Int
+  studentId      String    @db.Char(36)
+  status         String    @default("OCCUPIED") @db.VarChar(24) // OCCUPIED, VACATED
+  maintenanceDue Int       @default(0)
+  allocatedAt    DateTime  @default(now())
+  vacatedAt      DateTime?
+
+  room           HostelRoom     @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  student        StudentProfile @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@index([branchId, status])
+  @@index([studentId, status])
+  @@map("hostel_bed_allocations")
+}
+
+model MessMenu {
+  id        String @id @default(uuid()) @db.Char(36)
+  branchId  String @db.Char(36)
+  dayOfWeek String @db.VarChar(16)
+  breakfast String @db.VarChar(300)
+  lunch     String @db.VarChar(300)
+  snacks    String @db.VarChar(300)
+  dinner    String @db.VarChar(300)
+
+  @@unique([branchId, dayOfWeek])
+  @@index([branchId])
+  @@map("mess_menus")
+}
+
+model HostelMaintenanceTicket {
+  id          String    @id @default(uuid()) @db.Char(36)
+  branchId    String    @db.Char(36)
+  roomId      String    @db.Char(36)
+  studentId   String?   @db.Char(36)
+  title       String    @db.VarChar(200)
+  description String    @db.VarChar(500)
+  status      String    @default("OPEN") @db.VarChar(24) // OPEN, IN_PROGRESS, RESOLVED
+  repairCost  Int       @default(0)
+  createdAt   DateTime  @default(now())
+  resolvedAt  DateTime?
+
+  room        HostelRoom @relation(fields: [roomId], references: [id], onDelete: Cascade)
+
+  @@index([branchId, status])
+  @@map("hostel_maintenance_tickets")
+}
+
+model HostelVisitorLog {
+  id            String    @id @default(uuid()) @db.Char(36)
+  branchId      String    @db.Char(36)
+  visitorName   String    @db.VarChar(150)
+  visitorPhone  String    @db.VarChar(20)
+  purpose       String    @db.VarChar(255)
+  hostStudentId String?   @db.Char(36)
+  otpCode       String    @db.VarChar(10)
+  otpVerified   Boolean   @default(false)
+  checkedInAt   DateTime?
+  checkedOutAt  DateTime?
+  createdAt     DateTime  @default(now())
+
+  @@index([branchId, otpVerified])
+  @@map("hostel_visitor_logs")
+}
+
+model GatePass {
+  id               String    @id @default(uuid()) @db.Char(36)
+  branchId         String    @db.Char(36)
+  studentId        String?   @db.Char(36)
+  passType         String    @db.VarChar(24) // HOSTEL_OUTPASS, EARLY_PICKUP, VISITOR
+  reason           String    @db.VarChar(300)
+  destination      String?   @db.VarChar(200)
+  qrPayload        String    @unique @db.VarChar(255)
+  expiresAt        DateTime
+  parentApprovedAt DateTime?
+  wardenApprovedAt DateTime?
+  rejectedAt       DateTime?
+  exitScannedAt    DateTime?
+  entryScannedAt   DateTime?
+  status           String    @default("PENDING_PARENT") @db.VarChar(24) // PENDING_PARENT, PENDING_WARDEN, APPROVED, EXITED, RETURNED, REJECTED
+  createdAt        DateTime  @default(now())
+
+  student          StudentProfile? @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@index([branchId, status])
+  @@index([studentId, status])
+  @@map("gate_passes")
+}
+
+// ============================================================================
+// PHASE 2 SPRINT 5: SMART PTM BOOKER, DLT CAMPAIGNS & WHATSAPP PARENT BOT
+// ============================================================================
+
+model PTMEvent {
+  id            String    @id @default(uuid()) @db.Char(36)
+  branchId      String    @db.Char(36)
+  teacherUserId String    @db.Char(36)
+  title         String    @db.VarChar(200)
+  eventDate     String    @db.VarChar(16) // YYYY-MM-DD
+  startTime     String    @db.VarChar(8)  // HH:MM
+  endTime       String    @db.VarChar(8)  // HH:MM
+  slotMinutes   Int       @default(10)
+  meetingMode   String    @default("IN_PERSON") @db.VarChar(24) // IN_PERSON, ONLINE
+  meetingLink   String?   @db.VarChar(300)
+  createdAt     DateTime  @default(now())
+
+  slots         PTMSlot[]
+
+  @@index([branchId, eventDate])
+  @@map("ptm_events")
+}
+
+model PTMSlot {
+  id                  String    @id @default(uuid()) @db.Char(36)
+  eventId             String    @db.Char(36)
+  branchId            String    @db.Char(36)
+  startTime           String    @db.VarChar(8)
+  endTime             String    @db.VarChar(8)
+  status              String    @default("AVAILABLE") @db.VarChar(24) // AVAILABLE, BOOKED, CANCELLED
+  bookedByParentUserId String?  @db.Char(36)
+  studentId           String?   @db.Char(36)
+  notes               String?   @db.VarChar(300)
+  bookedAt            DateTime?
+
+  event               PTMEvent  @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@index([eventId, status])
+  @@index([bookedByParentUserId])
+  @@map("ptm_slots")
+}
+
+model DltTemplate {
+  id                   String   @id @default(uuid()) @db.Char(36)
+  branchId             String   @db.Char(36)
+  templateId           String   @db.VarChar(64)
+  senderId             String   @db.VarChar(16)
+  channel              String   @db.VarChar(16) // SMS, WHATSAPP
+  eventTrigger         String   @db.VarChar(32) // ABSENCE, FEE_DUE, BUS_DELAY, EXAM_SCHEDULE
+  bodyWithPlaceholders String   @db.VarChar(1000)
+  isActive             Boolean  @default(true)
+  createdAt            DateTime @default(now())
+
+  @@unique([branchId, templateId])
+  @@index([branchId, eventTrigger])
+  @@map("dlt_templates")
+}
+
+model CampaignDispatchLog {
+  id             String   @id @default(uuid()) @db.Char(36)
+  branchId       String   @db.Char(36)
+  templateId     String   @db.VarChar(64)
+  channel        String   @db.VarChar(16)
+  eventTrigger   String   @db.VarChar(32)
+  recipientPhone String   @db.VarChar(24)
+  renderedBody   String   @db.VarChar(1000)
+  status         String   @default("SENT") @db.VarChar(16)
+  dispatchedAt   DateTime @default(now())
+
+  @@index([branchId, dispatchedAt])
+  @@map("campaign_dispatch_logs")
+}
+
+model WhatsAppSession {
+  id        String   @id @default(uuid()) @db.Char(36)
+  phone     String   @unique @db.VarChar(24)
+  step      String   @default("MENU") @db.VarChar(32)
+  draftData Json?
+  updatedAt DateTime @updatedAt
+
+  @@map("whatsapp_sessions")
+}
+
+// ============================================================================
+// PHASE 2 SPRINT 7: LABS, ACTIVITIES, ROLLOVER, ACADEMICS, ACCOUNTS & PLACEMENT
+// ============================================================================
+
+model Lab {
+  id        String   @id @default(uuid()) @db.Char(36)
+  branchId  String   @db.Char(36)
+  name      String   @db.VarChar(150)
+  labType   String   @db.VarChar(64) // PHYSICS, CHEMISTRY, BIOLOGY, COMPUTER_SCIENCE
+  roomNo    String   @db.VarChar(32)
+  capacity  Int      @default(30)
+  createdAt DateTime @default(now())
+
+  batches     LabBatch[]
+  experiments LabExperiment[]
+  equipment   LabEquipmentItem[]
+
+  @@index([branchId])
+  @@map("labs")
+}
+
+model LabBatch {
+  id           String @id @default(uuid()) @db.Char(36)
+  branchId     String @db.Char(36)
+  labId        String @db.Char(36)
+  batchName    String @db.VarChar(64)
+  classOrCourse String @db.VarChar(100)
+  scheduleSlot String @db.VarChar(64)
+
+  lab          Lab    @relation(fields: [labId], references: [id], onDelete: Cascade)
+
+  @@index([branchId, labId])
+  @@map("lab_batches")
+}
+
+model LabExperiment {
+  id          String @id @default(uuid()) @db.Char(36)
+  branchId    String @db.Char(36)
+  labId       String @db.Char(36)
+  title       String @db.VarChar(200)
+  aim         String @db.VarChar(500)
+  maxMarks    Int    @default(25)
+
+  lab         Lab          @relation(fields: [labId], references: [id], onDelete: Cascade)
+  journals    LabJournal[]
+
+  @@index([branchId, labId])
+  @@map("lab_experiments")
+}
+
+model LabEquipmentItem {
+  id                String    @id @default(uuid()) @db.Char(36)
+  branchId          String    @db.Char(36)
+  labId             String    @db.Char(36)
+  name              String    @db.VarChar(150)
+  qrTag             String    @unique @db.VarChar(64)
+  category          String    @db.VarChar(32) // APPARATUS, CHEMICAL, CONSUMABLE
+  quantity          Int       @default(1)
+  minStockLevel     Int       @default(5)
+  expiryDate        DateTime?
+  calibrationStatus String    @default("OK") @db.VarChar(32) // OK, CALIBRATION_DUE, MAINTENANCE
+  maintenanceNotes  String?   @db.VarChar(300)
+
+  lab               Lab                 @relation(fields: [labId], references: [id], onDelete: Cascade)
+  issues            LabEquipmentIssue[]
+
+  @@index([branchId, labId])
+  @@map("lab_equipment_items")
+}
+
+model LabEquipmentIssue {
+  id           String    @id @default(uuid()) @db.Char(36)
+  branchId     String    @db.Char(36)
+  itemId       String    @db.Char(36)
+  studentId    String    @db.Char(36)
+  quantity     Int       @default(1)
+  status       String    @default("ISSUED") @db.VarChar(24) // ISSUED, RETURNED, DAMAGED
+  damageFine   Int       @default(0)
+  issuedAt     DateTime  @default(now())
+  returnedAt   DateTime?
+
+  item         LabEquipmentItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
+
+  @@index([branchId, studentId])
+  @@map("lab_equipment_issues")
+}
+
+model LabJournal {
+  id              String    @id @default(uuid()) @db.Char(36)
+  branchId        String    @db.Char(36)
+  experimentId    String    @db.Char(36)
+  studentId       String    @db.Char(36)
+  submissionNotes String    @db.VarChar(1000)
+  observationMarks Int      @default(0)
+  recordMarks     Int       @default(0)
+  vivaMarks       Int       @default(0)
+  totalMarks      Int       @default(0)
+  signedOffById   String?   @db.Char(36)
+  signedOffAt     DateTime?
+  status          String    @default("SUBMITTED") @db.VarChar(24) // SUBMITTED, GRADED_SIGNED
+
+  experiment      LabExperiment @relation(fields: [experimentId], references: [id], onDelete: Cascade)
+
+  @@index([branchId, studentId])
+  @@map("lab_journals")
+}
+
+model Activity {
+  id                   String    @id @default(uuid()) @db.Char(36)
+  branchId             String    @db.Char(36)
+  name                 String    @db.VarChar(150)
+  category             String    @db.VarChar(64) // SPORTS, ROBOTICS, ARTS, MUSIC
+  venue                String    @db.VarChar(100)
+  scheduleSlot         String    @db.VarChar(64) // e.g. "MON-15:30"
+  eligibleGrades       String    @db.VarChar(200) // comma-separated or "ALL"
+  seatLimit            Int       @default(25)
+  feeAmount            Int       @default(0)
+  withdrawalCutoffDate DateTime
+  createdAt            DateTime  @default(now())
+
+  enrollments          ActivityEnrollment[]
+
+  @@index([branchId])
+  @@map("activities")
+}
+
+model ActivityEnrollment {
+  id                String    @id @default(uuid()) @db.Char(36)
+  branchId          String    @db.Char(36)
+  activityId        String    @db.Char(36)
+  studentId         String    @db.Char(36)
+  status            String    @default("PENDING_CONSENT") @db.VarChar(24) // PENDING_CONSENT, ENROLLED, WITHDRAWN
+  parentConsentOtp  String?   @db.VarChar(10)
+  parentConsentedAt DateTime?
+  feeSynced         Boolean   @default(false)
+  createdAt         DateTime  @default(now())
+
+  activity          Activity  @relation(fields: [activityId], references: [id], onDelete: Cascade)
+
+  @@unique([activityId, studentId])
+  @@index([branchId, studentId])
+  @@map("activity_enrollments")
+}
+
+model SyllabusChapter {
+  id            String    @id @default(uuid()) @db.Char(36)
+  branchId      String    @db.Char(36)
+  classOrCourse String    @db.VarChar(100)
+  subject       String    @db.VarChar(150)
+  chapterNo     Int
+  title         String    @db.VarChar(200)
+  isCompleted   Boolean   @default(false)
+  completedAt   DateTime?
+  teacherUserId String?   @db.Char(36)
+
+  @@index([branchId, classOrCourse, subject])
+  @@map("syllabus_chapters")
+}
+
+model BoardExamRegistration {
+  id             String   @id @default(uuid()) @db.Char(36)
+  branchId       String   @db.Char(36)
+  academicYearId String   @db.Char(36)
+  studentId      String   @db.Char(36)
+  board          String   @db.VarChar(32)
+  rollNumber     String?  @db.VarChar(64)
+  admitCardUrl   String?  @db.VarChar(300)
+  status         String   @default("REGISTERED") @db.VarChar(24) // REGISTERED, ADMIT_CARD_UPLOADED
+  createdAt      DateTime @default(now())
+
+  @@unique([academicYearId, studentId])
+  @@index([branchId])
+  @@map("board_exam_registrations")
+}
+
+model BoardChangeLog {
+  id               String   @id @default(uuid()) @db.Char(36)
+  branchId         String   @db.Char(36)
+  studentId        String   @db.Char(36)
+  fromBoard        String   @db.VarChar(64)
+  toBoard          String   @db.VarChar(64)
+  reason           String   @db.VarChar(300)
+  approvedByUserId String   @db.Char(36)
+  createdAt        DateTime @default(now())
+
+  @@index([branchId, studentId])
+  @@map("board_change_logs")
+}
+
+model CollegeAcademicRecord {
+  id                 String   @id @default(uuid()) @db.Char(36)
+  branchId           String   @db.Char(36)
+  studentId          String   @db.Char(36)
+  semester           Int
+  sgpa               Float
+  cgpa               Float
+  backlogs           Int      @default(0)
+  revaluationStatus  String   @default("NONE") @db.VarChar(24) // NONE, REQUESTED, COMPLETED
+  revaluationSubject String?  @db.VarChar(150)
+  updatedAt          DateTime @updatedAt
+
+  @@unique([studentId, semester])
+  @@index([branchId, studentId])
+  @@map("college_academic_records")
+}
+
+model ChequePayment {
+  id         String   @id @default(uuid()) @db.Char(36)
+  branchId   String   @db.Char(36)
+  invoiceId  String   @db.Char(36)
+  chequeNo   String   @db.VarChar(64)
+  bankName   String   @db.VarChar(100)
+  amount     Int
+  status     String   @default("PENDING") @db.VarChar(24) // PENDING, CLEARED, BOUNCED
+  bounceFine Int      @default(0)
+  createdAt  DateTime @default(now())
+
+  @@index([branchId, status])
+  @@map("cheque_payments")
+}
+
+model GatewayReconciliation {
+  id          String   @id @default(uuid()) @db.Char(36)
+  branchId    String   @db.Char(36)
+  gatewayRef  String   @unique @db.VarChar(100)
+  invoiceNo   String?  @db.VarChar(64)
+  amount      Int
+  status      String   @db.VarChar(24) // MATCHED, UNMATCHED, FAILED, REFUNDED
+  notes       String?  @db.VarChar(300)
+  createdAt   DateTime @default(now())
+
+  @@index([branchId, status])
+  @@map("gateway_reconciliations")
+}
+
+model DocumentRequest {
+  id        String   @id @default(uuid()) @db.Char(36)
+  branchId  String   @db.Char(36)
+  studentId String   @db.Char(36)
+  docType   String   @db.VarChar(32) // BONAFIDE, TC, ID_CARD
+  reason    String   @db.VarChar(300)
+  status    String   @default("PENDING") @db.VarChar(24) // PENDING, ISSUED, REJECTED
+  issuedRef String?  @db.VarChar(64)
+  createdAt DateTime @default(now())
+
+  @@index([branchId, studentId])
+  @@map("document_requests")
+}
+
+model AlumniProfile {
+  id             String   @id @default(uuid()) @db.Char(36)
+  branchId       String   @db.Char(36)
+  fullName       String   @db.VarChar(150)
+  email          String   @unique @db.VarChar(255)
+  graduationYear Int
+  department     String   @db.VarChar(100)
+  company        String   @db.VarChar(150)
+  roleTitle      String   @db.VarChar(150)
+  status         String   @default("PENDING") @db.VarChar(24) // PENDING, VERIFIED
+  createdAt      DateTime @default(now())
+
+  @@index([branchId, status])
+  @@map("alumni_profiles")
+}
+
+model PlacementDrive {
+  id               String   @id @default(uuid()) @db.Char(36)
+  branchId         String   @db.Char(36)
+  companyName      String   @db.VarChar(150)
+  jobTitle         String   @db.VarChar(150)
+  packageLpa       Float
+  minCgpa          Float    @default(6.0)
+  maxBacklogs      Int      @default(0)
+  driveDate        String   @db.VarChar(16)
+  isReferral       Boolean  @default(false)
+  postedByAlumniId String?  @db.Char(36)
+  moderationStatus String   @default("APPROVED") @db.VarChar(24) // PENDING, APPROVED, REJECTED
+  createdAt        DateTime @default(now())
+
+  applications     PlacementApplication[]
+
+  @@index([branchId, moderationStatus])
+  @@map("placement_drives")
+}
+
+model PlacementApplication {
+  id        String   @id @default(uuid()) @db.Char(36)
+  branchId  String   @db.Char(36)
+  driveId   String   @db.Char(36)
+  studentId String   @db.Char(36)
+  status    String   @default("APPLIED") @db.VarChar(24) // APPLIED, SHORTLISTED, SELECTED, REJECTED
+  appliedAt DateTime @default(now())
+
+  drive     PlacementDrive @relation(fields: [driveId], references: [id], onDelete: Cascade)
+
+  @@unique([driveId, studentId])
+  @@index([branchId, studentId])
+  @@map("placement_applications")
 }
